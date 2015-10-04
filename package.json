@@ -11,11 +11,14 @@
     "gulp-jade": "^1.1.0",
     "gulp-sass": "^2.0.4",
     "gulp-webpack": "^1.5.0",
+    "jquery": "^2.1.4",
+    "parse-bmfont-ascii": "^1.0.6",
     "webpack": "^1.12.2",
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
     "gulp-livereload": "^3.8.1",
+    "json-loader": "^0.5.3",
     "run-sequence": "^1.1.4"
   },
   "scripts": {
