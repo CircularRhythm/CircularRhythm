@@ -1,6 +1,6 @@
 import fontParser from "parse-bmfont-ascii"
 import $ from "jquery"
-import Game from "./game"
+import { Game } from "./game"
 
 $(() => {
   const game = new Game()

@@ -1,7 +1,10 @@
 export class Player {
-  constructor(game, bmson) {
+  constructor(game, bmson, parentPath) {
     this.game = game
     this.bmson = bmson
+    this.parentPath = parentPath
+
+    this.audioContext = new AudioContext()
 
     this.lastTime = 0
     this.playing = false
@@ -72,6 +75,72 @@ export class Player {
     for(let e of this.soundChannels) {
       this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
     }
+  }
+
+  loadAudio() {
+    return new Promise((resolve, reject) => {
+      const promises = []
+      this.soundChannels.forEach((channel) => {
+        promises.push(new Promise((resolve, reject) => {
+          const request = new XMLHttpRequest()
+          request.open("GET", this.parentPath + "/" + channel.name.replace(/\.wav$/, ".ogg"))
+          request.responseType = "arraybuffer"
+          request.onload = () => {
+            if(request.status == 200) {
+              this.audioContext.decodeAudioData(request.response, (data) => {
+                resolve({name: channel.name, audio: data})
+              })
+            } else {
+              console.error(request.statusText)
+            }
+          }
+          request.onerror = () => reject(console.error("Network Error"))
+          request.send()
+        }))
+      })
+      Promise.all(promises).then((result) => {
+        result.forEach((e) => {
+          const channel = this.soundChannels.find((channel) => channel.name == e.name)
+          const numberOfChannels = e.audio.numberOfChannels
+          const sampleRate = e.audio.sampleRate
+          for(let i = 0; i < channel.notes.length - 1; i++) {
+            const note = channel.notes[i]
+
+            const startBpmData = this.getBpmData(note.y)
+            const startTime = this.calculateTime(note.y, startBpmData)
+
+            let endTime = 0
+            let addIndex = 0
+            while(endTime <= startTime) {
+              addIndex ++
+              if(i + addIndex >= channel.notes.length - 1) {
+                endTime = e.audio.duration
+                break
+              } else {
+                const nextNote = channel.notes[i + addIndex]
+                const endBpmData = this.getBpmData(nextNote.y)
+                endTime = this.calculateTime(nextNote.y, endBpmData)
+              }
+            }
+            const length = endTime - startTime
+            console.log(length)
+            if(length <= 0 || startTime / 1000 >= e.audio.duration) {
+              // Ignore TODO
+              note.audioBuffer = this.audioContext.createBuffer(1, 1, 44100)
+            } else {
+              const buffer = this.audioContext.createBuffer(numberOfChannels, sampleRate * length / 1000, sampleRate)
+              for(let c = 0; c < numberOfChannels; c++) {
+                const array = new Float32Array(sampleRate * length / 1000)
+                e.audio.copyFromChannel(array, c, sampleRate * startTime / 1000)
+                buffer.copyToChannel(array, c)
+              }
+              note.audioBuffer = buffer
+            }
+          }
+        })
+        resolve()
+      })
+    })
   }
 
   start() {
@@ -189,6 +258,7 @@ export class Player {
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.judgeShortNote(note, judge)
+            this.noteOn(note)
           }
         }
         if(note instanceof NoteLong) {
@@ -197,6 +267,7 @@ export class Player {
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.firstJudgeLongNote(note, judge)
+            this.noteOn(note)
           }
 
           if(note.active) {
@@ -209,6 +280,13 @@ export class Player {
         }
       }
     }
+  }
+
+  noteOn(note) {
+    const source = this.audioContext.createBufferSource()
+    source.buffer = note.audioBuffer
+    source.connect(this.audioContext.destination)
+    source.start(0)
   }
 
   // currentTime - noteTime; Early : <0, Slow: >0
@@ -310,6 +388,8 @@ export class Note {
 
     this.judgeState = JudgeState.NO
     this.targetable = true
+
+    this.audioBuffer = null
   }
 }
 

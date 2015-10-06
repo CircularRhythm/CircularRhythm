@@ -3,11 +3,7 @@ import ControllerState from "./controller"
 import Renderer from "./renderer"
 import { Player } from "./player"
 
-// TODO: Bmson loading method
-import bmson from "../../bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
-//import bmson from "../../bmson/test/test.bmson"
-
-export default class Game {
+export class Game {
   constructor() {
     this.CANVAS_CLASS = "canvas#gameScreen"
     const canvas = document.getElementById("gameScreen")
@@ -24,24 +20,48 @@ export default class Game {
       this.controller[i] = new ControllerState()
     }
 
-    this.renderer = new Renderer(this)
-    this.player = new Player(this, bmson)
+    this.state = States.LOADING
+
+    // TODO: Make it async
+    const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
+    const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
+    new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest()
+      request.open("GET", bmsonPath)
+      request.responseType = "json"
+      request.onload = () => {
+        if(request.status == 200) {
+          resolve(request.response)
+        } else {
+          console.error(request.statusText)
+        }
+      }
+      request.onerror = () => reject(console.error("Network Error"))
+      request.send()
+    }).then((bmson) => {
+      this.player = new Player(this, bmson, parentPath)
+      this.renderer = new Renderer(this)
+
+      this.player.loadAudio().then(() => {
+        this.state = States.IN_GAME
+        this.player.start()
+      })
+    })
   }
 
   start() {
     this.onResize();
     console.log("Game started.")
-    this.player.start()
     this.frame = 0
     this.startTime = Date.now()
-    setInterval(() => this.update(), 1000 / 60)
+    this.update()
   }
 
   update() {
     // TODO: Accurate FPS counter
     this.frame ++
-    const now = Date.now()
-    const fps = this.frame / (now - this.startTime) * 1000
+    const frameStartTime = Date.now()
+    const fps = this.frame / (frameStartTime - this.startTime) * 1000
 
     const g = this.g
 
@@ -76,16 +96,24 @@ export default class Game {
     g.rect(0, 0, this.width, this.height)
     g.fill()
 
-    g.save()
-    g.translate((this.width - 800) / 2, (this.height - 600) / 2)
+    if(this.state == States.LOADING) {
+      g.fillStyle = "#000000"
+      g.fillText("LOADING", 32, 64)
+    } else {
+      g.save()
+      g.translate((this.width - 800) / 2, (this.height - 600) / 2)
 
-    this.player.update(this.controller)
-    this.renderer.render(g, this.controller)
+      this.player.update(this.controller)
+      this.renderer.render(g, this.controller)
 
-    g.restore()
+      g.restore()
+    }
+
 
     g.fillStyle = "#000000"
     g.fillText(fps, 32, 32)
+
+    setTimeout(() => this.update(), 10)
   }
 
   onResize() {
@@ -110,4 +138,9 @@ export default class Game {
   onKeyUp(e) {
     this.keys[e.keyCode] = false
   }
+}
+
+export class States {
+  static get LOADING() { return 0 }
+  static get IN_GAME() { return 1 }
 }
