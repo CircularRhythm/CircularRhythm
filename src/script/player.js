@@ -1,4 +1,5 @@
 export class Player {
+  // TODO: Make soundChannels index-base
   constructor(game, bmson, parentPath) {
     this.game = game
     this.bmson = bmson
@@ -28,6 +29,7 @@ export class Player {
     // [{y: Number, bpm: Number, time: Number}]
     this.bpmList = []
     this.bpmList.push({y: 0, bpm: this.bmson.info.initBPM, time: 0})
+    // TODO
 
     // [{y: Number, l: Number}]
     this.barLines = []
@@ -80,15 +82,16 @@ export class Player {
   loadAudio() {
     return new Promise((resolve, reject) => {
       const promises = []
-      this.soundChannels.forEach((channel) => {
+      this.soundChannels.forEach((channel, i) => {
         promises.push(new Promise((resolve, reject) => {
           const request = new XMLHttpRequest()
+          // TODO: WAV / OGG selecting
           request.open("GET", this.parentPath + "/" + channel.name.replace(/\.wav$/, ".ogg"))
           request.responseType = "arraybuffer"
           request.onload = () => {
             if(request.status == 200) {
               this.audioContext.decodeAudioData(request.response, (data) => {
-                resolve({name: channel.name, audioBuffer: data})
+                resolve({channelIndex: i, audioBuffer: data})
               })
             } else {
               console.error(request.statusText)
@@ -99,12 +102,17 @@ export class Player {
         }))
       })
       Promise.all(promises).then((result) => {
+        // Slice audio
+        // result: {name: String, audioBuffer: AudioBuffer}
         result.forEach((e) => {
-          const channel = this.soundChannels.find((channel) => channel.name == e.name)
+          const channel = this.soundChannels[e.channelIndex]
           const numberOfChannels = e.audioBuffer.numberOfChannels
           const sampleRate = e.audioBuffer.sampleRate
 
           let audioStartTime = 0
+          if(channel.notes[0].c == true) {
+            console.warn("First note of each channel should be c=false")
+          }
           for(let i = 0; i < channel.notes.length; i++) {
             const note = channel.notes[i]
             const noteStartTime = this.calculateTime(note.y, this.getBpmData(note.y))
@@ -125,12 +133,14 @@ export class Player {
               while(channel.notes[i + addIndex].y <= note.y) {
                 addIndex ++
                 if(i + addIndex >= channel.notes.length) {
+                  // If there is no next note
                   sliceEndSample = e.audioBuffer.length - 1
                   reachEnd = true
                   break
                 }
               }
               if(!reachEnd) {
+                // If there is a next note
                 const nextNote = channel.notes[i + addIndex]
                 const nextNoteTime = this.calculateTime(nextNote.y, this.getBpmData(nextNote.y))
                 const sliceEndTime = nextNoteTime - audioStartTime
@@ -140,7 +150,7 @@ export class Player {
               const sliceSampleLength = sliceEndSample - sliceStartSample
               const audioBuffer = this.audioContext.createBuffer(numberOfChannels, sliceSampleLength, sampleRate)
               for(let c = 0; c < numberOfChannels; c++) {
-
+                // Copy buffer from whole source
                 const array = new Float32Array(sliceSampleLength)
                 e.audioBuffer.copyFromChannel(array, c, sliceStartSample)
                 audioBuffer.copyToChannel(array, c)
@@ -231,6 +241,7 @@ export class Player {
 
     // Target & Judge
     // Before assigning new targets, clean up old ones
+    // TODO: Double-judgment
     this.targetNotes.forEach((e, x) => {
       if(!e.note.active) this.targetNotes.delete(x)
     })
@@ -251,8 +262,6 @@ export class Player {
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x < 1 || 4 < note.x))
       playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
 
-      // TODO: Clap
-
       // Judge
       for(let i = 0; i < 4; i++) {
         const button = controller[i]
@@ -267,7 +276,7 @@ export class Player {
 
         if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
           // Miss
-          if(this.currentTime - note.time > 400) this.judgeShortNote(note, JudgeState.MISS)
+          if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.judgeShortNote(note, judge)
@@ -276,7 +285,7 @@ export class Player {
         }
         if(note instanceof NoteLong) {
           // Miss
-          if(this.currentTime - note.time > 400 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
+          if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.firstJudgeLongNote(note, judge)
@@ -284,7 +293,7 @@ export class Player {
           }
 
           if(note.active) {
-            if(this.currentTime - note.endTime > 400) this.secondJudgeLongNote(note, false)
+            if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
             else if(button.isJustReleased()) {
               const judge = this.getSecondJudge(this.currentTime - note.endTime)
               this.secondJudgeLongNote(note, judge)
@@ -315,16 +324,16 @@ export class Player {
   // currentTime - noteTime; Early : <0, Slow: >0
   getJudge(difference) {
     const diffAbs = Math.abs(difference)
-    if(0 <= diffAbs && diffAbs < 100) return JudgeState.EXCELLENT
-    if(100 <= diffAbs && diffAbs < 200) return JudgeState.GREAT
-    if(200 <= diffAbs && diffAbs < 300) return JudgeState.GOOD
-    if(300 <= diffAbs && diffAbs < 400) return JudgeState.BAD
+    if(diffAbs < 20) return JudgeState.EXCELLENT
+    if(diffAbs < 50) return JudgeState.GREAT
+    if(diffAbs < 100) return JudgeState.GOOD
+    if(diffAbs < 200) return JudgeState.BAD
     return JudgeState.MISS_EMPTY
   }
 
   getSecondJudge(difference) {
     const diffAbs = Math.abs(difference)
-    if(0 <= diffAbs && diffAbs <= 400) return true
+    if(diffAbs <= 200) return true
     return false
   }
 
