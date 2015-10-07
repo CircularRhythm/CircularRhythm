@@ -65,7 +65,7 @@ export class Player {
           notes.push(new NoteShort(note.x, note.y, note.c, time, position))
         }
       }
-      this.soundChannels.push({name: bmsonSoundChannel.name, notes: notes})
+      this.soundChannels.push({name: bmsonSoundChannel.name, source: null, notes: notes})
     }
 
     this.currentBpm = bmson.info.initBPM
@@ -88,7 +88,7 @@ export class Player {
           request.onload = () => {
             if(request.status == 200) {
               this.audioContext.decodeAudioData(request.response, (data) => {
-                resolve({name: channel.name, audio: data})
+                resolve({name: channel.name, audioBuffer: data})
               })
             } else {
               console.error(request.statusText)
@@ -101,40 +101,51 @@ export class Player {
       Promise.all(promises).then((result) => {
         result.forEach((e) => {
           const channel = this.soundChannels.find((channel) => channel.name == e.name)
-          const numberOfChannels = e.audio.numberOfChannels
-          const sampleRate = e.audio.sampleRate
-          for(let i = 0; i < channel.notes.length - 1; i++) {
+          const numberOfChannels = e.audioBuffer.numberOfChannels
+          const sampleRate = e.audioBuffer.sampleRate
+
+          let audioStartTime = 0
+          for(let i = 0; i < channel.notes.length; i++) {
             const note = channel.notes[i]
-
-            const startBpmData = this.getBpmData(note.y)
-            const startTime = this.calculateTime(note.y, startBpmData)
-
-            let endTime = 0
-            let addIndex = 0
-            while(endTime <= startTime) {
-              addIndex ++
-              if(i + addIndex >= channel.notes.length - 1) {
-                endTime = e.audio.duration
-                break
-              } else {
-                const nextNote = channel.notes[i + addIndex]
-                const endBpmData = this.getBpmData(nextNote.y)
-                endTime = this.calculateTime(nextNote.y, endBpmData)
-              }
+            const noteStartTime = this.calculateTime(note.y, this.getBpmData(note.y))
+            if(note.c == false) {
+              audioStartTime = noteStartTime
             }
-            const length = endTime - startTime
-            console.log(length)
-            if(length <= 0 || startTime / 1000 >= e.audio.duration) {
-              // Ignore TODO
-              note.audioBuffer = this.audioContext.createBuffer(1, 1, 44100)
-            } else {
-              const buffer = this.audioContext.createBuffer(numberOfChannels, sampleRate * length / 1000, sampleRate)
-              for(let c = 0; c < numberOfChannels; c++) {
-                const array = new Float32Array(sampleRate * length / 1000)
-                e.audio.copyFromChannel(array, c, sampleRate * startTime / 1000)
-                buffer.copyToChannel(array, c)
-              }
+            const sliceStartTime = noteStartTime - audioStartTime
+            const sliceStartSample = sampleRate * sliceStartTime / 1000
+
+            let sliceEndSample
+            if(sliceStartSample >= e.audioBuffer.length) {
+              console.warn(`There is a note data which has to slice out of audio length, y=${note.y}, sliceTime=${sliceStartTime}, audioLength=${e.audioBuffer.length}`)
+              const buffer = this.audioContext.createBuffer(numberOfChannels, 1, sampleRate)
               note.audioBuffer = buffer
+            } else {
+              let addIndex = 0
+              let reachEnd = false
+              while(channel.notes[i + addIndex].y <= note.y) {
+                addIndex ++
+                if(i + addIndex >= channel.notes.length) {
+                  sliceEndSample = e.audioBuffer.length - 1
+                  reachEnd = true
+                  break
+                }
+              }
+              if(!reachEnd) {
+                const nextNote = channel.notes[i + addIndex]
+                const nextNoteTime = this.calculateTime(nextNote.y, this.getBpmData(nextNote.y))
+                const sliceEndTime = nextNoteTime - audioStartTime
+                sliceEndSample = sampleRate * sliceEndTime / 1000
+              }
+
+              const sliceSampleLength = sliceEndSample - sliceStartSample
+              const audioBuffer = this.audioContext.createBuffer(numberOfChannels, sliceSampleLength, sampleRate)
+              for(let c = 0; c < numberOfChannels; c++) {
+
+                const array = new Float32Array(sliceSampleLength)
+                e.audioBuffer.copyFromChannel(array, c, sliceStartSample)
+                audioBuffer.copyToChannel(array, c)
+              }
+              note.audioBuffer = audioBuffer
             }
           }
         })
@@ -237,6 +248,8 @@ export class Player {
           if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
         }
       }
+      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x < 1 || 4 < note.x))
+      playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
 
       // TODO: Clap
 
@@ -258,7 +271,7 @@ export class Player {
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.judgeShortNote(note, judge)
-            this.noteOn(note)
+            this.noteOn(target.name, note)
           }
         }
         if(note instanceof NoteLong) {
@@ -267,7 +280,7 @@ export class Player {
           else if(button.isJustPressed()) {
             const judge = this.getJudge(this.currentTime - note.time)
             this.firstJudgeLongNote(note, judge)
-            this.noteOn(note)
+            this.noteOn(target.name, note)
           }
 
           if(note.active) {
@@ -275,6 +288,7 @@ export class Player {
             else if(button.isJustReleased()) {
               const judge = this.getSecondJudge(this.currentTime - note.endTime)
               this.secondJudgeLongNote(note, judge)
+              if(!judge) this.noteOff(target.name)
             }
           }
         }
@@ -282,11 +296,20 @@ export class Player {
     }
   }
 
-  noteOn(note) {
+  noteOn(channelName, note) {
+    const channel = this.soundChannels.find((channel) => channel.name == channelName)
+    if(channel.source != null) channel.source.stop()
     const source = this.audioContext.createBufferSource()
     source.buffer = note.audioBuffer
     source.connect(this.audioContext.destination)
     source.start(0)
+    channel.source = source
+  }
+
+  noteOff(channelName) {
+    const channel = this.soundChannels.find((channel) => channel.name == channelName)
+    if(channel.source != null) channel.source.stop()
+    channel.source = null
   }
 
   // currentTime - noteTime; Early : <0, Slow: >0
