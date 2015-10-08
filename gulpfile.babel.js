@@ -1,5 +1,3 @@
-/*var g = require('gulp');
-var $ = require('gulp-load-plugins')*/
 import g from 'gulp';
 import jade from 'gulp-jade';
 import sass from 'gulp-sass';
@@ -14,7 +12,7 @@ g.task("html", () => g.src("src/**/*.jade").pipe(jade({ pretty: true })).pipe(g.
 g.task("css", () => g.src("src/style/*.sass").pipe(sass({ indentedSyntax: true, onError: (err) => console.log(err)})).pipe(g.dest("build/style/")).pipe(liveReload()));
 g.task("bmson", () => g.src("bmson/**/*").pipe(g.dest("build/bmson/")))
 
-g.task("all", ["clean"], (cb) => runSequence(["html", "css", "js"], cb));
+g.task("all", ["clean"], (cb) => runSequence(["html", "css", "js", "bmson"], cb));
 g.task("clean", (cb) => del("build/", cb));
 
 g.task("watch", () => {
@@ -22,6 +20,6 @@ g.task("watch", () => {
     g.watch("src/**/*.jade", ["html"]);
     g.watch("src/style/*.sass", ["css"]);
     g.watch("src/script/*.js", ["js"]);
-    g.watch("src/bmson/**/*", ["bmson"]);
+    g.watch("bmson/**/*", ["bmson"]);
   }
 );
