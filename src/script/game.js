@@ -22,7 +22,8 @@ export class Game {
 
     this.state = States.LOADING
 
-    const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
+    const bmsonPath = "bmson/test/test.bmson"
+    //const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
     //const bmsonPath = "bmson/cyel/cyel.bmson"
     //const bmsonPath = "bmson/jazzytechnotris_ogg/_spn.bmson"
     const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
@@ -44,8 +45,7 @@ export class Game {
       this.renderer = new Renderer(this)
 
       this.player.loadAudio().then(() => {
-        this.state = States.IN_GAME
-        this.player.start()
+        this.state = States.READY
       })
     })
   }
@@ -97,19 +97,36 @@ export class Game {
     g.rect(0, 0, this.width, this.height)
     g.fill()
 
-    if(this.state == States.LOADING) {
-      g.fillStyle = "#000000"
-      g.fillText("LOADING", 32, 64)
-    } else {
-      g.save()
-      g.translate((this.width - 800) / 2, (this.height - 600) / 2)
+    switch(this.state) {
+      case States.LOADING:
+        g.fillStyle = "#000000"
+        g.fillText("LOADING", 32, 64)
+        break
+      case States.READY:
+        g.fillStyle = "#000000"
+        g.fillText("READY, PRESS H", 32, 64)
+        if(this.controller[0].isJustPressed()) {
+          this.player.start()
+          this.state = States.IN_GAME
+        }
 
-      this.player.update(this.controller)
-      this.renderer.render(g, this.controller)
+        g.save()
+        g.translate((this.width - 800) / 2, (this.height - 600) / 2)
 
-      g.restore()
+        this.renderer.render(g, this.controller)
+
+        g.restore()
+        break
+      case States.IN_GAME:
+        g.save()
+        g.translate((this.width - 800) / 2, (this.height - 600) / 2)
+
+        this.player.update(this.controller)
+        this.renderer.render(g, this.controller)
+
+        g.restore()
+        break
     }
-
 
     g.fillStyle = "#000000"
     g.fillText(fps, 32, 32)
@@ -143,5 +160,6 @@ export class Game {
 
 export class States {
   static get LOADING() { return 0 }
-  static get IN_GAME() { return 1 }
+  static get READY() { return 1 }
+  static get IN_GAME() { return 2 }
 }

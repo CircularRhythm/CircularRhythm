@@ -28,8 +28,68 @@ export class Player {
 
     // [{y: Number, bpm: Number, time: Number}]
     this.bpmList = []
-    this.bpmList.push({y: 0, bpm: this.bmson.info.initBPM, time: 0})
-    // TODO
+    this.stopList = []
+    // [{time: Number, y: Number, bpm: Number}]
+    // used by timeToY, yToTime
+    // yToTime on a stop event will return start time of the stop
+    this.timingList = []
+    const bmsonBpmList = this.bmson.bpmNotes
+    const bmsonStopList = this.bmson.stopNotes
+
+    // y -> {bpm: {}, stop: {}}
+    const combinedList = new Map()
+    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpm: e, stop: null}))
+    bmsonStopList.forEach((e, i) => {
+      if(combinedList.has(e.y)) {
+        combinedList.get(e.y)["stop"] = e
+      } else {
+        combinedList.set(e.y, {bpm: null, stop: e})
+      }
+    })
+
+    let lastTime = 0
+    let lastY = 0
+    let lastBpm = this.bmson.info.initBPM
+    Array.from(combinedList)  // Convert to an array
+    .sort((a, b) => a[0] - b[0]).forEach((e) => {  // To sort by y
+      const y = e[0]
+      const bpm = e[1].bpm
+      const stop = e[1].stop
+      if(bpm == null) {
+        // Only stop
+        lastTime += (y - lastY) / 240 / lastBpm * 60000
+        // Start
+        this.timingList.push({time: lastTime, y: y, bpm: 0})
+        // End
+        this.timingList.push({time: lastTime + stop.v, y: y, bpm: lastBpm})
+        lastTime += stop.v
+        lastY = y
+      } else if(stop == null) {
+        // Only bpm
+        // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
+        lastTime += (y - lastY) / 240 / lastBpm * 60000
+        this.timingList.push({time: lastTime, y: y, bpm: bpm.v})
+        lastBpm = bpm.v
+        lastY = y
+      } else {
+        // Both
+        // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
+        lastTime += (y - lastY) / 240 / lastBpm * 60000
+        // Start
+        this.timingList.push({time: lastTime, y: y, bpm: 0})
+        // End
+        this.timingList.push({time: lastTime + stop.v, y: y, bpm: bpm.v})
+        lastTime += stop.v
+        lastBpm = bpm.v
+        lastY = y
+      }
+    })
+
+    console.table(this.timingList)
+
+    if(this.timingList[0].y != 0) {
+      this.timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.initBPM})
+    }
 
     // [{y: Number, l: Number}]
     this.barLines = []
@@ -50,17 +110,17 @@ export class Player {
         // TODO: Can improve speed
         this.checkAndAppendBarLine(note.y)
         const barLine = this.getBarLine(note.y)
-        const bpmData = this.getBpmData(note.y)
-        const time = this.calculateTime(note.y, bpmData)
-        const position = this.calculatePosition(note.y, barLine)
+        const timingData = this.getTimingDataFromY(note.y)
+        const time = this.yToTime(note.y, timingData)
+        const position = this.yToPosition(note.y, barLine)
         if(note.l > 0) {
           // Long note
           const endY = note.y + note.l
           this.checkAndAppendBarLine(endY)
           const endBarLine = this.getBarLine(endY)
-          const endBpmData = this.getBpmData(endY)
-          const endTime = this.calculateTime(endY, bpmData)
-          const endPosition = this.calculatePosition(endY, endBarLine)
+          const endTimingData = this.getTimingDataFromY(endY)
+          const endTime = this.yToTime(endY, endTimingData)
+          const endPosition = this.yToPosition(endY, endBarLine)
           notes.push(new NoteLong(note.x, note.y, note.c, time, position, endY, endTime, endPosition))
         } else {
           // Normal note
@@ -72,7 +132,7 @@ export class Player {
 
     this.currentBpm = bmson.info.initBPM
     this.visibleEndPosition = 0.7
-    this.visibleEndY = this.calculatePositionInv(this.visibleEndPosition, this.barLines[0])
+    this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[0])
 
     for(let e of this.soundChannels) {
       this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
@@ -115,7 +175,8 @@ export class Player {
           }
           for(let i = 0; i < channel.notes.length; i++) {
             const note = channel.notes[i]
-            const noteStartTime = this.calculateTime(note.y, this.getBpmData(note.y))
+            //const noteStartTime = this.calculateTime(note.y, this.getBpmData(note.y))
+            const noteStartTime = note.time
             if(note.c == false) {
               audioStartTime = noteStartTime
             }
@@ -142,7 +203,8 @@ export class Player {
               if(!reachEnd) {
                 // If there is a next note
                 const nextNote = channel.notes[i + addIndex]
-                const nextNoteTime = this.calculateTime(nextNote.y, this.getBpmData(nextNote.y))
+                //const nextNoteTime = this.calculateTime(nextNote.y, this.getBpmData(nextNote.y))
+                const nextNoteTime = nextNote.time
                 const sliceEndTime = nextNoteTime - audioStartTime
                 sliceEndSample = sampleRate * sliceEndTime / 1000
               }
@@ -176,8 +238,9 @@ export class Player {
     this.currentTime += delta
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
-    const deltaY = 240 * this.currentBpm * delta / 60000
-    this.currentY += deltaY
+    //const deltaY = 240 * this.currentBpm * delta / 60000
+    //this.currentY += deltaY
+    this.currentY = this.timeToY(this.currentTime, this.getTimingDataFromTime(this.currentTime))
 
     const currentBarLineIndex = this.getBarLineIndex(this.currentY)
     if(currentBarLineIndex == -1) {
@@ -187,7 +250,7 @@ export class Player {
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
 
-    this.currentPosition = this.calculatePosition(this.currentY, currentBarLine)
+    this.currentPosition = this.yToPosition(this.currentY, currentBarLine)
     const visibleEndPositionAdded = this.currentPosition + 0.7
     const oldVisibleEndY = this.visibleEndY
     if(visibleEndPositionAdded >= 1) {
@@ -200,12 +263,12 @@ export class Player {
         this.visibleEndPosition = 0
         this.visibleEndY = lastBarLine.y + lastBarLine.l
       } else {
-        this.visibleEndY = this.calculatePositionInv(this.visibleEndPosition, this.barLines[barLineIndex])
+        this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[barLineIndex])
       }
     } else {
       // Not step over a barline
       this.visibleEndPosition = visibleEndPositionAdded
-      this.visibleEndY = this.calculatePositionInv(this.visibleEndPosition, this.barLines[currentBarLineIndex])
+      this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[currentBarLineIndex])
     }
     const deltaVisibleEndY = this.visibleEndY - oldVisibleEndY
 
@@ -381,22 +444,36 @@ export class Player {
     return this.barLines.find((e, i, a) => e.y <= y && y < e.y + e.l)
   }
 
-  getBpmData(y) {
-    const list = this.bpmList.filter((e) => e.y <= y)
+  getTimingDataFromY(y) {
+    const list = this.timingList.filter((e) => e.y <= y)
+    if(list.length >= 2 && list[list.length - 2].y == y) {
+      // If in stop event
+      return list[list.length - 2]
+    }
     return list[list.length - 1]
   }
 
-  calculatePosition(y, barLine) {
+  getTimingDataFromTime(time) {
+    const list = this.timingList.filter((e) => e.time <= time)
+    return list[list.length - 1]
+  }
+
+  yToPosition(y, barLine) {
     return (y - barLine.y) / barLine.l
   }
 
-  calculatePositionInv(position, barLine) {
+  positionToY(position, barLine) {
     return barLine.y + position * barLine.l
   }
 
-  calculateTime(y, bpmData) {
+  yToTime(y, timingData) {
     // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
-    return bpmData.time + (y - bpmData.y) / 240 / bpmData.bpm * 60000
+    return timingData.time + (y - timingData.y) / 240 / timingData.bpm * 60000
+  }
+
+  timeToY(time, timingData) {
+    // [ms] / 60000 [ms/min] * bpm [beat(4th)/min] * 240 [tick/beat(4th)]
+    return timingData.y + (time - timingData.time) / 60000 * timingData.bpm * 240
   }
 }
 

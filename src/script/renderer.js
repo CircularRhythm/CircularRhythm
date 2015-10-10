@@ -6,10 +6,26 @@ export default class Renderer {
 
   render(g, controller) {
     const player = this.game.player
+
+    const gradient = g.createRadialGradient(400, 300, 70, 400, 300, 80)
+    gradient.addColorStop(0, "#00FFFF")
+    gradient.addColorStop(1, "#FFFFFF")
+    g.fillStyle = gradient
+    g.beginPath()
+    g.arc(400, 300, 80, Math.PI * 2, false)
+    g.fill()
+
+    g.shadowBlur = 0
+    g.fillStyle = "#FFFFFF"
+    g.beginPath()
+    g.arc(400, 300, 70, Math.PI * 2, false)
+    g.fill()
+
     this.drawLaneCircle(g, 400, 300, 70, controller[0].isPressed())
     this.drawLaneCircle(g, 400, 300, 100, controller[1].isPressed())
     this.drawLaneCircle(g, 400, 300, 130, controller[2].isPressed())
     this.drawLaneCircle(g, 400, 300, 160, controller[3].isPressed())
+
 
     player.visibleNotes.forEach((notes, name) => {
       for(let note of notes) {
@@ -47,6 +63,12 @@ export default class Renderer {
     g.textAlign = "center"
     g.font = "32px sans-serif"
     g.fillText(player.combo, 400, 312)
+
+    g.fillStyle = "#000000"
+    g.textAlign = "left"
+    g.font = "12px sans-serif"
+    g.fillText(player.currentTime, 0, 60)
+    g.fillText(player.currentY, 0, 80)
   }
 
   getJudgeColor(judge) {
