@@ -1,8 +1,17 @@
+import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
+import { Note, NoteShort, NoteLong } from "./note"
+import { JudgeState } from "./judge-state"
+import { AudioSlicer } from "./audio-slicer"
+import { FileLoader } from "./file"
+import { BmsonLoader } from "./bmson-loader"
+import { PlayerUtil } from "./player-util"
+
 export class Player {
   // TODO: Make soundChannels index-base
   constructor(game, bmson, parentPath) {
     this.game = game
     this.bmson = bmson
+    this.bmsonLoader = new BmsonLoader(bmson)
     this.parentPath = parentPath
 
     this.audioContext = new AudioContext()
@@ -13,10 +22,10 @@ export class Player {
     this.currentY = 0
     this.currentPosition = 0
     this.currentTime = 0
-    this.currentBpm = 0
+    this.currentBpm = this.bmson.info.initBPM
 
     this.visibleEndY = 0
-    this.visibleEndPosition = 0
+    this.visibleEndPosition = 0.7
     this.visibleEndTime = 0
 
     // String(name) -> [Note]
@@ -27,206 +36,46 @@ export class Player {
     this.combo = 0
 
     // [{y: Number, bpm: Number, time: Number}]
-    this.bpmList = []
+    /*this.bpmList = []
     this.stopList = []
+    this.lengthChangeList = []*/
+    this.barSpeedChangeList = []
+
+    this.activeSpeedChangeEvent = []
+
     // [{time: Number, y: Number, bpm: Number}]
     // used by timeToY, yToTime
     // yToTime on a stop event will return start time of the stop
-    this.timingList = []
-    const bmsonBpmList = this.bmson.bpmNotes
-    const bmsonStopList = this.bmson.stopNotes
-
-    // y -> {bpm: {}, stop: {}}
-    const combinedList = new Map()
-    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpm: e, stop: null}))
-    bmsonStopList.forEach((e, i) => {
-      if(combinedList.has(e.y)) {
-        combinedList.get(e.y)["stop"] = e
-      } else {
-        combinedList.set(e.y, {bpm: null, stop: e})
-      }
-    })
-
-    let lastTime = 0
-    let lastY = 0
-    let lastBpm = this.bmson.info.initBPM
-    Array.from(combinedList)  // Convert to an array
-    .sort((a, b) => a[0] - b[0]).forEach((e) => {  // To sort by y
-      const y = e[0]
-      const bpm = e[1].bpm
-      const stop = e[1].stop
-      if(bpm == null) {
-        // Only stop
-        lastTime += (y - lastY) / 240 / lastBpm * 60000
-        // Start
-        this.timingList.push({time: lastTime, y: y, bpm: 0})
-        // End
-        this.timingList.push({time: lastTime + stop.v, y: y, bpm: lastBpm})
-        lastTime += stop.v
-        lastY = y
-      } else if(stop == null) {
-        // Only bpm
-        // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
-        lastTime += (y - lastY) / 240 / lastBpm * 60000
-        this.timingList.push({time: lastTime, y: y, bpm: bpm.v})
-        lastBpm = bpm.v
-        lastY = y
-      } else {
-        // Both
-        // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
-        lastTime += (y - lastY) / 240 / lastBpm * 60000
-        // Start
-        this.timingList.push({time: lastTime, y: y, bpm: 0})
-        // End
-        this.timingList.push({time: lastTime + stop.v, y: y, bpm: bpm.v})
-        lastTime += stop.v
-        lastBpm = bpm.v
-        lastY = y
-      }
-    })
-
-    console.table(this.timingList)
-
-    if(this.timingList[0].y != 0) {
-      this.timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.initBPM})
-    }
+    this.timingList = this.bmsonLoader.loadTimingList()
 
     // [{y: Number, l: Number}]
-    this.barLines = []
-    const bmsonBarLines = this.bmson.lines.slice().sort((a, b) => a.y - b.y)
-    if(!bmsonBarLines[0] || bmsonBarLines[0].y != 0) new Error("First barline must be y=0")
-    for(let i = 0; i < bmsonBarLines.length - 1; i++) {
-      const line1 = bmsonBarLines[i]
-      const line2 = bmsonBarLines[i + 1]
-      this.barLines.push({y: line1.y, l: line2.y - line1.y})
+    this.barLines = this.bmsonLoader.loadBarLines()
+
+    for(let i = 0; i < this.barLines.length - 1; i++) {
+      const line1 = this.barLines[i]
+      const line2 = this.barLines[i + 1]
+      if(line1.l != line2.l) this.barSpeedChangeList.push(new BarSpeedChangeEventSpeed(line1.y, 0)) // TODO
     }
 
     // [{name: String, notes: [Note]}]
-    this.soundChannels = []
-    for(let bmsonSoundChannel of this.bmson.soundChannel) {
-      const bmsonNotes = bmsonSoundChannel.notes.slice().sort((a, b) => a.y - b.y)
-      const notes = []
-      for(let note of bmsonNotes) {
-        // TODO: Can improve speed
-        this.checkAndAppendBarLine(note.y)
-        const barLine = this.getBarLine(note.y)
-        const timingData = this.getTimingDataFromY(note.y)
-        const time = this.yToTime(note.y, timingData)
-        const position = this.yToPosition(note.y, barLine)
-        if(note.l > 0) {
-          // Long note
-          const endY = note.y + note.l
-          this.checkAndAppendBarLine(endY)
-          const endBarLine = this.getBarLine(endY)
-          const endTimingData = this.getTimingDataFromY(endY)
-          const endTime = this.yToTime(endY, endTimingData)
-          const endPosition = this.yToPosition(endY, endBarLine)
-          notes.push(new NoteLong(note.x, note.y, note.c, time, position, endY, endTime, endPosition))
-        } else {
-          // Normal note
-          notes.push(new NoteShort(note.x, note.y, note.c, time, position))
-        }
-      }
-      this.soundChannels.push({name: bmsonSoundChannel.name, source: null, notes: notes})
-    }
-
-    this.currentBpm = bmson.info.initBPM
-    this.visibleEndPosition = 0.7
-    this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[0])
-
-    for(let e of this.soundChannels) {
-      this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
-    }
+    this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
   }
 
-  loadAudio() {
+  init() {
+    const fileLoader = new FileLoader(this.parentPath)
+
     return new Promise((resolve, reject) => {
-      const promises = []
-      this.soundChannels.forEach((channel, i) => {
-        promises.push(new Promise((resolve, reject) => {
-          const request = new XMLHttpRequest()
-          // TODO: WAV / OGG selecting
-          request.open("GET", this.parentPath + "/" + channel.name.replace(/\.wav$/, ".ogg"))
-          request.responseType = "arraybuffer"
-          request.onload = () => {
-            if(request.status == 200) {
-              this.audioContext.decodeAudioData(request.response, (data) => {
-                resolve({channelIndex: i, audioBuffer: data})
-              })
-            } else {
-              console.error(request.statusText)
-            }
-          }
-          request.onerror = () => reject(console.error("Network Error"))
-          request.send()
-        }))
-      })
-      Promise.all(promises).then((result) => {
-        // Slice audio
-        // result: {name: String, audioBuffer: AudioBuffer}
-        result.forEach((e) => {
-          const channel = this.soundChannels[e.channelIndex]
-          const numberOfChannels = e.audioBuffer.numberOfChannels
-          const sampleRate = e.audioBuffer.sampleRate
-
-          let audioStartTime = 0
-          if(channel.notes[0].c == true) {
-            console.warn("First note of each channel should be c=false")
-          }
-          for(let i = 0; i < channel.notes.length; i++) {
-            const note = channel.notes[i]
-            //const noteStartTime = this.calculateTime(note.y, this.getBpmData(note.y))
-            const noteStartTime = note.time
-            if(note.c == false) {
-              audioStartTime = noteStartTime
-            }
-            const sliceStartTime = noteStartTime - audioStartTime
-            const sliceStartSample = sampleRate * sliceStartTime / 1000
-
-            let sliceEndSample
-            if(sliceStartSample >= e.audioBuffer.length) {
-              console.warn(`There is a note data which has to slice out of audio length, y=${note.y}, sliceTime=${sliceStartTime}, audioLength=${e.audioBuffer.length}`)
-              const buffer = this.audioContext.createBuffer(numberOfChannels, 1, sampleRate)
-              note.audioBuffer = buffer
-            } else {
-              let addIndex = 0
-              let reachEnd = false
-              while(channel.notes[i + addIndex].y <= note.y) {
-                addIndex ++
-                if(i + addIndex >= channel.notes.length) {
-                  // If there is no next note
-                  sliceEndSample = e.audioBuffer.length - 1
-                  reachEnd = true
-                  break
-                }
-              }
-              if(!reachEnd) {
-                // If there is a next note
-                const nextNote = channel.notes[i + addIndex]
-                //const nextNoteTime = this.calculateTime(nextNote.y, this.getBpmData(nextNote.y))
-                const nextNoteTime = nextNote.time
-                const sliceEndTime = nextNoteTime - audioStartTime
-                sliceEndSample = sampleRate * sliceEndTime / 1000
-              }
-
-              const sliceSampleLength = sliceEndSample - sliceStartSample
-              const audioBuffer = this.audioContext.createBuffer(numberOfChannels, sliceSampleLength, sampleRate)
-              for(let c = 0; c < numberOfChannels; c++) {
-                // Copy buffer from whole source
-                const array = new Float32Array(sliceSampleLength)
-                e.audioBuffer.copyFromChannel(array, c, sliceStartSample)
-                audioBuffer.copyToChannel(array, c)
-              }
-              note.audioBuffer = audioBuffer
-            }
-          }
-        })
-        resolve()
-      })
+      new AudioSlicer(this.audioContext, fileLoader, this.soundChannels).loadAudio().then(() => resolve())
     })
   }
 
   start() {
+    this.visibleEndY = PlayerUtil.positionToY(this.visibleEndPosition, this.barLines[0])
+
+    for(let e of this.soundChannels) {
+      this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
+    }
+
     this.lastTime = Date.now()
     this.playing = true
   }
@@ -240,9 +89,11 @@ export class Player {
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
     //const deltaY = 240 * this.currentBpm * delta / 60000
     //this.currentY += deltaY
-    this.currentY = this.timeToY(this.currentTime, this.getTimingDataFromTime(this.currentTime))
+    const timingData = PlayerUtil.getTimingDataFromTime(this.currentTime, this.timingList)
+    this.currentY = PlayerUtil.timeToY(this.currentTime, timingData)
+    if(timingData.bpm != 0) this.currentBpm = timingData.bpm
 
-    const currentBarLineIndex = this.getBarLineIndex(this.currentY)
+    const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
       this.playing = false
       console.log("Stopped")
@@ -250,7 +101,7 @@ export class Player {
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
 
-    this.currentPosition = this.yToPosition(this.currentY, currentBarLine)
+    this.currentPosition = PlayerUtil.yToPosition(this.currentY, currentBarLine)
     const visibleEndPositionAdded = this.currentPosition + 0.7
     const oldVisibleEndY = this.visibleEndY
     if(visibleEndPositionAdded >= 1) {
@@ -263,12 +114,12 @@ export class Player {
         this.visibleEndPosition = 0
         this.visibleEndY = lastBarLine.y + lastBarLine.l
       } else {
-        this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[barLineIndex])
+        this.visibleEndY = PlayerUtil.positionToY(this.visibleEndPosition, this.barLines[barLineIndex])
       }
     } else {
       // Not step over a barline
       this.visibleEndPosition = visibleEndPositionAdded
-      this.visibleEndY = this.positionToY(this.visibleEndPosition, this.barLines[currentBarLineIndex])
+      this.visibleEndY = PlayerUtil.positionToY(this.visibleEndPosition, this.barLines[currentBarLineIndex])
     }
     const deltaVisibleEndY = this.visibleEndY - oldVisibleEndY
 
@@ -306,7 +157,7 @@ export class Player {
     // Before assigning new targets, clean up old ones
     // TODO: Double-judgment
     this.targetNotes.forEach((e, x) => {
-      if(!e.note.active) this.targetNotes.delete(x)
+      if(!e.note.targetable) this.targetNotes.delete(x)
     })
     for(let channel of this.soundChannels) {
       // Assign new targets
@@ -428,130 +279,4 @@ export class Player {
       this.combo = 0
     }
   }
-
-  checkAndAppendBarLine(y) {
-    while(this.barLines[this.barLines.length - 1].y <= y) {
-      const lastBarLine = this.barLines[this.barLines.length - 1]
-      this.barLines.push({y: lastBarLine.y + lastBarLine.l, l: lastBarLine.l})
-    }
-  }
-
-  getBarLineIndex(y) {
-    return this.barLines.findIndex((e, i, a) => e.y <= y && y < e.y + e.l)
-  }
-
-  getBarLine(y) {
-    return this.barLines.find((e, i, a) => e.y <= y && y < e.y + e.l)
-  }
-
-  getTimingDataFromY(y) {
-    const list = this.timingList.filter((e) => e.y <= y)
-    if(list.length >= 2 && list[list.length - 2].y == y) {
-      // If in stop event
-      return list[list.length - 2]
-    }
-    return list[list.length - 1]
-  }
-
-  getTimingDataFromTime(time) {
-    const list = this.timingList.filter((e) => e.time <= time)
-    return list[list.length - 1]
-  }
-
-  yToPosition(y, barLine) {
-    return (y - barLine.y) / barLine.l
-  }
-
-  positionToY(position, barLine) {
-    return barLine.y + position * barLine.l
-  }
-
-  yToTime(y, timingData) {
-    // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
-    return timingData.time + (y - timingData.y) / 240 / timingData.bpm * 60000
-  }
-
-  timeToY(time, timingData) {
-    // [ms] / 60000 [ms/min] * bpm [beat(4th)/min] * 240 [tick/beat(4th)]
-    return timingData.y + (time - timingData.time) / 60000 * timingData.bpm * 240
-  }
-}
-
-export class JudgeState {
-  static get NO() { return 0 }
-  static get MISS() { return 1 }
-  static get BAD() { return 2 }
-  static get GOOD() { return 3 }
-  static get GREAT() { return 4 }
-  static get EXCELLENT() { return 5 }
-  static get MISS_EMPTY() { return 6 }
-}
-
-export class Note {
-  constructor(x, y, c, time, position) {
-    this.x = x
-    this.y = y
-    this.c = c
-    this.time = time
-    this.position = position
-
-    this.judgeState = JudgeState.NO
-    this.targetable = true
-
-    this.audioBuffer = null
-  }
-}
-
-export class NoteShort extends Note {
-  constructor(x, y, c, time, position) {
-    super(x, y, c, time, position)
-    this.eraseTimer = -1
-  }
-
-  judge(judgeState) {
-    this.judgeState = judgeState
-    this.eraseTimer = 0
-    this.targetable = false
-  }
-}
-
-export class NoteLong extends Note {
-  constructor(x, y, c, time, position, endY, endTime, endPosition) {
-    super(x, y, c, time, position)
-    this.endY = endY
-    this.endTime = endTime
-    this.endPosition = endPosition
-
-    this.noteHeadEraseTimer = -1
-    this.noteHeadPosition = position
-    this.noteHeadMovable = false
-
-    // Whether note is being pressed
-    this.active = false
-    // Whether line is rendered as active
-    this.lineActive = true
-  }
-
-  firstJudge(judgeState) {
-    this.judgeState = judgeState
-    if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
-      this.targetable = false
-      this.lineActive = false
-    } else {
-      this.active = true
-      this.noteHeadMovable = true
-    }
-  }
-
-  secondJudge(success) {
-    if(!success) {
-      this.judgeState = JudgeState.MISS
-      this.noteHeadMovable = false
-      this.lineActive = false
-    }
-    this.noteHeadEraseTimer = 0
-    this.targetable = false
-    this.active = false
-  }
-
 }

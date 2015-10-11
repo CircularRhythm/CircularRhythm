@@ -1,4 +1,5 @@
-import { NoteShort, NoteLong, JudgeState } from "./player"
+import { NoteShort, NoteLong } from "./note"
+import { JudgeState } from "./judge-state"
 export default class Renderer {
   constructor(game) {
     this.game = game
@@ -63,6 +64,11 @@ export default class Renderer {
     g.textAlign = "center"
     g.font = "32px sans-serif"
     g.fillText(player.combo, 400, 312)
+
+    g.fillStyle = "#000000"
+    g.textAlign = "center"
+    g.font = "32px sans-serif"
+    g.fillText(player.currentBpm, 400, 500)
 
     g.fillStyle = "#000000"
     g.textAlign = "left"
