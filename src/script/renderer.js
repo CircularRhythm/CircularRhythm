@@ -1,5 +1,7 @@
 import { NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
+import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
+
 export default class Renderer {
   constructor(game) {
     this.game = game
@@ -8,12 +10,13 @@ export default class Renderer {
   render(g, controller) {
     const player = this.game.player
 
-    const gradient = g.createRadialGradient(400, 300, 70, 400, 300, 80)
+    const beaterSize = 80 - player.unitPosition * 8
+    const gradient = g.createRadialGradient(400, 300, 70, 400, 300, beaterSize)
     gradient.addColorStop(0, "#00FFFF")
     gradient.addColorStop(1, "#FFFFFF")
     g.fillStyle = gradient
     g.beginPath()
-    g.arc(400, 300, 80, Math.PI * 2, false)
+    g.arc(400, 300, beaterSize, Math.PI * 2, false)
     g.fill()
 
     g.shadowBlur = 0
@@ -27,6 +30,21 @@ export default class Renderer {
     this.drawLaneCircle(g, 400, 300, 130, controller[2].isPressed())
     this.drawLaneCircle(g, 400, 300, 160, controller[3].isPressed())
 
+    player.visibleSupportLines.forEach((e) => {
+      const radian = this.positionToRadian(e.position)
+      g.strokeStyle = this.getLineColor(e.type)
+      if(e.type == 1) {
+        g.lineWidth = 2
+      } else {
+        g.lineWidth = 1
+      }
+      g.globalAlpha = 0.4
+      g.beginPath()
+      g.moveTo(400 + Math.cos(radian) * 70 , 300 + Math.sin(radian) * 70)
+      g.lineTo(400 + Math.cos(radian) * 160, 300 + Math.sin(radian) * 160)
+      g.stroke()
+      g.globalAlpha = 1
+    })
 
     player.visibleNotes.forEach((notes, name) => {
       for(let note of notes) {
@@ -52,6 +70,38 @@ export default class Renderer {
       }
     })
 
+    player.visibleBarSpeedChangeList.forEach((e, i) => {
+      const speedChangeLineRadian = this.positionToRadian(e.position)
+      switch(e.type) {
+        case "stop":
+          g.strokeStyle = "#888888"
+          break
+        case "slower":
+          g.strokeStyle = "#0000FF"
+          break
+        case "faster":
+          g.strokeStyle = "#FF0000"
+          break
+      }
+      g.lineWidth = 3
+      g.beginPath()
+      g.moveTo(400, 300)
+      g.lineTo(400 + Math.cos(speedChangeLineRadian) * 160, 300 + Math.sin(speedChangeLineRadian) * 160)
+      g.stroke()
+
+      if(e.showMovingLine) {
+        const speedChangeLineMovingRadian = this.positionToRadian(player.barMovingSpeedChangeEvent.currentPosition)
+        g.beginPath()
+        g.moveTo(400, 300)
+        g.lineTo(400 + Math.cos(speedChangeLineMovingRadian) * 160, 300 + Math.sin(speedChangeLineMovingRadian) * 160)
+        g.stroke()
+      }
+    })
+
+    if(player.barMovingSpeedChangeEvent && player.barMovingSpeedChangeEvent.show) {
+    }
+
+
     const lineRadian = this.positionToRadian(player.currentPosition)
     g.strokeStyle = "#000000"
     g.lineWidth = 5
@@ -75,6 +125,7 @@ export default class Renderer {
     g.font = "12px sans-serif"
     g.fillText(player.currentTime, 0, 60)
     g.fillText(player.currentY, 0, 80)
+    g.fillText(player.supportLineVisibleEndY, 0, 100)
   }
 
   getJudgeColor(judge) {
@@ -85,6 +136,11 @@ export default class Renderer {
     if(judge == JudgeState.BAD) return "#FF7F00"
     if(judge == JudgeState.MISS) return "#888888"
     return "#000000"
+  }
+
+  getLineColor(type) {
+    const arr = ["#000000", "#FF0000", "#0000FF", "#00FF00", "#FFFF00"]
+    return arr[type]
   }
 
   positionToRadian(position) {

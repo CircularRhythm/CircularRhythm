@@ -7,9 +7,9 @@ export class PlayerUtil {
     return barLines.find((e, i, a) => e.y <= y && y < e.y + e.l)
   }
 
-  static getTimingDataFromY(y, timingList) {
+  static getTimingDataFromY(y, timingList, stopEnd=false) {
     const list = timingList.filter((e) => e.y <= y)
-    if(list.length >= 2 && list[list.length - 2].y == y) {
+    if(list.length >= 2 && list[list.length - 2].y == y && !stopEnd) {
       // If in stop event
       return list[list.length - 2]
     }

@@ -8,6 +8,7 @@ import { PlayerUtil } from "./player-util"
 
 export class Player {
   // TODO: Make soundChannels index-base
+  // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
   constructor(game, bmson, parentPath) {
     this.game = game
     this.bmson = bmson
@@ -23,10 +24,14 @@ export class Player {
     this.currentPosition = 0
     this.currentTime = 0
     this.currentBpm = this.bmson.info.initBPM
+    this.currentBarSpeed = 0
+    this.currentBarLine = null
 
     this.visibleEndY = 0
     this.visibleEndPosition = 0.7
     this.visibleEndTime = 0
+
+    this.supportLineVisibleEndY = 0
 
     // String(name) -> [Note]
     this.visibleNotes = new Map()
@@ -35,14 +40,6 @@ export class Player {
 
     this.combo = 0
 
-    // [{y: Number, bpm: Number, time: Number}]
-    /*this.bpmList = []
-    this.stopList = []
-    this.lengthChangeList = []*/
-    this.barSpeedChangeList = []
-
-    this.activeSpeedChangeEvent = []
-
     // [{time: Number, y: Number, bpm: Number}]
     // used by timeToY, yToTime
     // yToTime on a stop event will return start time of the stop
@@ -50,15 +47,25 @@ export class Player {
 
     // [{y: Number, l: Number}]
     this.barLines = this.bmsonLoader.loadBarLines()
+    this.bmsonLoader.appendLackingBarLine(this.barLines)
+    this.bmsonLoader.makeBeatData(this.barLines)
 
-    for(let i = 0; i < this.barLines.length - 1; i++) {
-      const line1 = this.barLines[i]
-      const line2 = this.barLines[i + 1]
-      if(line1.l != line2.l) this.barSpeedChangeList.push(new BarSpeedChangeEventSpeed(line1.y, 0)) // TODO
-    }
+    this.supportLines = this.bmsonLoader.makeSupportLines(this.barLines)
+    this.visibleSupportLines = []
+
+    // [{y: Number, bpm: Number, time: Number}]
+    /*this.bpmList = []
+    this.stopList = []
+    this.lengthChangeList = []*/
+    this.barSpeedChangeList = this.bmsonLoader.getBarSpeedChangeList(this.barLines, this.timingList)
+
+    this.visibleBarSpeedChangeList = []
+    this.barMovingSpeedChangeEvent = null
 
     // [{name: String, notes: [Note]}]
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
+
+    this.unitPosition = 0
   }
 
   init() {
@@ -72,10 +79,17 @@ export class Player {
   start() {
     this.visibleEndY = PlayerUtil.positionToY(this.visibleEndPosition, this.barLines[0])
 
+    this.supportLineVisibleEndY = this.barLines[0].l
+    const newSupportLines = this.supportLines.filter((e) => this.supportLineVisibleEndY > e.y)
+    Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
+
     for(let e of this.soundChannels) {
       this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
     }
 
+    this.currentBarLine = this.barLines[0]
+    // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
+    this.currentBarSpeed = this.currentBpm / 60000 * 240 / this.barLines[0].l
     this.lastTime = Date.now()
     this.playing = true
   }
@@ -100,6 +114,7 @@ export class Player {
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
+    this.currentBarLine = currentBarLine
 
     this.currentPosition = PlayerUtil.yToPosition(this.currentY, currentBarLine)
     const visibleEndPositionAdded = this.currentPosition + 0.7
@@ -122,6 +137,45 @@ export class Player {
       this.visibleEndY = PlayerUtil.positionToY(this.visibleEndPosition, this.barLines[currentBarLineIndex])
     }
     const deltaVisibleEndY = this.visibleEndY - oldVisibleEndY
+
+    // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
+    this.currentBarSpeed = this.currentBpm / 60000 * 240 / currentBarLine.l
+
+    // Speed change line
+    this.visibleBarSpeedChangeList = this.visibleBarSpeedChangeList.filter((e) => e.y >= this.currentY)
+    const newEvent = this.barSpeedChangeList.filter((e) => e.targetable && this.visibleEndY - deltaVisibleEndY <= e.y && e.y < this.visibleEndY)
+    Array.prototype.push.apply(this.visibleBarSpeedChangeList, newEvent)
+
+    const earliestEvent = this.visibleBarSpeedChangeList.sort((a, b) => a.y - b.y)[0]
+    this.barMovingSpeedChangeEvent = earliestEvent
+    if(earliestEvent instanceof BarSpeedChangeEventStop && earliestEvent.y == this.currentY) {
+      if(earliestEvent.barMoveTime < this.currentTime) {
+        // Approaching resumption
+        earliestEvent.showMovingLine = true
+        earliestEvent.currentPosition = earliestEvent.position - (earliestEvent.time + earliestEvent.length - this.currentTime) * earliestEvent.speed
+      }
+    } else if(earliestEvent instanceof BarSpeedChangeEventSpeed) {
+      if(earliestEvent.barMoveTime < this.currentTime) {
+        earliestEvent.showMovingLine = true
+        earliestEvent.currentPosition = earliestEvent.position - (earliestEvent.time - this.currentTime) * earliestEvent.speed
+      }
+    }
+
+    // Support line
+    const oldSupportLineVisibleEndY = this.supportLineVisibleEndY
+    if(currentBarLineIndex >= this.barLines.length - 1) {
+      this.supportLineVisibleEndY = currentBarLine.y + currentBarLine.l
+    } else {
+      const nextBarLine = this.barLines[currentBarLineIndex + 1]
+      this.supportLineVisibleEndY = PlayerUtil.positionToY(this.currentPosition, nextBarLine)
+    }
+    const deltaSupportLineVisibleEndY = this.supportLineVisibleEndY - oldSupportLineVisibleEndY
+
+    this.visibleSupportLines = this.visibleSupportLines.filter((e) => e.y > this.currentY)
+    const newSupportLines = this.supportLines.filter((e) => this.supportLineVisibleEndY - deltaSupportLineVisibleEndY <= e.y && e.y < this.supportLineVisibleEndY)
+    Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
+
+    this.unitPosition = ((this.currentY - currentBarLine.y) % currentBarLine.maximumUnit) / currentBarLine.maximumUnit
 
     // Add notes which to be visible
     for(let channel of this.soundChannels) {

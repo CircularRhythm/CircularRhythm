@@ -22,8 +22,8 @@ export class Game {
 
     this.state = States.LOADING
 
-    //const bmsonPath = "bmson/test/test.bmson"
-    const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
+    const bmsonPath = "bmson/test/test.bmson"
+    //const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
     //const bmsonPath = "bmson/cyel/cyel.bmson"
     //const bmsonPath = "bmson/jazzytechnotris_ogg/_spn.bmson"
     const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
