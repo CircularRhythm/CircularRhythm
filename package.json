@@ -11,16 +11,23 @@
     "gulp-jade": "^1.1.0",
     "gulp-sass": "^2.0.4",
     "gulp-webpack": "^1.5.0",
+    "jade": "^1.11.0",
     "jquery": "^2.1.4",
+    "jsrender": "0.0.3",
     "parse-bmfont-ascii": "^1.0.6",
     "webpack": "^1.12.2",
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
+    "css-loader": "^0.20.1",
     "gulp-livereload": "^3.8.1",
+    "jade-loader": "^0.7.1",
     "json-loader": "^0.5.3",
+    "node-sass": "^3.3.3",
     "node-static": "^0.7.7",
-    "run-sequence": "^1.1.4"
+    "run-sequence": "^1.1.4",
+    "sass-loader": "^3.0.0",
+    "style-loader": "^0.12.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

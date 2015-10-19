@@ -1,4 +1,4 @@
-import { FileLoader } from "./file"
+import { AssetLoader } from "./asset-loader"
 
 export class AudioSlicer {
   constructor(audioContext, fileLoader, soundChannels) {

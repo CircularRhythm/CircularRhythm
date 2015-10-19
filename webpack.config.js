@@ -13,6 +13,14 @@ export default {
       {
         test: /\.bmson$/,
         loader: 'json-loader'
+      },
+      {
+        test: /\.jade$/,
+        loader: 'jade-loader'
+      },
+      {
+        test: /\.sass$/,
+        loaders: ['style-loader/useable', 'css-loader', 'sass-loader?indentedSyntax']
       }
     ]
   },

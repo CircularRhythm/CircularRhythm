@@ -1,4 +1,6 @@
-export class FileLoader {
+import XHRPromise from "./xhr-promise"
+
+export class AssetLoader {
   constructor(parentPath) {
     this.parentPath = parentPath
     this.files = new Map()
@@ -28,7 +30,7 @@ export class FileLoader {
   }
 
   _load(path, type) {
-    return new Promise((resolve, reject) => {
+    /*return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest()
       request.open("GET", this.parentPath + "/" + path)
       request.responseType = type
@@ -46,6 +48,22 @@ export class FileLoader {
       request.onerror = () => reject(FileErrorStatus.NETWORK_ERROR)
       request.send()
     })
+  }*/
+    return XHRPromise.send({
+      url: this.parentPath + "/" + path
+    })
+  }
+}
+
+export class AssetLoaderArchive extends AssetLoader {
+  constructor(parentPath, definition) {
+    super(parentPath)
+    this.assetFiles = []
+    this.definition = definition
+  }
+
+  _load(path, type) {
+
   }
 }
 

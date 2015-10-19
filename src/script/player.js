@@ -2,17 +2,19 @@ import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop 
 import { Note, NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
 import { AudioSlicer } from "./audio-slicer"
-import { FileLoader } from "./file"
+import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 
 export class Player {
   // TODO: Make soundChannels index-base
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
-  constructor(game, bmson, parentPath) {
+  constructor(game, bmsonSet, parentPath) {
     this.game = game
-    this.bmson = bmson
-    this.bmsonLoader = new BmsonLoader(bmson)
+    this.bmsonSet = bmsonSet
+    this.bmson = bmsonSet.bmson
+    this.assetLoader = bmsonSet.assetLoader
+    this.bmsonLoader = new BmsonLoader(this.bmson)
     this.parentPath = parentPath
 
     this.audioContext = new AudioContext()
@@ -69,10 +71,8 @@ export class Player {
   }
 
   init() {
-    const fileLoader = new FileLoader(this.parentPath)
-
     return new Promise((resolve, reject) => {
-      new AudioSlicer(this.audioContext, fileLoader, this.soundChannels).loadAudio().then(() => resolve())
+      new AudioSlicer(this.audioContext, this.assetLoader, this.soundChannels).loadAudio().then(() => resolve())
     })
   }
 
@@ -110,7 +110,8 @@ export class Player {
     const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
       this.playing = false
-      console.log("Stopped")
+      this.game.endCallback()
+      //console.log("Stopped")
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]

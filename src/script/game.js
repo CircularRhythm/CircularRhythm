@@ -2,9 +2,15 @@ import $ from "jquery"
 import ControllerState from "./controller"
 import Renderer from "./renderer"
 import { Player } from "./player"
+import XHRPromise from "./xhr-promise"
+import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 
 export class Game {
-  constructor() {
+  constructor(bmsonSetConfig, endCallback) {
+    this.bmsonSetConfig = bmsonSetConfig
+    this.bmsonPath = bmsonSetConfig.path
+    this.assetPath = bmsonSetConfig.assetPath
+    this.endCallback = endCallback
     this.CANVAS_CLASS = "canvas#gameScreen"
     const canvas = document.getElementById("gameScreen")
     this.g = canvas.getContext("2d")
@@ -22,26 +28,27 @@ export class Game {
 
     this.state = States.LOADING
 
-    const bmsonPath = "bmson/test/test.bmson"
+    //const bmsonPath = "bmson/test/test.bmson"
     //const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
     //const bmsonPath = "bmson/cyel/cyel.bmson"
     //const bmsonPath = "bmson/jazzytechnotris_ogg/_spn.bmson"
-    const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
-    new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest()
-      request.open("GET", bmsonPath)
-      request.responseType = "json"
-      request.onload = () => {
-        if(request.status == 200) {
-          resolve(request.response)
-        } else {
-          console.error(request.statusText)
-        }
+    const parentPath = this.bmsonPath.replace(/\/[^\/]*$/, "")
+    const promises = [
+      XHRPromise.send({
+        url: this.bmsonPath,
+        responseType: "json"
+      }),
+      XHRPromise.send({
+        url: this.assetPath,
+        responseType: "json"
+      })
+    ]
+    Promise.all(promises).then((result) => {
+      const bmsonSet = {
+        bmson: result[0],
+        assetLoader: new AssetLoaderArchive(parentPath, result[1])
       }
-      request.onerror = () => reject(console.error("Network Error"))
-      request.send()
-    }).then((bmson) => {
-      this.player = new Player(this, bmson, parentPath)
+      this.player = new Player(this, bmsonSet, parentPath)
       this.renderer = new Renderer(this)
 
       this.player.init().then(() => {
