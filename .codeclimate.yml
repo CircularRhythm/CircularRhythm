@@ -1,0 +1,12 @@
+engines:
+  eslint:
+    enabled: true
+  scss-lint:
+    enabled: true
+  fixme:
+    enabled: true
+ratings:
+  paths:
+  - "**.js"
+  - "**.sass"
+exclude_paths: []
