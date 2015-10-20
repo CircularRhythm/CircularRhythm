@@ -1,17 +1,42 @@
-import { AssetLoader } from "./asset-loader"
+import { AssetLoader, FileErrorStatus } from "./asset-loader"
 
 export class AudioSlicer {
-  constructor(audioContext, fileLoader, soundChannels) {
+  constructor(audioContext, assetLoader, soundChannels) {
     this.audioContext = audioContext
-    this.fileLoader = fileLoader
+    this.assetLoader = assetLoader
     this.soundChannels = soundChannels
+    this.extensions = ["wav", "ogg"]
   }
 
   loadAudio() {
     // TODO: WAV / OGG selecting
     const promises = []
     this.soundChannels.forEach((channel, i) => promises.push(new Promise((resolve, reject) => {
-      this.fileLoader.load(channel.name.replace(/\.wav$/, ".ogg"), "arraybuffer").then((data) => {
+      new Promise((resolve, reject) => {
+        this.assetLoader.load(channel.name).then((data) => resolve(data)).catch((e) => {
+          if(e == FileErrorStatus.NOT_FOUND) {
+            const that = this
+            function newExtensionModifiedPromise(baseName, index) {
+              return new Promise((resolve, reject) => {
+                that.assetLoader.load(baseName + "." + that.extensions[index]).then((data) => resolve(data)).catch((e) => {
+                  if(e == FileErrorStatus.NOT_FOUND) {
+                    if(index < that.extensions.length - 1) {
+                      return newExtensionModifiedPromise(baseName, index + 1)
+                    } else {
+                      reject(FileErrorStatus.NOT_FOUND)
+                    }
+                  } else {
+                    reject(e)
+                  }
+                }).then((data) => resolve(data)).catch((e) => reject(e))
+              })
+            }
+            return newExtensionModifiedPromise(channel.name.replace(/\.[^/.]+$/, ""), 0)
+          } else {
+            reject(e)
+          }
+        }).then((e) => resolve(e)).catch((e) => reject(e))
+      }).then((data) => {
         this.audioContext.decodeAudioData(data, (audioBuffer) => {
           const numberOfChannels = audioBuffer.numberOfChannels
           const sampleRate = audioBuffer.sampleRate
@@ -67,7 +92,7 @@ export class AudioSlicer {
           }
           resolve()
         })
-      })
+      }).catch((e) => console.error(e))
     })))
     return Promise.all(promises)
   }

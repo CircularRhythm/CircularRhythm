@@ -27,6 +27,7 @@ $(() => {
   $("body").html(templateLoading())
 
   const serverUrl = "http://circularrhythm.github.io/OfficialMusicServer"
+  //const serverUrl = "http://localhost:8080"
 
   new Promise((resolve, reject) => {
     XHRPromise.send({

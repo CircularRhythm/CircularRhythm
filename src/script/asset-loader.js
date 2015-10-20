@@ -6,51 +6,44 @@ export class AssetLoader {
     this.files = new Map()
   }
 
-  load(path, type) {
+  load(path) {
     return new Promise((resolve, reject) => {
       const normalizedPath = path.trim().replace(/^\/*/, "")
-      if(this.files.has(normalizedPath) && this.files.get(normalizedPath).type == type) {
+      if(this.files.has(normalizedPath)) {
         const file = this.files.get(normalizedPath)
         if(file.currentPromise != null) {
-          file.currentPromise.then((data) => {
-            resolve(data)
-          })
+          file.currentPromise.then((data) => resolve(data)).catch((e) => reject(e))
         } else {
-          resolve(this.files.get(normalizedPath))
+          resolve(file)
         }
       } else {
-        const promise = this._load(normalizedPath, type)
-        this.files.set(normalizedPath, {type: type, data: null, currentPromise: promise})
+        const promise = this.get(normalizedPath)
+        this.files.set(normalizedPath, {data: null, currentPromise: promise})
         promise.then((data) => {
-          this.files.set(normalizedPath, {type: type, data: data, currentPromise: null})
+          this.files.set(normalizedPath, {data: data, currentPromise: null})
           resolve(data)
-        })
+        }).catch((e) => reject(e))
       }
     })
   }
 
-  _load(path, type) {
-    /*return new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest()
-      request.open("GET", this.parentPath + "/" + path)
-      request.responseType = type
-      request.onload = () => {
-        if(request.status == 200) {
-          resolve(request.response)
-        } else if(request.status == 404){
-          console.error(request.statusText)
-          reject(FileErrorStatus.NOT_FOUND)
-        } else {
-          console.error(request.statusText)
-          reject(FileErrorStatus.UNKNOWN)
-        }
-      }
-      request.onerror = () => reject(FileErrorStatus.NETWORK_ERROR)
-      request.send()
-    })
-  }*/
-    return XHRPromise.send({
-      url: this.parentPath + "/" + path
+  get(path) {
+    return this.xhr(path)
+  }
+
+  xhr(path) {
+    return new Promise((resolve, reject) => {
+      XHRPromise.send({
+        url: this.parentPath + "/" + path,
+        responseType: "arraybuffer"
+      }).then((data) => {
+        resolve(data)
+      }).catch((e) => {
+        if(!e) reject(FileErrorStatus.UNKNOWN)
+        else if(e.status == -1) reject(FileErrorStatus.NETWORK_ERROR)
+        else if(e.status == 404) reject(FileErrorStatus.NOT_FOUND)
+        else reject(FileErrorStatus.UNKNOWN)
+      })
     })
   }
 }
@@ -62,8 +55,50 @@ export class AssetLoaderArchive extends AssetLoader {
     this.definition = definition
   }
 
-  _load(path, type) {
+  get(path) {
+    return new Promise((resolve, reject) => {
+      const normalizedPath = path.trim().replace(/^\/*/, "")
+      const definition = this.definition[normalizedPath]
+      if(!definition) {
+        reject(FileErrorStatus.NOT_FOUND)
+        return
+      }
+      const promises = definition.map((e) => {
+        return new Promise((resolve, reject) => {
+          const assetPath = e[0] + ".crasset"
+          if(this.assetFiles[e[0]]) {
+            const assetFile = this.assetFiles[e[0]]
+            if(assetFile.currentPromise != null) {
+              assetFile.currentPromise.then((data) => resolve(data)).catch((e) => reject(e))
+            } else {
+              resolve(assetFile.data)
+            }
+          } else {
+            const promise = this.xhr(assetPath)
+            this.assetFiles[e[0]] = {data: null, currentPromise: promise}
+            promise.then((data) => {
+              this.assetFiles[e[0]] = {data: data, currentPromise: null}
+              resolve(data)
+            }).catch((e) => reject(e))
+          }
+        })
+      })
 
+      Promise.all(promises).then((array) => {
+        let length = 1
+        definition.forEach((e) => {
+          length += e[2] - e[1]
+        })
+        //const buffer = new ArrayBuffer(length)
+        const combinedData = new Uint8Array(length)
+        let currentPosition = 0
+        definition.forEach((e, i) => {
+          combinedData.set(new Uint8Array(array[i], e[1], e[2] - e[1]), currentPosition)
+          currentPosition += e[2] - e[1]
+        })
+        resolve(combinedData.buffer)
+      }).catch((e) => reject(e))
+    })
   }
 }
 

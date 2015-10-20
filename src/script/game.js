@@ -46,6 +46,7 @@ export class Game {
     Promise.all(promises).then((result) => {
       const bmsonSet = {
         bmson: result[0],
+        //assetLoader: new AssetLoader(parentPath)
         assetLoader: new AssetLoaderArchive(parentPath, result[1])
       }
       this.player = new Player(this, bmsonSet, parentPath)

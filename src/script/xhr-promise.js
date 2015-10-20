@@ -14,7 +14,7 @@ export default class XHRPromise {
           reject({status: request.status, statusText: request.statusText})
         }
       }
-      request.onerror = () => reject({status: 0, statusText: "Network Error"})
+      request.onerror = () => reject({status: -1, statusText: "Network Error"})
       request.send()
     })
   }
