@@ -33,4 +33,4 @@ g.task("watch", () => {
 )
 
 // Travis CI
-g.task("deploy", ["all_minify"], () => g.src("build/**/*").pipe(ghPages({remoteUrl: `https://${process.env.GH_TOKEN}@github.com/CircularRhythm/CircularRhythm.git`})))
+g.task("deploy", ["all_minify"], () => g.src("build/**/*").pipe(ghPages({remoteUrl: `https://${process.env.GH_TOKEN}@github.com/CircularRhythm/circularrhythm.github.io.git`, branch: "master"})))
