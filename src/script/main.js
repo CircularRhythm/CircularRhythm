@@ -48,7 +48,7 @@ $(() => {
     styleLoading.unuse()
     styleMenu.use()
     $("body").html(templateMenu({music_list: musicData}))
-    $("#music_list").each((i, element) => {
+    $("#music_list .music_container").each((i, element) => {
       const e = $(element)
       e.click(() => {
         const music = musicData[i]
