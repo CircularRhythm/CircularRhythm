@@ -1,0 +1,15 @@
+language: node_js
+
+node-js:
+  - "0.12"
+
+script:
+  - '[ "$TRAVIS_BRANCH" == "master" ] && [ $GH_TOKEN ] && gulp deploy 2> /dev/null
+
+env:
+  global:
+    - GIT_COMMITTER_NAME='suitougreentea'
+    - GIT_COMMITTER_EMAIL='suitougreentea@users.noreply.github.com'
+    - GIT_AUTHOR_NAME='suitougreentea'
+    - GIT_AUTHOR_EMAIL='suitougreentea@users.noreply.github.com'
+    - secure: "YmhxQl6/gU3Qwyj7T9rpQ/fzDNluvtf2qGkUlKwukA9oPJEEfvklTPlAQo4g40b1zMrKPi7/ctCEZO5JbWZjyrUZSZRSfqSyK7zKDo9GYwFjwKXuxqW1zpwCHjoDo8Hxm6Vv3c30BhvdriN4T7Seb0+pXEZO+yUd3MbJ3hYsNEWdIrkSfhMA9EWLGclNaEtkeL00yXaRZa/R35Y7WoFO//EHcLD/nERq7pdyL7bluPdOFwXJZxWiQTMHdGiINKUNmSW5MytFb9MxMtPe7i5TvvGGSElXaY2AmZYSkRgQzFkbIidEdl0XyxPoTMS3wC19XLjDHIKlV0j6yaYxm/Sp4lCXeN28/Oj2gwA2iRh9PWi4jfrn8PcTUKA+Ckxry+DMieAOUU+qpedzJcLiIud0hxlAwpAjqrH1zmqtA+z48mv04A6OSFjHcXjM2wgOkO7MoC9kpEKOGOZWWkOg0EHQxH/TRS70xhm35TUbynscvKsYNvAAiveRDl6XfYjUNU15S0T7g8sa1aFj6YpuJQSIAAihX+HAB/2siXfFDeUbCpwsNtKGnssUvuKR9ExZbhisfmD3Atfnh1rrO3ec2pldDyGze5ajWZal/TElZ6r8UJcUDR9S6V0fswoJbyroW7DvMWCodyrAXQxFaygHauzZ1MDb3j+9EomLRR6+40CpN5Y="

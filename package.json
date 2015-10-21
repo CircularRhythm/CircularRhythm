@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "css-loader": "^0.20.1",
+    "gulp-gh-pages": "^0.5.4",
     "gulp-livereload": "^3.8.1",
     "jade-loader": "^0.7.1",
     "json-loader": "^0.5.3",

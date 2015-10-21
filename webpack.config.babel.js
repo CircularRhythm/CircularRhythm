@@ -25,5 +25,7 @@ export default {
     ]
   },
   resolve: {
-  }
+  },
+  plugins: [
+  ]
 }
