@@ -1,5 +1,6 @@
-import fontParser from "parse-bmfont-ascii"
+//import fontParser from "parse-bmfont-ascii"
 import $ from "jquery"
+import getParameter from "get-parameter"
 import { Game } from "./game"
 import XHRPromise from "./xhr-promise"
 
@@ -26,8 +27,8 @@ $(() => {
   styleLoading.use()
   $("body").html(templateLoading())
 
-  const serverUrl = "http://circularrhythm.github.io/OfficialMusicServer"
-  //const serverUrl = "http://localhost:8080"
+  const serverUrlParam = getParameter("server")
+  const serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
 
   new Promise((resolve, reject) => {
     XHRPromise.send({
@@ -42,7 +43,9 @@ $(() => {
       console.log(json)
       resolve(json)
     }).catch((e) => {
-      console.error("Error connecting to server")
+      console.error("Error connecting to server: " + serverUrl)
+      $("#loading").text("An error occured while loading")
+      $("#error").text("Cannot connect to server: " + serverUrl)
     })
   }).then((musicData) => {
     styleLoading.unuse()
