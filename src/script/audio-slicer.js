@@ -9,7 +9,6 @@ export class AudioSlicer {
   }
 
   loadAudio() {
-    // TODO: WAV / OGG selecting
     const promises = []
     this.soundChannels.forEach((channel, i) => promises.push(new Promise((resolve, reject) => {
       new Promise((resolve, reject) => {
@@ -56,7 +55,7 @@ export class AudioSlicer {
 
             let sliceEndSample
             if(sliceStartSample >= audioBuffer.length) {
-              console.warn(`There is a note data which has to slice out of audio length, y=${note.y}, sliceTime=${sliceStartTime}, audioLength=${e.audioBuffer.length}`)
+              console.warn(`There is a note data which has to slice out of audio length, y=${note.y}, sliceTime=${sliceStartTime}, audioLength=${audioBuffer.length}`)
               const buffer = this.audioContext.createBuffer(numberOfChannels, 1, sampleRate)
               note.audioBuffer = buffer
             } else {

@@ -126,6 +126,7 @@ export default class Renderer {
     g.fillText(player.currentTime, 0, 60)
     g.fillText(player.currentY, 0, 80)
     g.fillText(player.supportLineVisibleEndY, 0, 100)
+    g.fillText(player.judgeStats, 0, 120)
   }
 
   getJudgeColor(judge) {

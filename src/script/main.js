@@ -1,66 +1,31 @@
 //import fontParser from "parse-bmfont-ascii"
 import $ from "jquery"
 import getParameter from "get-parameter"
-import { Game } from "./game"
 import XHRPromise from "./xhr-promise"
 
-import templateLoading from "./template/loading.jade"
-import styleLoading from "./template/loading.sass"
-import templateMenu from "./template/menu.jade"
-import styleMenu from "./template/menu.sass"
+import { Screen, ScreenManager } from "./screen/screen"
+import ScreenLoading from "./screen/screen-loading"
+import ScreenMenu from "./screen/screen-menu"
+import ScreenGame from "./screen/screen-game"
 
-function endGame() {
-  $("body").html('')
-  $(window).unbind("resize keydown keyup")
+class CircularRhythm {
+  static main() {
+    const serverUrlParam = getParameter("server")
+    this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
+
+    this.musicList = null
+    this.game = null
+    this.bmsonData = null
+
+    const screens = new Map()
+    this.screenManager = new ScreenManager(screens)
+    screens.set("loading", new ScreenLoading(this.screenManager, this))
+    screens.set("menu", new ScreenMenu(this.screenManager, this))
+    screens.set("game", new ScreenGame(this.screenManager, this))
+    this.screenManager.changeScreen("loading")
+  }
 }
 
-function startGame(bmsonPath) {
-  const game = new Game(bmsonPath, endGame)
-  game.start()
-  $(window).bind({
-    "resize": () => game.onResize(),
-    "keydown": (e) => game.onKeyDown(e),
-    "keyup": (e) => game.onKeyUp(e)
-  })
-}
 $(() => {
-  styleLoading.use()
-  $("body").html(templateLoading())
-
-  const serverUrlParam = getParameter("server")
-  const serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
-
-  new Promise((resolve, reject) => {
-    XHRPromise.send({
-      url: serverUrl + "/index.json",
-      responseType: "json"
-    }).then((json) => {
-      return XHRPromise.send({
-        url: serverUrl + "/" + json.music_data,
-        responseType: "json"
-      })
-    }).then((json) => {
-      console.log(json)
-      resolve(json)
-    }).catch((e) => {
-      console.error("Error connecting to server: " + serverUrl)
-      $("#loading").text("An error occured while loading")
-      $("#error").text("Cannot connect to server: " + serverUrl)
-    })
-  }).then((musicData) => {
-    styleLoading.unuse()
-    styleMenu.use()
-    $("body").html(templateMenu({music_list: musicData}))
-    $("#music_list .music_container").each((i, element) => {
-      const e = $(element)
-      e.click(() => {
-        const music = musicData[i]
-        const bmsonPath = serverUrl + "/" + music.basedir + "/" + music.charts[0].file
-        const assetPath = serverUrl + "/" + music.basedir + "/assets.json"
-        styleMenu.unuse()
-        $("body").html('<canvas id="gameScreen"></canvas>')
-        startGame({path: bmsonPath, assetPath: assetPath})
-      })
-    })
-  })
-});
+  CircularRhythm.main()
+})

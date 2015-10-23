@@ -68,6 +68,8 @@ export class Player {
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
     this.unitPosition = 0
+
+    this.judgeStats = [0, 0, 0, 0, 0, 0, 0]
   }
 
   init() {
@@ -83,9 +85,9 @@ export class Player {
     const newSupportLines = this.supportLines.filter((e) => this.supportLineVisibleEndY > e.y)
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
-    for(let e of this.soundChannels) {
-      this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
-    }
+    this.soundChannels.forEach((e, i) => {
+      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= 4))
+    })
 
     this.currentBarLine = this.barLines[0]
     // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
@@ -179,13 +181,13 @@ export class Player {
     this.unitPosition = ((this.currentY - currentBarLine.y) % currentBarLine.maximumUnit) / currentBarLine.maximumUnit
 
     // Add notes which to be visible
-    for(let channel of this.soundChannels) {
+    this.soundChannels.forEach((channel, i) => {
       const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= 4)
-      Array.prototype.push.apply(this.visibleNotes.get(channel.name), newVisibleNotes)
-    }
+      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotes)
+    })
 
     // Erase notes which is already judged
-    this.visibleNotes.forEach((notes, name) => {
+    this.visibleNotes.forEach((notes, index) => {
       notes.filter((note) => note instanceof NoteShort && note.eraseTimer >= 0).forEach((note) => {
         note.eraseTimer += delta
       })
@@ -205,7 +207,7 @@ export class Player {
       notes = notes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime + 500)
 
       // Set new notes list
-      this.visibleNotes.set(name, notes)
+      this.visibleNotes.set(index, notes)
     })
 
     // Target & Judge
@@ -231,43 +233,44 @@ export class Player {
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x < 1 || 4 < note.x))
       playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
 
-      // Judge
-      for(let i = 0; i < 4; i++) {
-        const button = controller[i]
-        const x = i + 1
-        const target = this.targetNotes.get(x)
-        let note
-        if(target) {
-          note = target.note
-        } else {
-          note = null
+    }
+    
+    // Judge
+    for(let i = 0; i < 4; i++) {
+      const button = controller[i]
+      const x = i + 1
+      const target = this.targetNotes.get(x)
+      let note
+      if(target) {
+        note = target.note
+      } else {
+        note = null
+      }
+
+      if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
+        // Miss
+        if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
+        else if(button.isJustPressed()) {
+          const judge = this.getJudge(this.currentTime - note.time)
+          this.judgeShortNote(note, judge)
+          this.noteOn(target.name, note)
+        }
+      }
+      if(note instanceof NoteLong) {
+        // Miss
+        if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
+        else if(button.isJustPressed()) {
+          const judge = this.getJudge(this.currentTime - note.time)
+          this.firstJudgeLongNote(note, judge)
+          this.noteOn(target.name, note)
         }
 
-        if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
-          // Miss
-          if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
-          else if(button.isJustPressed()) {
-            const judge = this.getJudge(this.currentTime - note.time)
-            this.judgeShortNote(note, judge)
-            this.noteOn(target.name, note)
-          }
-        }
-        if(note instanceof NoteLong) {
-          // Miss
-          if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
-          else if(button.isJustPressed()) {
-            const judge = this.getJudge(this.currentTime - note.time)
-            this.firstJudgeLongNote(note, judge)
-            this.noteOn(target.name, note)
-          }
-
-          if(note.active) {
-            if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
-            else if(button.isJustReleased()) {
-              const judge = this.getSecondJudge(this.currentTime - note.endTime)
-              this.secondJudgeLongNote(note, judge)
-              if(!judge) this.noteOff(target.name)
-            }
+        if(note.active) {
+          if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
+          else if(button.isJustReleased()) {
+            const judge = this.getSecondJudge(this.currentTime - note.endTime)
+            this.secondJudgeLongNote(note, judge)
+            if(!judge) this.noteOff(target.name)
           }
         }
       }
@@ -307,6 +310,7 @@ export class Player {
   }
 
   judgeShortNote(note, judgeState) {
+    console.log(note, judgeState)
     if(judgeState != JudgeState.MISS_EMPTY) {
       note.judge(judgeState)
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
@@ -315,6 +319,7 @@ export class Player {
         this.combo++
       }
     }
+    this.judgeStats[judgeState] ++
   }
 
   firstJudgeLongNote(note, judgeState) {
@@ -322,7 +327,10 @@ export class Player {
       note.firstJudge(judgeState)
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
+        this.judgeStats[judgeState] ++
       }
+    } else {
+      this.judgeStats[judgeState] ++
     }
   }
 
@@ -330,8 +338,10 @@ export class Player {
     note.secondJudge(success)
     if(success) {
       this.combo++
+      this.judgeStats[note.judgeState] ++
     } else {
       this.combo = 0
+      this.judgeStats[JudgeState.MISS] ++
     }
   }
 }

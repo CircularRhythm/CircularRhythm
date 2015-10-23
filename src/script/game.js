@@ -10,6 +10,7 @@ export class Game {
     this.bmsonSetConfig = bmsonSetConfig
     this.bmsonPath = bmsonSetConfig.path
     this.assetPath = bmsonSetConfig.assetPath
+    this.packedAssets = bmsonSetConfig.packedAssets
     this.endCallback = endCallback
     this.CANVAS_CLASS = "canvas#gameScreen"
     const canvas = document.getElementById("gameScreen")
@@ -33,21 +34,26 @@ export class Game {
     //const bmsonPath = "bmson/cyel/cyel.bmson"
     //const bmsonPath = "bmson/jazzytechnotris_ogg/_spn.bmson"
     const parentPath = this.bmsonPath.replace(/\/[^\/]*$/, "")
-    const promises = [
+    const promises = []
+    promises.push(
       XHRPromise.send({
         url: this.bmsonPath,
         responseType: "json"
-      }),
+      })
+    )
+    if(this.packedAssets) promises.push(
       XHRPromise.send({
         url: this.assetPath,
         responseType: "json"
       })
-    ]
+    )
     Promise.all(promises).then((result) => {
+      let assetLoader
+      if(this.packedAssets) assetLoader = new AssetLoaderArchive(parentPath, result[1])
+      else assetLoader = new AssetLoader(parentPath)
       const bmsonSet = {
         bmson: result[0],
-        //assetLoader: new AssetLoader(parentPath)
-        assetLoader: new AssetLoaderArchive(parentPath, result[1])
+        assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
       this.renderer = new Renderer(this)
@@ -59,7 +65,7 @@ export class Game {
   }
 
   start() {
-    this.onResize();
+    this.onResize()
     console.log("Game started.")
     this.frame = 0
     this.startTime = Date.now()
