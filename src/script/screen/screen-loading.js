@@ -6,9 +6,8 @@ import $ from "jquery"
 import XHRPromise from "../xhr-promise"
 
 export default class ScreenLoading extends Screen {
-  constructor(manager, cr) {
-    super(manager, cr)
-    console.log(this.cr)
+  constructor(manager, app) {
+    super(manager, app)
   }
   use() {
     style.use()
@@ -16,11 +15,11 @@ export default class ScreenLoading extends Screen {
 
     new Promise((resolve, reject) => {
       XHRPromise.send({
-        url: this.cr.serverUrl + "/index.json",
+        url: this.app.serverUrl + "/index.json",
         responseType: "json"
       }).then((json) => {
         return XHRPromise.send({
-          url: this.cr.serverUrl + "/" + json.music_data,
+          url: this.app.serverUrl + "/" + json.music_data,
           responseType: "json"
         })
       }).then((json) => {
@@ -32,7 +31,7 @@ export default class ScreenLoading extends Screen {
         $("#error").text("Cannot connect to server: " + serverUrl)
       })
     }).then((musicList) => {
-      this.cr.musicList = musicList
+      this.app.musicList = musicList
       this.manager.changeScreen("menu")
     })
   }

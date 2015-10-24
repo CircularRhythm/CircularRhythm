@@ -5,21 +5,21 @@ import { Screen } from "./screen"
 import $ from "jquery"
 
 export default class ScreenMenu extends Screen {
-  constructor(manager, cr) {
-    super(manager, cr)
+  constructor(manager, app) {
+    super(manager, app)
   }
   use() {
     style.use()
-    $("body").html(template({music_list: this.cr.musicList}))
+    $("body").html(template({music_list: this.app.musicList}))
     $("#music_list .music_container").each((i, element) => {
       const e = $(element)
       e.click(() => {
-        const music = this.cr.musicList[i]
-        const bmsonPath = this.cr.serverUrl + "/" + music.basedir + "/" + music.charts[0].file
-        const assetPath = this.cr.serverUrl + "/" + music.basedir + "/assets.json"
+        const music = this.app.musicList[i]
+        const bmsonPath = this.app.serverUrl + "/" + music.basedir + "/" + music.charts[0].file
+        const assetPath = this.app.serverUrl + "/" + music.basedir + "/assets.json"
         const packedAssets = music.packed_assets
-        this.cr.bmsonData = {path: bmsonPath, packedAssets: packedAssets, assetPath: assetPath}
-        this.manager.changeScreen("game")
+        const bmsonSetConfig = {path: bmsonPath, packedAssets: packedAssets, assetPath: assetPath}
+        this.manager.changeScreen("game", bmsonSetConfig)
       })
     })
   }

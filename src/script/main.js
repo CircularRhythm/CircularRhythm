@@ -14,14 +14,17 @@ class CircularRhythm {
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
 
     this.musicList = null
-    this.game = null
-    this.bmsonData = null
+    //this.game = null
+    //this.bmsonData = null
 
     const screens = new Map()
-    this.screenManager = new ScreenManager(screens)
-    screens.set("loading", new ScreenLoading(this.screenManager, this))
+    this.screenManager = new ScreenManager(this, screens)
+    /*screens.set("loading", new ScreenLoading(this.screenManager, this))
     screens.set("menu", new ScreenMenu(this.screenManager, this))
-    screens.set("game", new ScreenGame(this.screenManager, this))
+    screens.set("game", new ScreenGame(this.screenManager, this))*/
+    screens.set("loading", ScreenLoading)
+    screens.set("menu", ScreenMenu)
+    screens.set("game", ScreenGame)
     this.screenManager.changeScreen("loading")
   }
 }

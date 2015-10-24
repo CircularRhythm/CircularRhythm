@@ -1,7 +1,7 @@
 export class Screen {
-  constructor(manager, cr) {
+  constructor(manager, app) {
     this.manager = manager
-    this.cr = cr
+    this.app = app
   }
   use() {
   }
@@ -11,13 +11,15 @@ export class Screen {
 
 export class ScreenManager {
   // String => Screen
-  constructor(screens) {
+  constructor(app, screens) {
+    this.app = app
     this.screens = screens
     this.currentScreen = null
   }
 
-  changeScreen(screenName) {
+  changeScreen(screenName, ...constructorArgs) {
     if(this.currentScreen) this.currentScreen.unuse()
-    this.screens.get(screenName).use()
+    this.currentScreen = new (this.screens.get(screenName))(this, this.app, ...constructorArgs)
+    this.currentScreen.use()
   }
 }

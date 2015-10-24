@@ -3,17 +3,18 @@ import $ from "jquery"
 import { Game } from "../game"
 
 export default class ScreenGame extends Screen {
-  constructor(manager, cr) {
-    super(manager, cr)
+  constructor(manager, app, bmsonSetConfig) {
+    super(manager, app)
+    this.bmsonSetConfig = bmsonSetConfig
   }
   use() {
     $("body").html('<canvas id="gameScreen"></canvas>')
-    this.cr.game = new Game(this.cr.bmsonData, this.unuse)
-    this.cr.game.start()
+    this.game = new Game(this.bmsonSetConfig, this.unuse)
+    this.game.start()
     $(window).bind({
-      "resize": () => this.cr.game.onResize(),
-      "keydown": (e) => this.cr.game.onKeyDown(e),
-      "keyup": (e) => this.cr.game.onKeyUp(e)
+      "resize": () => this.game.onResize(),
+      "keydown": (e) => this.game.onKeyDown(e),
+      "keyup": (e) => this.game.onKeyUp(e)
     })
   }
 
