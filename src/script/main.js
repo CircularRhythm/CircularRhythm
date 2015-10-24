@@ -7,6 +7,7 @@ import { Screen, ScreenManager } from "./screen/screen"
 import ScreenLoading from "./screen/screen-loading"
 import ScreenMenu from "./screen/screen-menu"
 import ScreenGame from "./screen/screen-game"
+import ScreenResult from "./screen/screen-result"
 
 class CircularRhythm {
   static main() {
@@ -14,18 +15,20 @@ class CircularRhythm {
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
 
     this.musicList = null
-    //this.game = null
-    //this.bmsonData = null
 
     const screens = new Map()
     this.screenManager = new ScreenManager(this, screens)
-    /*screens.set("loading", new ScreenLoading(this.screenManager, this))
-    screens.set("menu", new ScreenMenu(this.screenManager, this))
-    screens.set("game", new ScreenGame(this.screenManager, this))*/
     screens.set("loading", ScreenLoading)
     screens.set("menu", ScreenMenu)
     screens.set("game", ScreenGame)
+    screens.set("result", ScreenResult)
     this.screenManager.changeScreen("loading")
+    /*this.screenManager.changeScreen("result", {
+      musicName: "TEST",
+      judge: [1, 2, 3, 4, 5, 6, 7],
+      score: 1000000,
+      maxCombo: 100
+    })*/
   }
 }
 

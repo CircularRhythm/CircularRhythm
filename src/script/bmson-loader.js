@@ -255,4 +255,13 @@ export class BmsonLoader {
       barLines.push({y: lastBarLine.y + lastBarLine.l, l: lastBarLine.l, minimumUnit: lastBarLine.minimumUnit, maximumUnit: lastBarLine.maximumUnit, supportLines: lastBarLine.supportLines})
     }
   }
+
+  getNumberOfNotes(soundChannels) {
+    let number = 0
+    soundChannels.forEach((channel) => {
+      const notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 4)
+      number += notes.length
+    })
+    return number
+  }
 }
