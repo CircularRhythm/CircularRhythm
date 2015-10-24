@@ -1,53 +1,36 @@
-import $ from "jquery"
-import ControllerState from "./controller"
-import Renderer from "./renderer"
-import { Player } from "./player"
 import XHRPromise from "./xhr-promise"
 import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
-
+import { Player } from "./player"
+import { Renderer } from "./renderer"
 export class Game {
   constructor(bmsonSetConfig, endCallback) {
     this.bmsonSetConfig = bmsonSetConfig
     this.bmsonPath = bmsonSetConfig.path
     this.assetPath = bmsonSetConfig.assetPath
+    this.packedAssets = bmsonSetConfig.packedAssets
     this.endCallback = endCallback
-    this.CANVAS_CLASS = "canvas#gameScreen"
-    const canvas = document.getElementById("gameScreen")
-    this.g = canvas.getContext("2d")
 
-    this.keys = []
-    for(let i = 0; i < 256; i++) {
-      this.keys[i] = false
-    }
-    // H J K L
-    this.keyConfig = [72, 74, 75, 76]
-    this.controller = []
-    for(let i = 0; i < 4; i++) {
-      this.controller[i] = new ControllerState()
-    }
-
-    this.state = States.LOADING
-
-    //const bmsonPath = "bmson/test/test.bmson"
-    //const bmsonPath = "bmson/flicknote_onlylove_remix/onlylove_remix.bmson"
-    //const bmsonPath = "bmson/cyel/cyel.bmson"
-    //const bmsonPath = "bmson/jazzytechnotris_ogg/_spn.bmson"
     const parentPath = this.bmsonPath.replace(/\/[^\/]*$/, "")
-    const promises = [
+    const promises = []
+    promises.push(
       XHRPromise.send({
         url: this.bmsonPath,
         responseType: "json"
-      }),
+      })
+    )
+    if(this.packedAssets) promises.push(
       XHRPromise.send({
         url: this.assetPath,
         responseType: "json"
       })
-    ]
+    )
     Promise.all(promises).then((result) => {
+      let assetLoader
+      if(this.packedAssets) assetLoader = new AssetLoaderArchive(parentPath, result[1])
+      else assetLoader = new AssetLoader(parentPath)
       const bmsonSet = {
         bmson: result[0],
-        //assetLoader: new AssetLoader(parentPath)
-        assetLoader: new AssetLoaderArchive(parentPath, result[1])
+        assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
       this.renderer = new Renderer(this)
@@ -56,54 +39,11 @@ export class Game {
         this.state = States.READY
       })
     })
+    this.state = States.LOADING
   }
 
-  start() {
-    this.onResize();
-    console.log("Game started.")
-    this.frame = 0
-    this.startTime = Date.now()
-    this.update()
-  }
-
-  update() {
-    // TODO: Accurate FPS counter
-    this.frame ++
-    const frameStartTime = Date.now()
-    const fps = this.frame / (frameStartTime - this.startTime) * 1000
-
-    const g = this.g
-
-    for(let i = 0; i < 4; i++) {
-      const keyCode = this.keyConfig[i]
-      if(this.keys[keyCode]) {
-        switch(this.controller[i].state) {
-          case ControllerState.NONE:
-          case ControllerState.JUST_RELEASED:
-            this.controller[i].state = ControllerState.JUST_PRESSED
-            break
-          case ControllerState.JUST_PRESSED:
-          case ControllerState.PRESSED:
-            this.controller[i].state = ControllerState.PRESSED
-            break
-        }
-      } else {
-        switch(this.controller[i].state) {
-          case ControllerState.NONE:
-          case ControllerState.JUST_RELEASED:
-            this.controller[i].state = ControllerState.NONE
-            break
-          case ControllerState.JUST_PRESSED:
-          case ControllerState.PRESSED:
-            this.controller[i].state = ControllerState.JUST_RELEASED
-            break
-        }
-      }
-    }
-
-    g.fillStyle = "#FFFFFF"
-    g.rect(0, 0, this.width, this.height)
-    g.fill()
+  update(framework) {
+    const g = framework.g
 
     switch(this.state) {
       case States.LOADING:
@@ -112,14 +52,15 @@ export class Game {
         break
       case States.READY:
         g.fillStyle = "#000000"
-        g.fillText("READY, PRESS H", 32, 64)
-        if(this.controller[0].isJustPressed()) {
+        g.fillText("READY, Press Enter", 32, 64)
+        if(framework.input.isJustPressed(13)) {
+          // Enter
           this.player.start()
           this.state = States.IN_GAME
         }
 
         g.save()
-        g.translate((this.width - 800) / 2, (this.height - 600) / 2)
+        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
 
         this.renderer.render(g, this.controller)
 
@@ -127,42 +68,17 @@ export class Game {
         break
       case States.IN_GAME:
         g.save()
-        g.translate((this.width - 800) / 2, (this.height - 600) / 2)
+        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
 
-        this.player.update(this.controller)
-        this.renderer.render(g, this.controller)
+        this.player.update(framework.input)
+        this.renderer.render(g)
 
         g.restore()
         break
     }
 
     g.fillStyle = "#000000"
-    g.fillText(fps, 32, 32)
-
-    setTimeout(() => this.update(), 10)
-  }
-
-  onResize() {
-    const body = $("body")
-    const width = body.width()
-    const height = body.height()
-
-    const canvas = $(this.CANVAS_CLASS)
-    canvas.attr("width", width)
-    canvas.attr("height", height)
-
-    this.width = width
-    this.height = height
-
-    console.log(`Resized: (${width}, ${height})`)
-  }
-
-  onKeyDown(e) {
-    this.keys[e.keyCode] = true
-  }
-
-  onKeyUp(e) {
-    this.keys[e.keyCode] = false
+    g.fillText(framework.currentFps.toFixed(2), 32, 32)
   }
 }
 

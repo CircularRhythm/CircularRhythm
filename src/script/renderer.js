@@ -2,7 +2,7 @@ import { NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
 import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
 
-export default class Renderer {
+export class Renderer {
   constructor(game) {
     this.game = game
   }
@@ -25,10 +25,10 @@ export default class Renderer {
     g.arc(400, 300, 70, Math.PI * 2, false)
     g.fill()
 
-    this.drawLaneCircle(g, 400, 300, 70, controller[0].isPressed())
-    this.drawLaneCircle(g, 400, 300, 100, controller[1].isPressed())
-    this.drawLaneCircle(g, 400, 300, 130, controller[2].isPressed())
-    this.drawLaneCircle(g, 400, 300, 160, controller[3].isPressed())
+    this.drawLaneCircle(g, 400, 300, 70, player.keyFlashing[0])
+    this.drawLaneCircle(g, 400, 300, 100, player.keyFlashing[1])
+    this.drawLaneCircle(g, 400, 300, 130, player.keyFlashing[2])
+    this.drawLaneCircle(g, 400, 300, 160, player.keyFlashing[3])
 
     player.visibleSupportLines.forEach((e) => {
       const radian = this.positionToRadian(e.position)
@@ -115,6 +115,8 @@ export default class Renderer {
     g.font = "32px sans-serif"
     g.fillText(player.combo, 400, 312)
 
+    g.fillText(Math.ceil(player.score), 400, 100)
+
     g.fillStyle = "#000000"
     g.textAlign = "center"
     g.font = "32px sans-serif"
@@ -126,6 +128,7 @@ export default class Renderer {
     g.fillText(player.currentTime, 0, 60)
     g.fillText(player.currentY, 0, 80)
     g.fillText(player.supportLineVisibleEndY, 0, 100)
+    g.fillText(player.judgeStats, 0, 120)
   }
 
   getJudgeColor(judge) {
@@ -165,8 +168,8 @@ export default class Renderer {
     //this.strokeArc(g, 400, 300, radius, 1, 2, "#00FF00", 5)
   }
 
-  drawLaneCircle(g, x, y, r, active) {
-    const style = active ? "#FF0000" : "#000000"
+  drawLaneCircle(g, x, y, r, flashing) {
+    const style = `rgb(${Math.floor(flashing * 255)}, 0, 0)`
     this.strokeCircle(g, x, y, r, style, 1)
   }
 

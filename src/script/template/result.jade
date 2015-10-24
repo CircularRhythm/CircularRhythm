@@ -1,0 +1,25 @@
+- var tweet_text = "I played " + musicName + " and got " + score + " points in #CircularRhythm !"
+#container
+  #music_name= musicName
+  #score Score: #{score}
+  #judgeList
+    .judgeRow
+      .judgeName Perfect
+      .judgeNumber= judge[5]
+    .judgeRow
+      .judgeName Great
+      .judgeNumber= judge[4]
+    .judgeRow
+      .judgeName Good
+      .judgeNumber= judge[3]
+    .judgeRow
+      .judgeName Bad
+      .judgeNumber= judge[2]
+    .judgeRow
+      .judgeName Miss
+      .judgeNumber #{judge[1] + judge[6]} (#{judge[1]})
+    .judgeRow.judgeRowMaxCombo
+      .judgeName Max Combo
+      .judgeNumber #{maxCombo} / #{numberOfNotes}
+  #tweet <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://circularrhythm.github.io" data-text="#{tweet_text}" data-via="" data-size="large" data-count="none">Tweet</a><script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+  #return_menu Return to menu

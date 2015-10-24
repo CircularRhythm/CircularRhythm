@@ -16,6 +16,8 @@ export class Player {
     this.assetLoader = bmsonSet.assetLoader
     this.bmsonLoader = new BmsonLoader(this.bmson)
     this.parentPath = parentPath
+    this.keyConfig = [72, 74, 75, 76]
+    this.keyFlashing = [0, 0, 0, 0]
 
     this.audioContext = new AudioContext()
 
@@ -41,6 +43,7 @@ export class Player {
     this.targetNotes = new Map()
 
     this.combo = 0
+    this.maxCombo = 0
 
     // [{time: Number, y: Number, bpm: Number}]
     // used by timeToY, yToTime
@@ -67,7 +70,13 @@ export class Player {
     // [{name: String, notes: [Note]}]
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
+    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels)
+
     this.unitPosition = 0
+
+    this.judgeStats = [0, 0, 0, 0, 0, 0, 0]
+    this.score = 0
+    this.scoreMultiply = [0, 0, 0.05, 0.25, 0.5, 1, 0]
   }
 
   init() {
@@ -83,9 +92,9 @@ export class Player {
     const newSupportLines = this.supportLines.filter((e) => this.supportLineVisibleEndY > e.y)
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
-    for(let e of this.soundChannels) {
-      this.visibleNotes.set(e.name, e.notes.filter((note) => note.y < this.visibleEndY))
-    }
+    this.soundChannels.forEach((e, i) => {
+      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= 4))
+    })
 
     this.currentBarLine = this.barLines[0]
     // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
@@ -94,11 +103,17 @@ export class Player {
     this.playing = true
   }
 
-  update(controller) {
+  update(input) {
     const nowTime = Date.now()
     const delta = nowTime - this.lastTime
     this.lastTime = nowTime
     this.currentTime += delta
+
+    for(let i = 0; i < 4; i++) {
+      this.keyFlashing[i] -= 0.05
+      if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
+      if(input.isPressed(this.keyConfig[i])) this.keyFlashing[i] = 1
+    }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
     //const deltaY = 240 * this.currentBpm * delta / 60000
@@ -110,8 +125,7 @@ export class Player {
     const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
       this.playing = false
-      this.game.endCallback()
-      //console.log("Stopped")
+      this.end()
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
@@ -179,13 +193,13 @@ export class Player {
     this.unitPosition = ((this.currentY - currentBarLine.y) % currentBarLine.maximumUnit) / currentBarLine.maximumUnit
 
     // Add notes which to be visible
-    for(let channel of this.soundChannels) {
+    this.soundChannels.forEach((channel, i) => {
       const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= 4)
-      Array.prototype.push.apply(this.visibleNotes.get(channel.name), newVisibleNotes)
-    }
+      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotes)
+    })
 
     // Erase notes which is already judged
-    this.visibleNotes.forEach((notes, name) => {
+    this.visibleNotes.forEach((notes, index) => {
       notes.filter((note) => note instanceof NoteShort && note.eraseTimer >= 0).forEach((note) => {
         note.eraseTimer += delta
       })
@@ -205,7 +219,7 @@ export class Player {
       notes = notes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime + 500)
 
       // Set new notes list
-      this.visibleNotes.set(name, notes)
+      this.visibleNotes.set(index, notes)
     })
 
     // Target & Judge
@@ -231,47 +245,58 @@ export class Player {
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x < 1 || 4 < note.x))
       playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
 
-      // Judge
-      for(let i = 0; i < 4; i++) {
-        const button = controller[i]
-        const x = i + 1
-        const target = this.targetNotes.get(x)
-        let note
-        if(target) {
-          note = target.note
-        } else {
-          note = null
+    }
+
+    // Judge
+    for(let i = 0; i < 4; i++) {
+      const button = this.keyConfig[i]
+      const x = i + 1
+      const target = this.targetNotes.get(x)
+      let note
+      if(target) {
+        note = target.note
+      } else {
+        note = null
+      }
+
+      if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
+        // Miss
+        if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
+        else if(input.isJustPressed(button)) {
+          const judge = this.getJudge(this.currentTime - note.time)
+          this.judgeShortNote(note, judge)
+          this.noteOn(target.name, note)
+        }
+      }
+      if(note instanceof NoteLong) {
+        // Miss
+        if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
+        else if(input.isJustPressed(button)) {
+          const judge = this.getJudge(this.currentTime - note.time)
+          this.firstJudgeLongNote(note, judge)
+          this.noteOn(target.name, note)
         }
 
-        if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
-          // Miss
-          if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
-          else if(button.isJustPressed()) {
-            const judge = this.getJudge(this.currentTime - note.time)
-            this.judgeShortNote(note, judge)
-            this.noteOn(target.name, note)
-          }
-        }
-        if(note instanceof NoteLong) {
-          // Miss
-          if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
-          else if(button.isJustPressed()) {
-            const judge = this.getJudge(this.currentTime - note.time)
-            this.firstJudgeLongNote(note, judge)
-            this.noteOn(target.name, note)
-          }
-
-          if(note.active) {
-            if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
-            else if(button.isJustReleased()) {
-              const judge = this.getSecondJudge(this.currentTime - note.endTime)
-              this.secondJudgeLongNote(note, judge)
-              if(!judge) this.noteOff(target.name)
-            }
+        if(note.active) {
+          if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
+          else if(input.isJustReleased(button)) {
+            const judge = this.getSecondJudge(this.currentTime - note.endTime)
+            this.secondJudgeLongNote(note, judge)
+            if(!judge) this.noteOff(target.name)
           }
         }
       }
     }
+  }
+
+  end() {
+    this.game.endCallback({
+      musicName: this.bmson.info.title,
+      judge: this.judgeStats,
+      maxCombo: this.maxCombo,
+      numberOfNotes: this.numberOfNotes,
+      score: Math.ceil(this.score)
+    })
   }
 
   noteOn(channelName, note) {
@@ -313,8 +338,11 @@ export class Player {
         this.combo = 0
       } else {
         this.combo++
+        if(this.combo > this.maxCombo) this.maxCombo = this.combo
       }
     }
+    this.judgeStats[judgeState] ++
+    this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
   }
 
   firstJudgeLongNote(note, judgeState) {
@@ -322,7 +350,10 @@ export class Player {
       note.firstJudge(judgeState)
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
+        this.judgeStats[judgeState] ++
       }
+    } else {
+      this.judgeStats[judgeState] ++
     }
   }
 
@@ -330,8 +361,13 @@ export class Player {
     note.secondJudge(success)
     if(success) {
       this.combo++
+      if(this.combo > this.maxCombo) this.maxCombo = this.combo
+      this.judgeStats[note.judgeState] ++
+      this.score += 1000000 * this.scoreMultiply[note.judgeState] / this.numberOfNotes
     } else {
       this.combo = 0
+      this.judgeStats[JudgeState.BAD] ++
+      this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
     }
   }
 }
