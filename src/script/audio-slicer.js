@@ -41,7 +41,7 @@ export class AudioSlicer {
           const sampleRate = audioBuffer.sampleRate
 
           let audioStartTime = 0
-          if(channel.notes[0].c == true) {
+          if(channel.notes.length > 0 && channel.notes[0].c == true) {
             console.warn("First note of each channel should be c=false")
           }
           for(let i = 0; i < channel.notes.length; i++) {
