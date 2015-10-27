@@ -1,7 +1,7 @@
 import { Screen } from "./screen"
 import $ from "jquery"
-import { GameFramework } from "../game-framework"
-import { Game } from "../game"
+import { GameFramework } from "../framework/game-framework"
+import { Game } from "../player/game"
 
 export default class ScreenGame extends Screen {
   constructor(manager, app, bmsonSetConfig) {

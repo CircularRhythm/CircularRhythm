@@ -1,4 +1,5 @@
 import webpack from "webpack";
+
 export default {
   output: {
     filename: 'main.js'

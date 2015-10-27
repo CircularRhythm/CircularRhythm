@@ -1,4 +1,4 @@
-import XHRPromise from "./xhr-promise"
+import XHRPromise from "../xhr-promise"
 
 export class AssetLoader {
   constructor(parentPath) {

@@ -1,7 +1,7 @@
-import XHRPromise from "./xhr-promise"
+import XHRPromise from "../xhr-promise"
 import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 import { Player } from "./player"
-import { Renderer } from "./renderer"
+import { Renderer } from "./renderer/renderer"
 export class Game {
   constructor(bmsonSetConfig, endCallback) {
     this.bmsonSetConfig = bmsonSetConfig
@@ -9,7 +9,9 @@ export class Game {
     this.assetPath = bmsonSetConfig.assetPath
     this.packedAssets = bmsonSetConfig.packedAssets
     this.endCallback = endCallback
+  }
 
+  start(framework) {
     const parentPath = this.bmsonPath.replace(/\/[^\/]*$/, "")
     const promises = []
     promises.push(
@@ -33,7 +35,7 @@ export class Game {
         assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
-      this.renderer = new Renderer(this)
+      this.renderer = new Renderer(this, framework)
 
       this.player.init().then(() => {
         this.state = States.READY
