@@ -8,6 +8,7 @@ import ScreenLoading from "./screen/loading"
 import ScreenMenu from "./screen/menu"
 import ScreenGame from "./screen/game"
 import ScreenResult from "./screen/result"
+import { AssetLoaderLocal } from "./player/asset-loader"
 
 class CircularRhythm {
   static main() {
@@ -15,6 +16,8 @@ class CircularRhythm {
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
 
     this.musicList = null
+    this.localMusicList = []
+    this.localFileList = new Map()
 
     const screens = new Map()
     this.screenManager = new ScreenManager(this, screens)

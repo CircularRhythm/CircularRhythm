@@ -102,6 +102,13 @@ export class AssetLoaderArchive extends AssetLoader {
   }
 }
 
+export class AssetLoaderLocal extends AssetLoader {
+  constructor(parentPath, localFileList) {
+    super(parentPath)
+    this.localFileList = localFileList
+  }
+}
+
 export class FileErrorStatus {
   static get UNKNOWN() { return -1 }
   static get NOT_FOUND() { return 1 }

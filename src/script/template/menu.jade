@@ -1,6 +1,11 @@
 #container
   #music_detail
+  #local_music_list
+    each music in local_music_list
+      .music_container
+        .music_title= music.name
   #music_list
     each music in music_list
       .music_container
         .music_title= music.name
+#drop(style="display: none")
