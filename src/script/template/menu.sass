@@ -1,18 +1,62 @@
-body
-  position: relative
-
 #container
   position: absolute
+  left: 50%
+  width: 900px
+  margin-left: -450px
 
-#music_list
-  margin: 20px
+#music_detail
+  position: fixed
+  width: 900px
+  height: 120px
+  border: 1px solid #000000
+  left: 50%
+  margin-left: -450px
+  background-color: #FFFFFF
+  z-index: 1
+
+#music_list, #local_music_list
+  margin-top: 130px
   display: flex
   flex-direction: row
   flex-wrap: wrap
   justify-content: space-between
+  margin-left: auto
+  margin-right: auto
 
 .music_container
+  width: 400px
+  height: 70px
+  margin: 10px
+  border: 1px solid #000000
+  position: relative
+
+.music_title
+  line-height: 20px
   width: 300px
+  height: 30px
+  font-size: 20px
+  position: absolute
+  top: 10px
+  left: 10px
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+
+.music_artist
+  position: absolute
+  height: 16px
+  line-height: 16px
+  top: 40px
+  left: 10px
+
+@media (max-width: 900px)
+  #music_detail
+
+  #container
+    width: 450px
+    margin-left: -225px
+  #music_list, #local_music_list
+    justify-content: center
 
 #drop
   position: fixed

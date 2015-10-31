@@ -4,24 +4,16 @@ import style from "../template/menu.sass"
 import { Screen } from "./screen"
 import $ from "jquery"
 
+import musicEntryTemplate from "../template/menu-musicentry.jade"
+
 export default class ScreenMenu extends Screen {
   constructor(manager, app) {
     super(manager, app)
   }
   use() {
     style.use()
-    $("body").html(template({music_list: this.app.musicList, local_music_list: this.app.localMusicList}))
-    $("#music_list .music_container").each((i, element) => {
-      const e = $(element)
-      e.click(() => {
-        const music = this.app.musicList[i]
-        const bmsonPath = this.app.serverUrl + "/" + music.basedir + "/" + music.charts[0].file
-        const assetPath = this.app.serverUrl + "/" + music.basedir + "/assets.json"
-        const packedAssets = music.packed_assets
-        const bmsonSetConfig = {path: bmsonPath, packedAssets: packedAssets, assetPath: assetPath}
-        this.manager.changeScreen("game", bmsonSetConfig)
-      })
-    })
+    $("body").html(template())
+    this.app.musicList.forEach((music) => this.addMusicEntry(music))
     $("#drop").click(() => $("#drop").hide())
     $("body").on({
       "dragenter": (e) => {
@@ -97,9 +89,39 @@ export default class ScreenMenu extends Screen {
           local: true
         }
         this.app.localMusicList.push(music)
-        $("body").html(template({music_list: this.app.musicList, local_music_list: this.app.localMusicList}))
+        //$("body").html(template({music_list: this.app.musicList, local_music_list: this.app.localMusicList}))
+        this.addMusicEntryLocal(music)
       }
       reader.readAsText(file)
+    })
+  }
+
+  addMusicEntry(music) {
+    $("#music_list").append(musicEntryTemplate({music: music}))
+    $("#music_list .music_container:last").click(() => {
+      const bmsonSetConfig = {}
+      bmsonSetConfig.path = this.app.serverUrl + "/" + music.basedir + "/" + music.charts[0].file
+      bmsonSetConfig.local = false
+      if(music.packed_assets) {
+        bmsonSetConfig.packedAssets = true
+        bmsonSetConfig.assetPath = this.app.serverUrl + "/" + music.basedir + "/assets.json"
+      } else {
+        bmsonSetConfig.packedAssets = false
+      }
+
+      this.manager.changeScreen("game", bmsonSetConfig)
+    })
+  }
+
+  addMusicEntryLocal(music) {
+    $("#local_music_list").append(musicEntryTemplate({music: music}))
+    $("#local_music_list .music_container:last").click(() => {
+      const bmsonSetConfig = {}
+      bmsonSetConfig.path = music.basedir
+      bmsonSetConfig.local = true
+      bmsonSetConfig.packedAssets = false
+
+      this.manager.changeScreen("game", bmsonSetConfig)
     })
   }
 
