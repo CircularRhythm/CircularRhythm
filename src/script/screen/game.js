@@ -13,7 +13,7 @@ export default class ScreenGame extends Screen {
   use() {
     $("body").html('<canvas id="gameScreen"></canvas>')
     style.use()
-    this.game = new Game(this.bmsonSetConfig, (resultData) => this.endCallback(resultData))
+    this.game = new Game(this.bmsonSetConfig, this.app.localFileList, (resultData) => this.endCallback(resultData))
     this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
     this.gameFramework.start()
     $(window).bind({

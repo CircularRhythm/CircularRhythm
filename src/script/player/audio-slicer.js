@@ -37,6 +37,7 @@ export class AudioSlicer {
         }).then((e) => resolve(e)).catch((e) => reject(e))
       }).then((data) => {
         this.audioContext.decodeAudioData(data, (audioBuffer) => {
+          // TODO: Stop slicing because it's too heavy
           const numberOfChannels = audioBuffer.numberOfChannels
           const sampleRate = audioBuffer.sampleRate
 

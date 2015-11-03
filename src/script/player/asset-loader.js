@@ -1,4 +1,5 @@
 import XHRPromise from "../xhr-promise"
+import { LocalFileLoader } from "../local-file-loader"
 
 export class AssetLoader {
   constructor(parentPath) {
@@ -105,7 +106,17 @@ export class AssetLoaderArchive extends AssetLoader {
 export class AssetLoaderLocal extends AssetLoader {
   constructor(parentPath, localFileList) {
     super(parentPath)
+    console.log()
     this.localFileList = localFileList
+  }
+
+  get(path) {
+    return new Promise((resolve, reject) => {
+      LocalFileLoader.get(this.parentPath + "/" + path, "arraybuffer", this.localFileList).then((data) => resolve(data)).catch((e) => {
+        if(e == "Not found") reject(FileErrorStatus.NOT_FOUND)
+        else reject(FileErrorStatus.UNKNOWN)
+      })
+    })
   }
 }
 

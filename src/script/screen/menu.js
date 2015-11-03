@@ -3,8 +3,11 @@ import style from "../template/menu.sass"
 
 import { Screen } from "./screen"
 import $ from "jquery"
+import { LocalBmsonLoader } from "../local-bmson-loader"
 
 import musicEntryTemplate from "../template/menu-musicentry.jade"
+import musicDetailTemplate from "../template/menu-music-detail.jade"
+import chartDetailTemplate from "../template/menu-chart-detail.jade"
 
 export default class ScreenMenu extends Screen {
   constructor(manager, app) {
@@ -14,6 +17,7 @@ export default class ScreenMenu extends Screen {
     style.use()
     $("body").html(template())
     this.app.musicList.forEach((music) => this.addMusicEntry(music))
+    this.app.localMusicList.forEach((music) => this.addMusicEntryLocal(music))
     $("#drop").click(() => $("#drop").hide())
     $("body").on({
       "dragenter": (e) => {
@@ -48,59 +52,44 @@ export default class ScreenMenu extends Screen {
   }
 
   onDropFiles(dataTransfer) {
-    const that = this
-    // readEntries can list only 100 files
-    function readDirectory(reader, entries) {
-      if(entries.length > 0) {
-        reader.readEntries((entries) => readDirectory(reader, entries))
-      }
-
-      entries.forEach((e, i) => traverse(e))
-    }
-    function traverse(entry) {
-      if(entry.isDirectory) {
-        const reader = entry.createReader()
-        reader.readEntries((entries) => readDirectory(reader, entries))
-      } else {
-        const path = entry.filesystem.name + entry.fullPath
-        that.app.localFileList.set(path, entry)
-        if(entry.name.search(/\.bmson$/) >= 0) {
-          that.addLocalBmson(entry)
-        }
-      }
-    }
-
     const length = dataTransfer.items.length
     for(let i = 0; i < length; i++) {
-      traverse(dataTransfer.items[i].webkitGetAsEntry())
+      const entry = dataTransfer.items[i].webkitGetAsEntry()
+      if(entry.isDirectory) {
+        const loader = new LocalBmsonLoader(this.app.localFileList)
+        loader.load(entry).then((music) => {
+          this.app.localMusicList.push(music)
+          this.addMusicEntryLocal(music)
+        })
+      }
     }
   }
 
-  addLocalBmson(entry) {
-    const path = entry.filesystem.name + entry.fullPath
-    const parentPath = path.replace(/\/[^\/]*$/, "")
-    entry.file((file) => {
-      const reader = new FileReader()
-      reader.onloadend = (event) => {
-        const bmson = JSON.parse(event.target.result)
-        const music = {
-          name: bmson.info.title,
-          basedir: parentPath,
-          local: true
-        }
-        this.app.localMusicList.push(music)
-        //$("body").html(template({music_list: this.app.musicList, local_music_list: this.app.localMusicList}))
-        this.addMusicEntryLocal(music)
+  registerDifficultyButtonEvent(music, i, elem, type) {
+    const e = $(elem)
+    e.click(() => {
+      if(e.hasClass("button-active")) {
+        e.removeClass("button-active")
+        $("#chart-detail").html("")
+        $("#chart-detail").slideUp(300)
+      } else {
+        $("#detail-difficulty-single .button").removeClass("button-active")
+        $("#detail-difficulty-double .button").removeClass("button-active")
+        e.addClass("button-active")
+        $("#chart-detail").html(chartDetailTemplate({type: type, chart: music.charts[type][i]}))
+        $("#chart-detail").slideDown(300)
+        $("#play-button").click(() => this.decideMusic(music, music.charts[type][i]))
       }
-      reader.readAsText(file)
     })
   }
 
-  addMusicEntry(music) {
-    $("#music_list").append(musicEntryTemplate({music: music}))
-    $("#music_list .music_container:last").click(() => {
-      const bmsonSetConfig = {}
-      bmsonSetConfig.path = this.app.serverUrl + "/" + music.basedir + "/" + music.charts[0].file
+  decideMusic(music, chart) {
+    const bmsonSetConfig = {}
+    if(music.local) {
+      bmsonSetConfig.path = music.basedir + "/" + chart.file
+      bmsonSetConfig.local = true
+    } else {
+      bmsonSetConfig.path = this.app.serverUrl + "/" + music.basedir + "/" + chart.file
       bmsonSetConfig.local = false
       if(music.packed_assets) {
         bmsonSetConfig.packedAssets = true
@@ -108,20 +97,30 @@ export default class ScreenMenu extends Screen {
       } else {
         bmsonSetConfig.packedAssets = false
       }
+    }
 
-      this.manager.changeScreen("game", bmsonSetConfig)
+    this.manager.changeScreen("game", bmsonSetConfig)
+  }
+
+  addMusicEntry(music) {
+    $("#music-list").append(musicEntryTemplate({music: music}))
+    $("#music-list .music-container:last").click(() => {
+      $("#chart-detail").html("")
+      $("#chart-detail").slideUp(300)
+      $("#music-detail").html(musicDetailTemplate({music: music}))
+      $("#detail-difficulty-single .button").each((i, elem) => this.registerDifficultyButtonEvent(music, i, elem, "single"))
+      $("#detail-difficulty-double .button").each((i, elem) => this.registerDifficultyButtonEvent(music, i, elem, "double"))
     })
   }
 
   addMusicEntryLocal(music) {
-    $("#local_music_list").append(musicEntryTemplate({music: music}))
-    $("#local_music_list .music_container:last").click(() => {
-      const bmsonSetConfig = {}
-      bmsonSetConfig.path = music.basedir
-      bmsonSetConfig.local = true
-      bmsonSetConfig.packedAssets = false
-
-      this.manager.changeScreen("game", bmsonSetConfig)
+    $("#local-music-list").append(musicEntryTemplate({music: music}))
+    $("#local-music-list .music-container:last").click(() => {
+      $("#chart-detail").html("")
+      $("#chart-detail").slideUp(300)
+      $("#music-detail").html(musicDetailTemplate({music: music}))
+      $("#detail-difficulty-single .button").each((i, elem) => this.registerDifficultyButtonEvent(music, i, elem, "single"))
+      $("#detail-difficulty-double .button").each((i, elem) => this.registerDifficultyButtonEvent(music, i, elem, "double"))
     })
   }
 
