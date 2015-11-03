@@ -1,0 +1,17 @@
+.banner
+.preview
+  audio(controls)
+.genre= music.genre
+.title= music.title
+.artist= music.artist
+.subartist
+.vr
+.difficulty
+  .label Single
+  #detail-difficulty-single.button-container
+    for e in music.charts.single
+      .button= e.level
+  .label Double
+  #detail-difficulty-double.button-container
+    for e in music.charts.double
+      .button= e.level

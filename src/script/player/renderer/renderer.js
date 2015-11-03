@@ -1,10 +1,14 @@
-import { NoteShort, NoteLong } from "./note"
-import { JudgeState } from "./judge-state"
-import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
+import { NoteShort, NoteLong } from "../note"
+import { JudgeState } from "../judge-state"
+import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "../bar-speed-change-event"
+import { ConicalGradient } from "./conical-gradient"
+import $ from "jquery"
 
 export class Renderer {
-  constructor(game) {
+  constructor(game, framework) {
     this.game = game
+    this.buffer = framework.createCanvasBuffer(800, 600, "gameScreenBuffer")
+    this.buffer2 = framework.createCanvasBuffer(800, 600, "gameScreenBuffer2")
   }
 
   render(g, controller) {
@@ -19,7 +23,6 @@ export class Renderer {
     g.arc(400, 300, beaterSize, Math.PI * 2, false)
     g.fill()
 
-    g.shadowBlur = 0
     g.fillStyle = "#FFFFFF"
     g.beginPath()
     g.arc(400, 300, 70, Math.PI * 2, false)
@@ -98,10 +101,6 @@ export class Renderer {
       }
     })
 
-    if(player.barMovingSpeedChangeEvent && player.barMovingSpeedChangeEvent.show) {
-    }
-
-
     const lineRadian = this.positionToRadian(player.currentPosition)
     g.strokeStyle = "#000000"
     g.lineWidth = 5
@@ -129,6 +128,7 @@ export class Renderer {
     g.fillText(player.currentY, 0, 80)
     g.fillText(player.supportLineVisibleEndY, 0, 100)
     g.fillText(player.judgeStats, 0, 120)
+
   }
 
   getJudgeColor(judge) {

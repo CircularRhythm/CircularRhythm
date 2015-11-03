@@ -1,9 +1,208 @@
-#music_list
-  margin: 20px
+@mixin ellipsis()
+  overflow: hidden
+  white-space: nowrap
+  text-overflow: ellipsis
+
+@mixin absolute($left, $top, $width, $height)
+  position: absolute
+  top: #{$top}px
+  left: #{$left}px
+  width: #{$width}px
+  height: #{$height}px
+
+@mixin font-size($size)
+  font-size: #{$size}px
+  line-height: #{$size}px
+
+$shadow-style: 0 0 5px 1px #A0A0A0
+
+body
+  background-color: #F0F0FF
+
+#music-detail
+  position: fixed
+  width: 900px
+  height: 120px
+  top: 20px
+  left: 50%
+  margin-left: -450px
+  z-index: 2
+  background-color: #FFFFFF
+  border-radius: 5px
+  box-shadow: $shadow-style
+  color: #000000
+
+  .no-music
+    @include absolute(0, 45, 900, 30)
+    @include font-size(30)
+    text-align: center
+
+  .banner
+    @include absolute(10, 10, 200, 53)
+    background-color: #000000
+  .preview
+    @include absolute(10, 80, 200, 30)
+    audio
+      width: 200px
+
+  .genre
+    @include absolute(220, 10, 470, 20)
+    @include font-size(16)
+    @include ellipsis()
+  .title
+    @include absolute(220, 30, 470, 32)
+    @include font-size(28)
+    @include ellipsis()
+  .artist
+    @include absolute(220, 64, 470, 20)
+    @include font-size(16)
+    @include ellipsis()
+  .subartist
+    @include absolute(220, 88, 470, 20)
+    @include font-size(16)
+    @include ellipsis()
+    border-top: 1px solid #000000
+    padding-top: 5px
+    .key
+      font-size: 12px
+      margin-right: 5px
+    .name
+      margin-right: 10px
+
+  .difficulty
+    @include absolute(710, 10, 180, 100)
+    .label
+      @include font-size(12)
+      height: 16px
+
+    .button-container
+      display: flex
+      flex-flow: row nowrap
+      margin-bottom: 14px
+      height: 25px
+      line-height: 25px
+
+      .button
+        cursor: pointer
+        flex-grow: 1
+        text-align: center
+        border: 1px solid #000000
+        &:first-child
+          border-top-left-radius: 3px
+          border-bottom-left-radius: 3px
+        &:last-child
+          border-top-right-radius: 3px
+          border-bottom-right-radius: 3px
+        &:hover
+          background-color: #F0F0F0
+      .button-active
+        background-color: #E0E0E0
+
+  .vr
+    @include absolute(700, 15, 1, 90)
+    background-color: #000000
+
+#chart-detail
+  position: fixed
+  width: 850px
+  height: 120px
+  top: 140px
+  left: 50%
+  margin-left: -425px
+  z-index: 1
+  background-color: #FFFFFF
+  border-bottom-left-radius: 5px
+  border-bottom-right-radius: 5px
+  box-shadow: $shadow-style
+  color: #000000
+  .type
+    @include absolute(10, 10, 150, 30)
+    @include font-size(16)
+  .difficulty
+    @include absolute(10, 30, 150, 30)
+    @include font-size(16)
+  .level
+    @include absolute(10, 50, 150, 30)
+    @include font-size(16)
+  .bpm
+    @include absolute(10, 70, 150, 30)
+    @include font-size(16)
+  .notes
+    @include absolute(10, 90, 150, 30)
+    @include font-size(16)
+  .title
+    @include absolute(170, 45, 600, 36)
+    @include font-size(24)
+  #play-button
+    @include absolute(760, 50, 80, 60)
+    cursor: pointer
+    border: 1px solid #000000
+    border-radius: 5px
+    background-color: #00FF00
+    line-height: 60px
+    font-size: 20px
+    text-align: center
+    text-shadow: 0px 0px 5px #FFFFFF
+
+#container
+  position: absolute
+  top: 150px
+  left: 50%
+  width: 900px
+  margin-left: -450px
+
+#music-list, #local-music-list
+  padding: 0px 30px
   display: flex
   flex-direction: row
   flex-wrap: wrap
   justify-content: space-between
+  margin-left: auto
+  margin-right: auto
 
-.music_container
-  width: 300px
+  .music-container
+    width: 400px
+    height: 70px
+    margin: 10px
+    position: relative
+    background-color: #FFFFFF
+    border-radius: 5px
+    box-shadow: $shadow-style
+    color: #000000
+    cursor: pointer
+
+  .title
+    line-height: 20px
+    width: 300px
+    height: 30px
+    font-size: 20px
+    position: absolute
+    top: 10px
+    left: 10px
+    @include ellipsis()
+
+  .artist
+    position: absolute
+    height: 14px
+    line-height: 14px
+    font-size: 14px
+    top: 45px
+    left: 10px
+
+//@media (max-width: 900px)
+  #music_detail
+
+  #container
+    width: 450px
+    margin-left: -225px
+  #music_list, #local_music_list
+    justify-content: center
+
+#drop
+  position: fixed
+  top: 0px
+  left: 0px
+  width: 100%
+  height: 100%
+  z-index: 100
+  background-color: rgba(0, 0, 0, 0.4)

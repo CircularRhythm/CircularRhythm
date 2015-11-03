@@ -29,6 +29,8 @@ export class GameFramework {
     this.onResize()
     this.startTime = this.timer.now()
 
+    this.game.start(this)
+
     console.log("Game started.")
 
     window.requestAnimationFrame(() => this.update())
@@ -45,9 +47,7 @@ export class GameFramework {
 
     this.input.update()
 
-    this.g.fillStyle = "#FFFFFF"
-    this.g.rect(0, 0, this.width, this.height)
-    this.g.fill()
+    this.g.clearRect(0, 0, this.width, this.height)
 
     this.game.update(this)
 
@@ -59,6 +59,12 @@ export class GameFramework {
     this.currentFps = this.accumulateFps / (now - this.accumulateStartTime) * 1000
     this.accumulateFps = 0
     this.accumulateStartTime = now
+  }
+
+  createCanvasBuffer(width, height, id) {
+    $("body").append(`<canvas id="${id}" width="${width}" height="${height}"/>`)
+    $("#" + id).hide()
+    return $("#" + id)[0].getContext("2d")
   }
 
   onResize() {

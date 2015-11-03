@@ -242,7 +242,7 @@ export class Player {
           if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
         }
       }
-      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x < 1 || 4 < note.x))
+      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || 4 < note.x))
       playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
 
     }

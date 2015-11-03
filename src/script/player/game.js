@@ -1,39 +1,51 @@
-import XHRPromise from "./xhr-promise"
-import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
+import XHRPromise from "../xhr-promise"
+import { LocalFileLoader } from "../local-file-loader"
+import { AssetLoader, AssetLoaderArchive, AssetLoaderLocal } from "./asset-loader"
 import { Player } from "./player"
-import { Renderer } from "./renderer"
+import { Renderer } from "./renderer/renderer"
 export class Game {
-  constructor(bmsonSetConfig, endCallback) {
+  constructor(bmsonSetConfig, localFileList, endCallback) {
     this.bmsonSetConfig = bmsonSetConfig
     this.bmsonPath = bmsonSetConfig.path
     this.assetPath = bmsonSetConfig.assetPath
     this.packedAssets = bmsonSetConfig.packedAssets
+    this.local = bmsonSetConfig.local
+    this.localFileList = localFileList
     this.endCallback = endCallback
+  }
 
+  start(framework) {
     const parentPath = this.bmsonPath.replace(/\/[^\/]*$/, "")
     const promises = []
-    promises.push(
-      XHRPromise.send({
-        url: this.bmsonPath,
-        responseType: "json"
-      })
-    )
-    if(this.packedAssets) promises.push(
-      XHRPromise.send({
-        url: this.assetPath,
-        responseType: "json"
-      })
-    )
+    if(this.local) {
+      promises.push(
+        LocalFileLoader.get(this.bmsonPath, "json", this.localFileList)
+      )
+    } else {
+      promises.push(
+        XHRPromise.send({
+          url: this.bmsonPath,
+          responseType: "json"
+        })
+      )
+      if(this.packedAssets) promises.push(
+        XHRPromise.send({
+          url: this.assetPath,
+          responseType: "json"
+        })
+      )
+    }
     Promise.all(promises).then((result) => {
       let assetLoader
-      if(this.packedAssets) assetLoader = new AssetLoaderArchive(parentPath, result[1])
+      if(this.local) assetLoader = new AssetLoaderLocal(parentPath, this.localFileList)
+      else if(this.packedAssets) assetLoader = new AssetLoaderArchive(parentPath, result[1])
       else assetLoader = new AssetLoader(parentPath)
       const bmsonSet = {
         bmson: result[0],
         assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
-      this.renderer = new Renderer(this)
+      this.renderer = new Renderer(this, framework)
 
       this.player.init().then(() => {
         this.state = States.READY

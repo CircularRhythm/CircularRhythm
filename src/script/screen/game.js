@@ -1,7 +1,9 @@
+import style from "../template/game.sass"
+
 import { Screen } from "./screen"
 import $ from "jquery"
-import { GameFramework } from "../game-framework"
-import { Game } from "../game"
+import { GameFramework } from "../framework/game-framework"
+import { Game } from "../player/game"
 
 export default class ScreenGame extends Screen {
   constructor(manager, app, bmsonSetConfig) {
@@ -10,7 +12,8 @@ export default class ScreenGame extends Screen {
   }
   use() {
     $("body").html('<canvas id="gameScreen"></canvas>')
-    this.game = new Game(this.bmsonSetConfig, (resultData) => this.endCallback(resultData))
+    style.use()
+    this.game = new Game(this.bmsonSetConfig, this.app.localFileList, (resultData) => this.endCallback(resultData))
     this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
     this.gameFramework.start()
     $(window).bind({
@@ -22,6 +25,7 @@ export default class ScreenGame extends Screen {
 
   unuse() {
     $("body").html("")
+    style.unuse()
     $(window).unbind("resize keydown keyup")
   }
 

@@ -26,9 +26,9 @@ export default class ScreenLoading extends Screen {
         console.log(json)
         resolve(json)
       }).catch((e) => {
-        console.error("Error connecting to server: " + serverUrl)
+        console.error("Error connecting to server: " + this.app.serverUrl)
         $("#loading").text("An error occured while loading")
-        $("#error").text("Cannot connect to server: " + serverUrl)
+        $("#error").text("Cannot connect to server: " + this.app.serverUrl)
       })
     }).then((musicList) => {
       this.app.musicList = musicList
