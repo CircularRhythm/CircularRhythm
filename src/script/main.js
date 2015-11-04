@@ -32,9 +32,9 @@ class CircularRhythm {
       switch(screenParam) {
         case "game":
           this.screenManager.changeScreen("game", {
-            path: this.serverUrl + "/flicknote_onlylove_remix/onlylove_remix.bmson",
-            assetPath: this.serverUrl + "/flicknote_onlylove_remix/assets.json",
-            packedAssets: true,
+            path: this.serverUrl + "/test/test.bmson",
+            assetPath: this.serverUrl + "/test/assets.json",
+            packedAssets: false,
             local: false
           })
           break

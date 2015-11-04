@@ -16,8 +16,12 @@ export class Player {
     this.assetLoader = bmsonSet.assetLoader
     this.bmsonLoader = new BmsonLoader(this.bmson)
     this.parentPath = parentPath
-    this.keyConfig = [72, 74, 75, 76]
+    this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
     this.keyFlashing = [0, 0, 0, 0]
+
+    this.playMode = 2
+    this.lanes = this.playMode * 4 + 1
+    this.specialLane = this.playMode * 4 + 1
 
     this.audioContext = new AudioContext()
 
@@ -34,6 +38,8 @@ export class Player {
     this.visibleEndY = 0
     this.visibleEndPosition = 0.7
     this.visibleEndTime = 0
+
+    this.specialLaneDuration = 750
 
     this.supportLineVisibleEndY = 0
 
@@ -70,7 +76,7 @@ export class Player {
     // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
-    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels)
+    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
 
     this.unitPosition = 0
 
@@ -93,7 +99,8 @@ export class Player {
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
     this.soundChannels.forEach((e, i) => {
-      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= 4))
+      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1))
+      this.visibleNotes.set(i, e.notes.filter((note) => note.time < this.specialLaneDuration && note.x == this.specialLane))
     })
 
     this.currentBarLine = this.barLines[0]
@@ -109,10 +116,10 @@ export class Player {
     this.lastTime = nowTime
     this.currentTime += delta
 
-    for(let i = 0; i < 4; i++) {
+    for(let i = 0; i < this.lanes; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
-      if(input.isPressed(this.keyConfig[i])) this.keyFlashing[i] = 1
+      if(this.isPressed(i, input)) this.keyFlashing[i] = 1
     }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
@@ -194,8 +201,10 @@ export class Player {
 
     // Add notes which to be visible
     this.soundChannels.forEach((channel, i) => {
-      const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= 4)
+      const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1)
       Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotes)
+      const newVisibleNotesSpecial = channel.notes.filter((note) => this.currentTime + this.specialLaneDuration - delta <= note.time && note.time < this.currentTime + this.specialLaneDuration && note.x == this.specialLane)
+      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotesSpecial)
     })
 
     // Erase notes which is already judged
@@ -230,7 +239,7 @@ export class Player {
     })
     for(let channel of this.soundChannels) {
       // Assign new targets
-      const newTargets = channel.notes.filter((note) => note.time - this.currentTime < 1000 && note.judgeState == JudgeState.NO && 1 <= note.x && note.x <= 4)
+      const newTargets = channel.notes.filter((note) => note.time - this.currentTime < 1000 && note.judgeState == JudgeState.NO && 1 <= note.x && note.x <= this.lanes)
       for(let note of newTargets) {
         const x = note.x
         const target = this.targetNotes.get(x)
@@ -242,13 +251,12 @@ export class Player {
           if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
         }
       }
-      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || 4 < note.x))
+      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || this.lanes < note.x))
       playSoundNotes.forEach((note) => note.sliceData.play(this.audioContext))
     }
 
     // Judge
-    for(let i = 0; i < 4; i++) {
-      const button = this.keyConfig[i]
+    for(let i = 0; i < this.lanes; i++) {
       const x = i + 1
       const target = this.targetNotes.get(x)
       let note
@@ -261,7 +269,7 @@ export class Player {
       if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
         // Miss
         if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
-        else if(input.isJustPressed(button)) {
+        else if(this.isJustPressed(i, input)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.judgeShortNote(note, judge)
           note.sliceData.play(this.audioContext)
@@ -270,7 +278,7 @@ export class Player {
       if(note instanceof NoteLong) {
         // Miss
         if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
-        else if(input.isJustPressed(button)) {
+        else if(this.isJustPressed(i, input)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.firstJudgeLongNote(note, judge)
           note.sliceData.play(this.audioContext)
@@ -278,7 +286,7 @@ export class Player {
 
         if(note.active) {
           if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
-          else if(input.isJustReleased(button)) {
+          else if(this.isJustReleased(i, input)) {
             const judge = this.getSecondJudge(this.currentTime - note.endTime)
             this.secondJudgeLongNote(note, judge)
             if(!judge) note.sliceData.stop()
@@ -351,6 +359,30 @@ export class Player {
       this.combo = 0
       this.judgeStats[JudgeState.BAD] ++
       this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
+    }
+  }
+
+  isJustPressed(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isJustPressed(this.keyConfig[lane]) || input.isJustPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 2) {
+      return input.isJustPressed(this.keyConfig[lane])
+    }
+  }
+
+  isPressed(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isPressed(this.keyConfig[lane]) || input.isPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 2) {
+      return input.isPressed(this.keyConfig[lane])
+    }
+  }
+
+  isJustReleased(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isJustReleased(this.keyConfig[lane]) || input.isJustReleased(this.keyConfig[lane + 4])
+    } else {
+      return input.isJustReleased(this.keyConfig[lane])
     }
   }
 }

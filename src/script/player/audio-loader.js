@@ -10,6 +10,7 @@ export class AudioLoader {
   }
 
   loadAudio() {
+    // TODO: EACH SLICE has a polyphony of 1
     const promises = []
     this.soundChannels.forEach((channel, i) => promises.push(new Promise((resolve, reject) => {
       new Promise((resolve, reject) => {

@@ -2,6 +2,7 @@ import { PlayerUtil } from "./player-util"
 import { Note, NoteShort, NoteLong } from "./note"
 import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
 
+// TODO: Exclude long special
 export class BmsonLoader {
   constructor(bmson) {
     this.bmson = bmson
@@ -256,10 +257,15 @@ export class BmsonLoader {
     }
   }
 
-  getNumberOfNotes(soundChannels) {
+  getNumberOfNotes(soundChannels, playMode) {
     let number = 0
     soundChannels.forEach((channel) => {
-      const notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 4)
+      let notes
+      if(playMode == 1) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 5)
+      } else if(playMode == 2) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 9)
+      }
       number += notes.length
     })
     return number
