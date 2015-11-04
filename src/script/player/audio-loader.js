@@ -1,6 +1,7 @@
 import { AssetLoader, FileErrorStatus } from "./asset-loader"
+import { SliceData } from "./slice-data"
 
-export class AudioSlicer {
+export class AudioLoader {
   constructor(audioContext, assetLoader, soundChannels) {
     this.audioContext = audioContext
     this.assetLoader = assetLoader
@@ -37,9 +38,9 @@ export class AudioSlicer {
         }).then((e) => resolve(e)).catch((e) => reject(e))
       }).then((data) => {
         this.audioContext.decodeAudioData(data, (audioBuffer) => {
-          // TODO: Stop slicing because it's too heavy
-          const numberOfChannels = audioBuffer.numberOfChannels
-          const sampleRate = audioBuffer.sampleRate
+          // Duration is millisecond-base
+          channel.audioBuffer = audioBuffer
+          const audioDuration = audioBuffer.duration * 1000
 
           let audioStartTime = 0
           if(channel.notes.length > 0 && channel.notes[0].c == true) {
@@ -47,26 +48,25 @@ export class AudioSlicer {
           }
           for(let i = 0; i < channel.notes.length; i++) {
             const note = channel.notes[i]
-            const noteStartTime = note.time
+            const noteTime = note.time
             if(note.c == false) {
-              audioStartTime = noteStartTime
+              audioStartTime = noteTime
             }
-            const sliceStartTime = noteStartTime - audioStartTime
-            const sliceStartSample = sampleRate * sliceStartTime / 1000
+            const sliceStartTime = noteTime - audioStartTime
+            let sliceEndTime
 
-            let sliceEndSample
-            if(sliceStartSample >= audioBuffer.length) {
-              console.warn(`There is a note data which has to slice out of audio length, y=${note.y}, sliceTime=${sliceStartTime}, audioLength=${audioBuffer.length}`)
-              const buffer = this.audioContext.createBuffer(numberOfChannels, 1, sampleRate)
-              note.audioBuffer = buffer
+            if(sliceStartTime >= audioDuration) {
+              console.warn("Slicing started at out of audio duration")
+              note.sliceData = null
             } else {
               let addIndex = 0
               let reachEnd = false
+              // search next time note
               while(channel.notes[i + addIndex].y <= note.y) {
                 addIndex ++
                 if(i + addIndex >= channel.notes.length) {
                   // If there is no next note
-                  sliceEndSample = audioBuffer.length - 1
+                  sliceEndTime = audioDuration
                   reachEnd = true
                   break
                 }
@@ -75,19 +75,12 @@ export class AudioSlicer {
                 // If there is a next note
                 const nextNote = channel.notes[i + addIndex]
                 const nextNoteTime = nextNote.time
-                const sliceEndTime = nextNoteTime - audioStartTime
-                sliceEndSample = sampleRate * sliceEndTime / 1000
+                sliceEndTime = nextNoteTime - audioStartTime
               }
 
-              const sliceSampleLength = sliceEndSample - sliceStartSample
-              const slicedAudioBuffer = this.audioContext.createBuffer(numberOfChannels, sliceSampleLength, sampleRate)
-              for(let c = 0; c < numberOfChannels; c++) {
-                // Copy buffer from whole source
-                const array = new Float32Array(sliceSampleLength)
-                audioBuffer.copyFromChannel(array, c, sliceStartSample)
-                slicedAudioBuffer.copyToChannel(array, c)
-              }
-              note.audioBuffer = slicedAudioBuffer
+              const sliceDuration = sliceEndTime - sliceStartTime
+
+              note.sliceData = new SliceData(audioBuffer, sliceStartTime, sliceDuration)
             }
           }
           resolve()

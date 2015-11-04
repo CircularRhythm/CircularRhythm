@@ -1,7 +1,7 @@
 import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
 import { Note, NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
-import { AudioSlicer } from "./audio-slicer"
+import { AudioLoader } from "./audio-loader"
 import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
@@ -67,7 +67,7 @@ export class Player {
     this.visibleBarSpeedChangeList = []
     this.barMovingSpeedChangeEvent = null
 
-    // [{name: String, notes: [Note]}]
+    // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
     this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels)
@@ -81,7 +81,7 @@ export class Player {
 
   init() {
     return new Promise((resolve, reject) => {
-      new AudioSlicer(this.audioContext, this.assetLoader, this.soundChannels).loadAudio().then(() => resolve())
+      new AudioLoader(this.audioContext, this.assetLoader, this.soundChannels).loadAudio().then(() => resolve())
     })
   }
 
@@ -243,8 +243,7 @@ export class Player {
         }
       }
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || 4 < note.x))
-      playSoundNotes.forEach((note) => this.noteOn(channel.name, note))
-
+      playSoundNotes.forEach((note) => note.sliceData.play(this.audioContext))
     }
 
     // Judge
@@ -265,7 +264,7 @@ export class Player {
         else if(input.isJustPressed(button)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.judgeShortNote(note, judge)
-          this.noteOn(target.name, note)
+          note.sliceData.play(this.audioContext)
         }
       }
       if(note instanceof NoteLong) {
@@ -274,7 +273,7 @@ export class Player {
         else if(input.isJustPressed(button)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.firstJudgeLongNote(note, judge)
-          this.noteOn(target.name, note)
+          note.sliceData.play(this.audioContext)
         }
 
         if(note.active) {
@@ -282,7 +281,7 @@ export class Player {
           else if(input.isJustReleased(button)) {
             const judge = this.getSecondJudge(this.currentTime - note.endTime)
             this.secondJudgeLongNote(note, judge)
-            if(!judge) this.noteOff(target.name)
+            if(!judge) note.sliceData.stop()
           }
         }
       }
@@ -297,22 +296,6 @@ export class Player {
       numberOfNotes: this.numberOfNotes,
       score: Math.ceil(this.score)
     })
-  }
-
-  noteOn(channelName, note) {
-    const channel = this.soundChannels.find((channel) => channel.name == channelName)
-    if(channel.source != null) channel.source.stop()
-    const source = this.audioContext.createBufferSource()
-    source.buffer = note.audioBuffer
-    source.connect(this.audioContext.destination)
-    source.start(0)
-    channel.source = source
-  }
-
-  noteOff(channelName) {
-    const channel = this.soundChannels.find((channel) => channel.name == channelName)
-    if(channel.source != null) channel.source.stop()
-    channel.source = null
   }
 
   // currentTime - noteTime; Early : <0, Slow: >0

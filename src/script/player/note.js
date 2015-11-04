@@ -11,7 +11,7 @@ export class Note {
     this.judgeState = JudgeState.NO
     this.targetable = true
 
-    this.audioBuffer = null
+    this.sliceData = null
   }
 }
 

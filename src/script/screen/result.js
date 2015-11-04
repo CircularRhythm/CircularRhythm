@@ -15,6 +15,7 @@ export default class ScreenMenu extends Screen {
     $("#return_menu").click(() => {
       this.manager.changeScreen("menu")
     })
+    if(typeof twttr !== "undefined") twttr.widgets.load()
   }
 
   unuse() {
