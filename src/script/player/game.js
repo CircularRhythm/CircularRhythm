@@ -12,6 +12,10 @@ export class Game {
     this.local = bmsonSetConfig.local
     this.localFileList = localFileList
     this.endCallback = endCallback
+
+    this.fieldWidth = 800
+    this.fieldHeight = 600
+    this.belowHeight = null
   }
 
   start(framework) {
@@ -56,6 +60,9 @@ export class Game {
 
   update(framework) {
     const g = framework.g
+    const scale = Math.min(framework.width / this.fieldWidth, framework.height / this.fieldHeight)
+    const translateX = (framework.width - this.fieldWidth * scale) / 2 / scale
+    this.belowHeight = (framework.height - this.fieldHeight * scale) / scale
 
     switch(this.state) {
       case States.LOADING:
@@ -72,7 +79,8 @@ export class Game {
         }
 
         g.save()
-        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
+        g.scale(scale, scale)
+        g.translate(translateX, 0)
 
         this.renderer.render(g, this.controller)
 
@@ -80,7 +88,8 @@ export class Game {
         break
       case States.IN_GAME:
         g.save()
-        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
+        g.scale(scale, scale)
+        g.translate(10, 0)
 
         this.player.update(framework.input)
         this.renderer.render(g)

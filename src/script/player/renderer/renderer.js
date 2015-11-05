@@ -16,44 +16,83 @@ export class Renderer {
     const player = this.game.player
 
     g.strokeStyle = "#000000"
+    g.beginPath()
     g.rect(0, 0, 800, 600)
     g.stroke()
 
     if(player.playMode == 1) {
       g.save()
-      g.translate(400, 300)
+      g.translate(400, 120)
       this.renderUnit(g, controller, 0)
       g.restore()
     } else if(player.playMode == 2) {
       g.save()
-      g.translate(210, 300)
+      g.translate(215, 220)
       this.renderUnit(g, controller, 0)
       g.restore()
       g.save()
-      g.translate(590, 300)
+      g.translate(585, 220)
       this.renderUnit(g, controller, 1)
       g.restore()
     }
 
     g.fillStyle = "#000000"
-    g.textAlign = "center"
+    g.textAlign = "left"
+    g.textBaseline = "top"
     g.font = "32px sans-serif"
-    g.fillText(player.combo, 400, 312)
+    g.fillText("80.0%", 20, 20)
 
-    g.fillText(Math.ceil(player.score), 400, 100)
+    g.fillStyle = "#000000"
+    g.textAlign = "right"
+    g.textBaseline = "top"
+    g.font = "32px sans-serif"
+    g.fillText(Math.ceil(player.score), 780, 20)
+
+    g.fillStyle = "#000000"
+    g.textAlign = "right"
+    g.textBaseline = "bottom"
+    g.font = "16px sans-serif"
+    g.fillText("0:00/2:30", 780, 440)
 
     g.fillStyle = "#000000"
     g.textAlign = "center"
+    g.textBaseline = "top"
     g.font = "32px sans-serif"
     g.fillText(player.currentBpm, 400, 500)
 
-    g.fillStyle = "#000000"
+
+    g.fillStyle = "#FF8800"
+    g.beginPath()
+    g.rect(0, 0, 10, 440)
+    g.fill()
+
+    g.fillStyle = "#00FF00"
+    g.beginPath()
+    g.rect(790, 0, 10, 440)
+    g.fill()
+
+    g.fillStyle = "#00FFFF"
+    g.beginPath()
+    g.rect(0, 440, 800, 10)
+    g.fill()
+
+    g.fillStyle = "#C0C0C0"
+    g.beginPath()
+    g.rect(0, 450, 800, 150)
+    g.fill()
+
+    g.fillStyle = "#909090"
+    g.beginPath()
+    g.rect(0, 600, 800, this.game.belowHeight)
+    g.fill()
+
+    /*g.fillStyle = "#000000"
     g.textAlign = "left"
     g.font = "12px sans-serif"
     g.fillText(player.currentTime, 0, 60)
     g.fillText(player.currentY, 0, 80)
     g.fillText(player.supportLineVisibleEndY, 0, 100)
-    g.fillText(player.judgeStats, 0, 120)
+    g.fillText(player.judgeStats, 0, 120)*/
   }
 
   renderUnit(g, controller, playerNum) {
@@ -167,5 +206,11 @@ export class Renderer {
     g.moveTo(0, 0)
     g.lineTo(Math.cos(lineRadian) * 160, Math.sin(lineRadian) * 160)
     g.stroke()
+
+    g.fillStyle = "#000000"
+    g.textAlign = "center"
+    g.textBaseline = "middle"
+    g.font = "32px sans-serif"
+    g.fillText(player.combo, 0, 0)
   }
 }
