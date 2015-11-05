@@ -99,8 +99,10 @@ export class Player {
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
     this.soundChannels.forEach((e, i) => {
-      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1))
-      this.visibleNotes.set(i, e.notes.filter((note) => note.time < this.specialLaneDuration && note.x == this.specialLane))
+      const firstVisibleNotes = []
+      Array.prototype.push.apply(firstVisibleNotes, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1))
+      Array.prototype.push.apply(firstVisibleNotes, e.notes.filter((note) => note.time < this.specialLaneDuration && note.x == this.specialLane))
+      this.visibleNotes.set(i, firstVisibleNotes)
     })
 
     this.currentBarLine = this.barLines[0]
@@ -251,7 +253,7 @@ export class Player {
           if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
         }
       }
-      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || this.lanes < note.x))
+      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x <= 0 || this.lanes < note.x))
       playSoundNotes.forEach((note) => note.sliceData.play(this.audioContext))
     }
 
