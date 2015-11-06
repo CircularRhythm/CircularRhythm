@@ -9,11 +9,12 @@ export default class ScreenGame extends Screen {
   constructor(manager, app, bmsonSetConfig) {
     super(manager, app)
     this.bmsonSetConfig = bmsonSetConfig
+    this.colorScheme = app.currentColorScheme
   }
   use() {
     $("body").html('<canvas id="gameScreen"></canvas>')
     style.use()
-    this.game = new Game(this.bmsonSetConfig, this.app.localFileList, (resultData) => this.endCallback(resultData))
+    this.game = new Game(this.bmsonSetConfig, this.app.localFileList, this.colorScheme, (resultData) => this.endCallback(resultData))
     this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
     this.gameFramework.start()
     $(window).bind({

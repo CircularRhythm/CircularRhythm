@@ -4,10 +4,12 @@ import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop 
 import { ConicalGradient } from "./conical-gradient"
 import { RenderUtil } from "./render-util"
 import $ from "jquery"
+import { ColorScheme } from "./color-scheme"
 
 export class Renderer {
-  constructor(game, framework) {
+  constructor(game, framework, colorScheme) {
     this.game = game
+    this.colorScheme = colorScheme
     /*this.buffer = framework.createCanvasBuffer(800, 600, "gameScreenBuffer")
     this.buffer2 = framework.createCanvasBuffer(800, 600, "gameScreenBuffer2")*/
   }
@@ -112,13 +114,13 @@ export class Renderer {
     g.arc(0, 0, 70, Math.PI * 2, false)
     g.fill()
 
-    RenderUtil.drawLaneCircle(g, 0, 0, 70, player.keyFlashing[playerNum * 4])
-    RenderUtil.drawLaneCircle(g, 0, 0, 100, player.keyFlashing[playerNum * 4 + 1])
-    RenderUtil.drawLaneCircle(g, 0, 0, 130, player.keyFlashing[playerNum * 4 + 2])
-    RenderUtil.drawLaneCircle(g, 0, 0, 160, player.keyFlashing[playerNum * 4 + 3])
+    this.drawLaneCircle(g, 0, 0, 70, player.keyFlashing[playerNum * 4])
+    this.drawLaneCircle(g, 0, 0, 100, player.keyFlashing[playerNum * 4 + 1])
+    this.drawLaneCircle(g, 0, 0, 130, player.keyFlashing[playerNum * 4 + 2])
+    this.drawLaneCircle(g, 0, 0, 160, player.keyFlashing[playerNum * 4 + 3])
 
     player.visibleSupportLines.forEach((e) => {
-      const radian = RenderUtil.positionToRadian(e.position)
+      const radian = this.positionToRadian(e.position)
       g.strokeStyle = RenderUtil.getLineColor(e.type)
       if(e.type == 1) {
         g.lineWidth = 2
@@ -139,14 +141,14 @@ export class Renderer {
         if(note instanceof NoteLong && note.endY > player.currentY) {
           const startPosition = note.y > player.currentY ? note.position : player.currentPosition
           const endPosition = note.endY < player.visibleEndY ? note.endPosition : player.visibleEndPosition
-          const startRadian = RenderUtil.positionToRadian(startPosition)
-          const endRadian = RenderUtil.positionToRadian(endPosition)
+          const startRadian = this.positionToRadian(startPosition)
+          const endRadian = this.positionToRadian(endPosition)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
             RenderUtil.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, note.lineActive)
           }
         }
         if(note instanceof NoteShort) {
-          const radian = RenderUtil.positionToRadian(note.position)
+          const radian = this.positionToRadian(note.position)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
             RenderUtil.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
           }
@@ -163,7 +165,7 @@ export class Renderer {
           }
         }
         if(note instanceof NoteLong) {
-          const noteHeadRadian = RenderUtil.positionToRadian(note.noteHeadPosition)
+          const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadEraseTimer < 500) {
             RenderUtil.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
           }
@@ -172,7 +174,7 @@ export class Renderer {
     })
 
     player.visibleBarSpeedChangeList.forEach((e, i) => {
-      const speedChangeLineRadian = RenderUtil.positionToRadian(e.position)
+      const speedChangeLineRadian = this.positionToRadian(e.position)
       switch(e.type) {
         case "stop":
           g.strokeStyle = "#888888"
@@ -191,7 +193,7 @@ export class Renderer {
       g.stroke()
 
       if(e.showMovingLine) {
-        const speedChangeLineMovingRadian = RenderUtil.positionToRadian(player.barMovingSpeedChangeEvent.currentPosition)
+        const speedChangeLineMovingRadian = this.positionToRadian(player.barMovingSpeedChangeEvent.currentPosition)
         g.beginPath()
         g.moveTo(0, 0)
         g.lineTo(Math.cos(speedChangeLineMovingRadian) * 160, Math.sin(speedChangeLineMovingRadian) * 160)
@@ -199,8 +201,8 @@ export class Renderer {
       }
     })
 
-    const lineRadian = RenderUtil.positionToRadian(player.currentPosition)
-    g.strokeStyle = "#000000"
+    const lineRadian = this.positionToRadian(player.currentPosition)
+    g.strokeStyle = this.colorScheme.bar
     g.lineWidth = 5
     g.beginPath()
     g.moveTo(0, 0)
@@ -212,5 +214,32 @@ export class Renderer {
     g.textBaseline = "middle"
     g.font = "32px sans-serif"
     g.fillText(player.combo, 0, 0)
+  }
+
+  positionToRadian(position) {
+    return position * 2 * Math.PI - (Math.PI / 2)
+  }
+
+  drawNote(g, lane, radian, judgeState) {
+    const radius = 70 + lane * 30
+    const x = Math.cos(radian) * radius
+    const y = Math.sin(radian) * radius
+    const style = this.getJudgeColor(judgeState)
+    this.fillCircle(g, x, y, 10, style)
+  }
+
+  drawLongNoteLine(g, lane, startRadian, endRadian, active) {
+    let startRadianNew = startRadian
+    let endRadianNew = endRadian
+    if(startRadian > endRadian) endRadianNew += Math.PI * 2
+    const radius = 70 + lane * 30
+    const style = active ? "#00FF00" : "#888888"
+    this.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5)
+    //this.strokeArc(g, 400, 300, radius, 1, 2, "#00FF00", 5)
+  }
+
+  drawLaneCircle(g, x, y, r, flashing) {
+    const style = `rgb(${Math.floor(flashing * 255)}, 0, 0)`
+    this.strokeCircle(g, x, y, r, style, 1)
   }
 }

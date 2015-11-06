@@ -1,26 +1,28 @@
-// TODO: stub
 export class ColorScheme {
-  constructor(json, default) {
-    this.colors = [
-      "background"
-    ]
-    function getData(data, levels, numLevel, fn) {
-      return 0
-
+  constructor(json) {
+    function getData(keyArray, data) {
+      if(!data || !data[keyArray[0]]) return null
+      if(keyArray.length == 1) {
+        return data[keyArray[0]]
+      } else {
+        return getData(keyArray.slice(1), data[keyArray[0]])
+      }
     }
-    //this.background = arrayToRGBA(json.background)
-    this.colors.forEach((name) => {
-      levels = name.split(".")
-      return getData(json, levels, 0, this.arrayToRGBA)
-    })
 
+    function getColor(key, defaultValue) {
+      const data = getData(key.split("."), json)
+      return data || defaultValue
+    }
+
+    this.background = this.arrayToRGBA(getColor("background", [255, 255, 255, 1]))
+    this.bar = this.arrayToRGBA(getColor("bar", [0, 0, 0, 1]))
   }
 
   arrayToRGBA(array) {
     if(array.length == 4) {
-      return `rgba(${array[0]},${array[1],${array[2]},${array[3]})`
+      return `rgba(${array[0]},${array[1]},${array[2]},${array[3]})`
     } else {
-      return `rgb(${array[0]},${array[1],${array[2]})`
+      return `rgb(${array[0]},${array[1]},${array[2]})`
     }
   }
 }
