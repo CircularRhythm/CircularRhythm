@@ -40,4 +40,19 @@ export class RenderUtil {
     g.closePath()
     g.fill()
   }
+
+  static fillRect(g, x, y, w, h, style) {
+    g.fillStyle = style
+    g.beginPath()
+    g.rect(x, y, w, h)
+    g.fill()
+  }
+
+  static fillText(g, text, x, y, font, style, align, baseline) {
+    g.fillStyle = style
+    g.font = font
+    g.textAlign = align
+    g.textBaseline = baseline
+    g.fillText(text, x, y)
+  }
 }

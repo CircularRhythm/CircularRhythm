@@ -38,55 +38,16 @@ export class Renderer {
       g.restore()
     }
 
-    g.fillStyle = "#000000"
-    g.textAlign = "left"
-    g.textBaseline = "top"
-    g.font = "32px sans-serif"
-    g.fillText("80.0%", 20, 20)
+    RenderUtil.fillText(g, "80.0%", 20, 20, "32px sans-serif", "#000000", "left", "top")
+    RenderUtil.fillText(g, Math.ceil(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
+    RenderUtil.fillText(g, "0:00/2:30", 780, 440, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, player.currentBpm, 400, 500, "32px sans-serif", "#000000", "center", "top")
 
-    g.fillStyle = "#000000"
-    g.textAlign = "right"
-    g.textBaseline = "top"
-    g.font = "32px sans-serif"
-    g.fillText(Math.ceil(player.score), 780, 20)
-
-    g.fillStyle = "#000000"
-    g.textAlign = "right"
-    g.textBaseline = "bottom"
-    g.font = "16px sans-serif"
-    g.fillText("0:00/2:30", 780, 440)
-
-    g.fillStyle = "#000000"
-    g.textAlign = "center"
-    g.textBaseline = "top"
-    g.font = "32px sans-serif"
-    g.fillText(player.currentBpm, 400, 500)
-
-
-    g.fillStyle = "#FF8800"
-    g.beginPath()
-    g.rect(0, 0, 10, 440)
-    g.fill()
-
-    g.fillStyle = "#00FF00"
-    g.beginPath()
-    g.rect(790, 0, 10, 440)
-    g.fill()
-
-    g.fillStyle = "#00FFFF"
-    g.beginPath()
-    g.rect(0, 440, 800, 10)
-    g.fill()
-
-    g.fillStyle = "#C0C0C0"
-    g.beginPath()
-    g.rect(0, 450, 800, 150)
-    g.fill()
-
-    g.fillStyle = "#909090"
-    g.beginPath()
-    g.rect(0, 600, 800, this.game.belowHeight)
-    g.fill()
+    RenderUtil.fillRect(g, 0, 0, 10, 440, "#FF8800")
+    RenderUtil.fillRect(g, 790, 0, 10, 440, "#00FF00")
+    RenderUtil.fillRect(g, 0, 440, 800, 10, "#00FFFF")
+    RenderUtil.fillRect(g, 0, 450, 800, 150, "#C0C0C0")
+    RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, "#909090")
 
     /*g.fillStyle = "#000000"
     g.textAlign = "left"
@@ -121,7 +82,7 @@ export class Renderer {
 
     player.visibleSupportLines.forEach((e) => {
       const radian = this.positionToRadian(e.position)
-      g.strokeStyle = RenderUtil.getLineColor(e.type)
+      g.strokeStyle = this.colorScheme.beatLine[e.type]
       if(e.type == 1) {
         g.lineWidth = 2
       } else {
@@ -144,13 +105,17 @@ export class Renderer {
           const startRadian = this.positionToRadian(startPosition)
           const endRadian = this.positionToRadian(endPosition)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-            RenderUtil.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, note.lineActive)
+            let state
+            if(note.judgeState == JudgeState.MISS || note.judgeState == JudgeState.BAD) state = 2
+            else if(note.lineActive) state = 1
+            else state = 0
+            this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, state)
           }
         }
         if(note instanceof NoteShort) {
           const radian = this.positionToRadian(note.position)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-            RenderUtil.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
+            this.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
           }
           if(note.x == player.specialLane) {
             let radius
@@ -160,14 +125,14 @@ export class Renderer {
             } else {
               radius = 70 + (note.time - player.currentTime) / player.specialLaneDuration * 80
             }
-            const style = RenderUtil.getJudgeColor(note.judgeState)
+            const style = this.colorScheme.note.judge[note.judgeState]
             RenderUtil.strokeCircle(g, 0, 0, radius, style, 3)
           }
         }
         if(note instanceof NoteLong) {
           const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadEraseTimer < 500) {
-            RenderUtil.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
+            this.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
           }
         }
       }
@@ -175,17 +140,7 @@ export class Renderer {
 
     player.visibleBarSpeedChangeList.forEach((e, i) => {
       const speedChangeLineRadian = this.positionToRadian(e.position)
-      switch(e.type) {
-        case "stop":
-          g.strokeStyle = "#888888"
-          break
-        case "slower":
-          g.strokeStyle = "#0000FF"
-          break
-        case "faster":
-          g.strokeStyle = "#FF0000"
-          break
-      }
+      // TODO
       g.lineWidth = 3
       g.beginPath()
       g.moveTo(0, 0)
@@ -224,22 +179,31 @@ export class Renderer {
     const radius = 70 + lane * 30
     const x = Math.cos(radian) * radius
     const y = Math.sin(radian) * radius
-    const style = this.getJudgeColor(judgeState)
-    this.fillCircle(g, x, y, 10, style)
+    const style = this.colorScheme.note.judge[judgeState]
+    console.log(style)
+    RenderUtil.fillCircle(g, x, y, 10, style)
   }
 
-  drawLongNoteLine(g, lane, startRadian, endRadian, active) {
+  drawLongNoteLine(g, lane, startRadian, endRadian, state) {
     let startRadianNew = startRadian
     let endRadianNew = endRadian
     if(startRadian > endRadian) endRadianNew += Math.PI * 2
     const radius = 70 + lane * 30
-    const style = active ? "#00FF00" : "#888888"
-    this.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5)
-    //this.strokeArc(g, 400, 300, radius, 1, 2, "#00FF00", 5)
+    let style
+    if(state == 0) style = this.colorScheme.note.long.inactive
+    else if(state == 1) style = this.colorScheme.note.long.active
+    else if(state == 2) style = this.colorScheme.note.long.miss
+    RenderUtil.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5)
   }
 
   drawLaneCircle(g, x, y, r, flashing) {
     const style = `rgb(${Math.floor(flashing * 255)}, 0, 0)`
-    this.strokeCircle(g, x, y, r, style, 1)
+    RenderUtil.strokeCircle(g, x, y, r, style, 1)
+  }
+
+  getBarSpeedChangeLineColor(type) {
+    if(type == BarSpeedChangeEventType.FASTER) return "#FF0000"
+    if(type == BarSpeedChangeEventType.SLOWER) return "#0000FF"
+    if(type == BarSpeedChangeEventType.STOP) return "#888888"
   }
 }

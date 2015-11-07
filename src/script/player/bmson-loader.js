@@ -1,6 +1,6 @@
 import { PlayerUtil } from "./player-util"
 import { Note, NoteShort, NoteLong } from "./note"
-import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
+import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop, BarSpeedChangeEventType } from "./bar-speed-change-event"
 
 // TODO: Exclude long special
 export class BmsonLoader {
@@ -166,7 +166,7 @@ export class BmsonLoader {
         if(speed > lastSpeed){
           // activate 0.5 position prior to NEW SPEED
           const barMoveTime = time - 0.5 / speed
-          barSpeedChangeList.push(new BarSpeedChangeEventSpeed("faster", y, time, position, speed, barMoveTime))
+          barSpeedChangeList.push(new BarSpeedChangeEventSpeed(BarSpeedChangeEventType.FASTER, y, time, position, speed, barMoveTime))
         } else if(speed < lastSpeed) {
           // activate 0.5 position prior to CURRENT SPEED
           let barMovePosition = position - 0.5
@@ -188,7 +188,7 @@ export class BmsonLoader {
             const barMoveTimingData = PlayerUtil.getTimingDataFromY(barMoveY, timingList)
             barMoveTime = PlayerUtil.yToTime(barMoveY, barMoveTimingData)
           }
-          barSpeedChangeList.push(new BarSpeedChangeEventSpeed("slower", y, time, position, speed, barMoveTime))
+          barSpeedChangeList.push(new BarSpeedChangeEventSpeed(BarSpeedChangeEventType.SLOWER, y, time, position, speed, barMoveTime))
         }
         lastSpeed = speed
       }
