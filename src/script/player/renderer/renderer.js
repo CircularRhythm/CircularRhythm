@@ -5,6 +5,7 @@ import { ConicalGradient } from "./conical-gradient"
 import { RenderUtil } from "./render-util"
 import $ from "jquery"
 import { ColorScheme } from "./color-scheme"
+import Color from "color"
 
 export class Renderer {
   constructor(game, framework, colorScheme) {
@@ -61,24 +62,34 @@ export class Renderer {
   renderUnit(g, controller, playerNum) {
     const player = this.game.player
 
-    const beaterSize = 80 - player.unitPosition * 8
-    const gradient = g.createRadialGradient(0, 0, 70, 0, 0, beaterSize)
-    gradient.addColorStop(0, "#00FFFF")
-    gradient.addColorStop(1, "#FFFFFF")
-    g.fillStyle = gradient
+    const specialLaneGradient = g.createRadialGradient(0, 0, 20 + player.specialLaneFlash * 50, 0, 0, 70 + player.specialLaneFlash * 50)
+    let specialLaneJudgeColor
+    if(player.specialLaneJudgeState == JudgeState.NO) specialLaneJudgeColor = this.colorScheme.note.special
+    else specialLaneJudgeColor = this.colorScheme.note.judge[player.specialLaneJudgeState]
+    specialLaneGradient.addColorStop(0, specialLaneJudgeColor)
+    specialLaneGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
+    g.fillStyle = specialLaneGradient
     g.beginPath()
-    g.arc(0, 0, beaterSize, Math.PI * 2, false)
+    g.arc(0, 0, 170, Math.PI * 2, false)
     g.fill()
 
-    g.fillStyle = "#FFFFFF"
+    const gradient = g.createRadialGradient(0, 0, 60 + player.unitPosition * 5, 0, 0, 70 + player.unitPosition * 10)
+    gradient.addColorStop(0, "#FFFFFF")
+    gradient.addColorStop(1, "#00FFFF")
+    g.fillStyle = gradient
     g.beginPath()
     g.arc(0, 0, 70, Math.PI * 2, false)
     g.fill()
 
-    this.drawLaneCircle(g, 0, 0, 70, player.keyFlashing[playerNum * 4])
-    this.drawLaneCircle(g, 0, 0, 100, player.keyFlashing[playerNum * 4 + 1])
-    this.drawLaneCircle(g, 0, 0, 130, player.keyFlashing[playerNum * 4 + 2])
-    this.drawLaneCircle(g, 0, 0, 160, player.keyFlashing[playerNum * 4 + 3])
+    /*g.fillStyle = "#FFFFFF"
+    g.beginPath()
+    g.arc(0, 0, 70, Math.PI * 2, false)
+    g.fill()*/
+
+    this.drawLaneCircle(g, 0, player.keyFlashing[playerNum * 4])
+    this.drawLaneCircle(g, 1, player.keyFlashing[playerNum * 4 + 1])
+    this.drawLaneCircle(g, 2, player.keyFlashing[playerNum * 4 + 2])
+    this.drawLaneCircle(g, 3, player.keyFlashing[playerNum * 4 + 3])
 
     player.visibleSupportLines.forEach((e) => {
       const radian = this.positionToRadian(e.position)
@@ -107,8 +118,8 @@ export class Renderer {
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
             let state
             if(note.judgeState == JudgeState.MISS || note.judgeState == JudgeState.BAD) state = 2
-            else if(note.lineActive) state = 1
-            else state = 0
+            else if(note.judgeState == JudgeState.NO) state = 0
+            else state = 1
             this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, state)
           }
         }
@@ -125,7 +136,7 @@ export class Renderer {
             } else {
               radius = 70 + (note.time - player.currentTime) / player.specialLaneDuration * 80
             }
-            const style = this.colorScheme.note.judge[note.judgeState]
+            const style = this.colorScheme.note.special
             RenderUtil.strokeCircle(g, 0, 0, radius, style, 3)
           }
         }
@@ -140,35 +151,18 @@ export class Renderer {
 
     player.visibleBarSpeedChangeList.forEach((e, i) => {
       const speedChangeLineRadian = this.positionToRadian(e.position)
-      // TODO
-      g.lineWidth = 3
-      g.beginPath()
-      g.moveTo(0, 0)
-      g.lineTo(Math.cos(speedChangeLineRadian) * 160, Math.sin(speedChangeLineRadian) * 160)
-      g.stroke()
+      RenderUtil.strokeLine(g, 0, 0, Math.cos(speedChangeLineRadian) * 160, Math.sin(speedChangeLineRadian) * 160, 3, this.colorScheme.speedChangeLine[e.type])
 
       if(e.showMovingLine) {
         const speedChangeLineMovingRadian = this.positionToRadian(player.barMovingSpeedChangeEvent.currentPosition)
-        g.beginPath()
-        g.moveTo(0, 0)
-        g.lineTo(Math.cos(speedChangeLineMovingRadian) * 160, Math.sin(speedChangeLineMovingRadian) * 160)
-        g.stroke()
+        RenderUtil.strokeLine(g, 0, 0, Math.cos(speedChangeLineMovingRadian) * 160, Math.sin(speedChangeLineMovingRadian) * 160, 3, this.colorScheme.speedChangeLine[e.type])
       }
     })
 
     const lineRadian = this.positionToRadian(player.currentPosition)
-    g.strokeStyle = this.colorScheme.bar
-    g.lineWidth = 5
-    g.beginPath()
-    g.moveTo(0, 0)
-    g.lineTo(Math.cos(lineRadian) * 160, Math.sin(lineRadian) * 160)
-    g.stroke()
+    RenderUtil.strokeLine(g, 0, 0, Math.cos(lineRadian) * 160, Math.sin(lineRadian) * 160, 5, this.colorScheme.bar)
 
-    g.fillStyle = "#000000"
-    g.textAlign = "center"
-    g.textBaseline = "middle"
-    g.font = "32px sans-serif"
-    g.fillText(player.combo, 0, 0)
+    RenderUtil.fillText(g, player.combo, 0, 0, "32px sans-serif", "#000000", "center", "middle")
   }
 
   positionToRadian(position) {
@@ -179,8 +173,12 @@ export class Renderer {
     const radius = 70 + lane * 30
     const x = Math.cos(radian) * radius
     const y = Math.sin(radian) * radius
-    const style = this.colorScheme.note.judge[judgeState]
-    console.log(style)
+    let style
+    if(judgeState == JudgeState.NO) {
+      style = this.colorScheme.note.lane[lane]
+    } else {
+      style = this.colorScheme.note.judge[judgeState]
+    }
     RenderUtil.fillCircle(g, x, y, 10, style)
   }
 
@@ -190,20 +188,14 @@ export class Renderer {
     if(startRadian > endRadian) endRadianNew += Math.PI * 2
     const radius = 70 + lane * 30
     let style
-    if(state == 0) style = this.colorScheme.note.long.inactive
-    else if(state == 1) style = this.colorScheme.note.long.active
+    if(state == 0) style = this.colorScheme.note.long.inactive[lane]
+    else if(state == 1) style = this.colorScheme.note.long.active[lane]
     else if(state == 2) style = this.colorScheme.note.long.miss
     RenderUtil.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5)
   }
 
-  drawLaneCircle(g, x, y, r, flashing) {
-    const style = `rgb(${Math.floor(flashing * 255)}, 0, 0)`
-    RenderUtil.strokeCircle(g, x, y, r, style, 1)
-  }
-
-  getBarSpeedChangeLineColor(type) {
-    if(type == BarSpeedChangeEventType.FASTER) return "#FF0000"
-    if(type == BarSpeedChangeEventType.SLOWER) return "#0000FF"
-    if(type == BarSpeedChangeEventType.STOP) return "#888888"
+  drawLaneCircle(g, lane, flashing) {
+    const style = Color(this.colorScheme.lane[lane]).lighten(flashing * 0.6).rgbaString()
+    RenderUtil.strokeCircle(g, 0, 0, 70 + 30 * lane, style, 1)
   }
 }

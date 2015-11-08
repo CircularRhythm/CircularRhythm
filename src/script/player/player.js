@@ -17,7 +17,9 @@ export class Player {
     this.bmsonLoader = new BmsonLoader(this.bmson)
     this.parentPath = parentPath
     this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
-    this.keyFlashing = [0, 0, 0, 0]
+    this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]
+    this.specialLaneFlash = 0
+    this.specialLaneJudgeState = JudgeState.NO
 
     this.playMode = 2
     this.lanes = this.playMode * 4 + 1
@@ -118,10 +120,16 @@ export class Player {
     this.lastTime = nowTime
     this.currentTime += delta
 
-    for(let i = 0; i < this.lanes; i++) {
+    for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
       if(this.isPressed(i, input)) this.keyFlashing[i] = 1
+    }
+    this.specialLaneFlash -= 0.05
+    if(this.specialLaneFlash < 0) this.specialLaneFlash = 0
+    if(this.isJustPressed(this.specialLane - 1, input)) {
+      this.specialLaneFlash = 1
+      this.specialLaneJudgeState = JudgeState.NO
     }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
@@ -216,6 +224,9 @@ export class Player {
       })
       // Remove eraseTimer > 500
       notes = notes.filter((note) => !(note instanceof NoteShort) || note.eraseTimer <= 500)
+
+      // Remove judged special lane
+      notes = notes.filter((note) => note.x != this.specialLane || note.eraseTimer < 0)
 
       notes.filter((note) => note instanceof NoteLong).forEach((note) => {
         if(note.noteHeadEraseTimer >= 0) {
@@ -333,6 +344,7 @@ export class Player {
         this.combo++
         if(this.combo > this.maxCombo) this.maxCombo = this.combo
       }
+      if(note.x == this.specialLane) this.specialLaneJudgeState = judgeState
     }
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes

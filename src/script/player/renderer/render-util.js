@@ -1,21 +1,6 @@
 import { JudgeState } from "../judge-state"
 
 export class RenderUtil {
-  /*static getJudgeColor(judge) {
-    if(judge == JudgeState.NO) return "#0000FF"
-    if(judge == JudgeState.EXCELLENT) return "#FFFF00"
-    if(judge == JudgeState.GREAT) return "#00FF00"
-    if(judge == JudgeState.GOOD) return "#00FFFF"
-    if(judge == JudgeState.BAD) return "#FF7F00"
-    if(judge == JudgeState.MISS) return "#888888"
-    return "#000000"
-  }
-
-  static getLineColor(type) {
-    const arr = ["#000000", "#FF0000", "#0000FF", "#00FF00", "#FFFF00"]
-    return arr[type]
-  }*/
-
   static strokeArc(g, x, y, r, start, end, style, lineWidth) {
     g.strokeStyle = style
     g.lineWidth = lineWidth
@@ -54,5 +39,14 @@ export class RenderUtil {
     g.textAlign = align
     g.textBaseline = baseline
     g.fillText(text, x, y)
+  }
+
+  static strokeLine(g, x1, y1, x2, y2, width, style) {
+    g.lineWidth = width
+    g.strokeStyle = style
+    g.beginPath()
+    g.moveTo(x1, y1)
+    g.lineTo(x2, y2)
+    g.stroke()
   }
 }
