@@ -60,9 +60,9 @@ export class ColorScheme {
     this.note.long.active[3] = color("note.long.active.3", [0, 0, 255, 1])
     this.note.long.miss = color("note.long.miss", [127, 127, 127, 1])
     this.speedChangeLine = {}
-    this.speedChangeLine[BarSpeedChangeEventType.FASTER] = color("note.speed_change.faster", [255, 0, 0, 1])
-    this.speedChangeLine[BarSpeedChangeEventType.SLOWER] = color("note.speed_change.faster", [0, 0, 255, 1])
-    this.speedChangeLine[BarSpeedChangeEventType.STOP] = color("note.speed_change.stop", [127, 127, 127, 1])
+    this.speedChangeLine[BarSpeedChangeEventType.FASTER] = color("speed_change.faster", [255, 0, 0, 1])
+    this.speedChangeLine[BarSpeedChangeEventType.SLOWER] = color("speed_change.slower", [0, 0, 255, 1])
+    this.speedChangeLine[BarSpeedChangeEventType.STOP] = color("speed_change.stop", [127, 127, 127, 1])
   }
 
   arrayToRGBA(array) {

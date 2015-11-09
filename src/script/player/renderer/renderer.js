@@ -118,8 +118,8 @@ export class Renderer {
           if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
             let state
             if(note.judgeState == JudgeState.MISS || note.judgeState == JudgeState.BAD) state = 2
-            else if(note.judgeState == JudgeState.NO) state = 0
-            else state = 1
+            else if(note.active) state = 1
+            else state = 0
             this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, state)
           }
         }
@@ -179,6 +179,10 @@ export class Renderer {
     } else {
       style = this.colorScheme.note.judge[judgeState]
     }
+    const gradient = g.createRadialGradient(x, y, 10, x, y, 15)
+    gradient.addColorStop(0, "rgba(180, 10, 20, 1)")
+    gradient.addColorStop(1, "rgba(180, 10, 20, 0)")
+    RenderUtil.fillCircle(g, x, y, 20, gradient)
     RenderUtil.fillCircle(g, x, y, 10, style)
   }
 
