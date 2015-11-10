@@ -108,43 +108,37 @@ export class Renderer {
     })
 
     const noteBaseX = playerNum * 4 + 1
-    player.visibleNotes.forEach((notes, name) => {
-      for(let note of notes) {
-        if(note instanceof NoteLong && note.endY > player.currentY) {
-          const startPosition = note.y > player.currentY ? note.position : player.currentPosition
-          const endPosition = note.endY < player.visibleEndY ? note.endPosition : player.visibleEndPosition
-          const startRadian = this.positionToRadian(startPosition)
-          const endRadian = this.positionToRadian(endPosition)
-          if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-            let state
-            if(note.judgeState == JudgeState.MISS || note.judgeState == JudgeState.BAD) state = 2
-            else if(note.active) state = 1
-            else state = 0
-            this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, state)
-          }
+    player.visibleNotes.forEach((note) => {
+      if(note instanceof NoteLong && note.endY > player.currentY) {
+        const startPosition = note.y > player.currentY ? note.position : player.currentPosition
+        const endPosition = note.endY < player.visibleEndY ? note.endPosition : player.visibleEndPosition
+        const startRadian = this.positionToRadian(startPosition)
+        const endRadian = this.positionToRadian(endPosition)
+        if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
+          this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, note.state)
         }
-        if(note instanceof NoteShort) {
-          const radian = this.positionToRadian(note.position)
-          if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-            this.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
-          }
-          if(note.x == player.specialLane) {
-            let radius
-            let alpha
-            if(note.time <= player.currentTime) {
-              radius = 70
-            } else {
-              radius = 70 + (note.time - player.currentTime) / player.specialLaneDuration * 80
-            }
-            const style = this.colorScheme.note.special
-            RenderUtil.strokeCircle(g, 0, 0, radius, style, 3)
-          }
+      }
+      if(note instanceof NoteShort) {
+        const radian = this.positionToRadian(note.position)
+        if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
+          this.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
         }
-        if(note instanceof NoteLong) {
-          const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
-          if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadEraseTimer < 500) {
-            this.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
+        if(note.x == player.specialLane) {
+          let radius
+          let alpha
+          if(note.time <= player.currentTime) {
+            radius = 70
+          } else {
+            radius = 70 + (note.time - player.currentTime) / player.specialLaneDuration * 80
           }
+          const style = this.colorScheme.note.special
+          RenderUtil.strokeCircle(g, 0, 0, radius, style, 3)
+        }
+      }
+      if(note instanceof NoteLong) {
+        const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
+        if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadVisible) {
+          this.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
         }
       }
     })

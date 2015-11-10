@@ -18,12 +18,10 @@ export class Note {
 export class NoteShort extends Note {
   constructor(x, y, c, time, position) {
     super(x, y, c, time, position)
-    this.eraseTimer = -1
   }
 
   judge(judgeState) {
     this.judgeState = judgeState
-    this.eraseTimer = 0
     this.targetable = false
   }
 }
@@ -35,36 +33,36 @@ export class NoteLong extends Note {
     this.endTime = endTime
     this.endPosition = endPosition
 
-    this.noteHeadEraseTimer = -1
     this.noteHeadPosition = position
     this.noteHeadMovable = false
+    this.noteHeadVisible = true
 
-    // Whether note is being pressed
-    this.active = false
-    // Whether line is rendered as active
-    this.lineActive = true
+    // 0: Inactive, 1: Active, 2: Miss
+    this.state = 0
   }
 
   firstJudge(judgeState) {
     this.judgeState = judgeState
     if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
+      this.state = 2
+      this.noteHeadVisible = false
       this.targetable = false
-      this.lineActive = false
     } else {
-      this.active = true
+      this.state = 1
       this.noteHeadMovable = true
     }
   }
 
   secondJudge(success) {
     if(!success) {
+      this.state = 2
+      this.noteHeadVisible = false
       this.judgeState = JudgeState.MISS
       this.noteHeadMovable = false
-      this.lineActive = false
+    } else {
+      this.state = 0
     }
-    this.noteHeadEraseTimer = 0
     this.targetable = false
-    this.active = false
   }
 
 }

@@ -7,7 +7,6 @@ import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 
 export class Player {
-  // TODO: Make soundChannels index-base
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
   constructor(game, bmsonSet, parentPath) {
     this.game = game
@@ -45,8 +44,7 @@ export class Player {
 
     this.supportLineVisibleEndY = 0
 
-    // String(name) -> [Note]
-    this.visibleNotes = new Map()
+    this.visibleNotes = []
     // Int -> {name: String, note: Note}
     this.targetNotes = new Map()
 
@@ -101,10 +99,10 @@ export class Player {
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
     this.soundChannels.forEach((e, i) => {
-      const firstVisibleNotes = []
-      Array.prototype.push.apply(firstVisibleNotes, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1))
-      Array.prototype.push.apply(firstVisibleNotes, e.notes.filter((note) => note.time < this.specialLaneDuration && note.x == this.specialLane))
-      this.visibleNotes.set(i, firstVisibleNotes)
+      //const firstVisibleNotes = []
+      Array.prototype.push.apply(this.visibleNotes, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1))
+      Array.prototype.push.apply(this.visibleNotes, e.notes.filter((note) => note.time < this.specialLaneDuration && note.x == this.specialLane))
+      //this.visibleNotes.set(i, firstVisibleNotes)
     })
 
     this.currentBarLine = this.barLines[0]
@@ -212,37 +210,17 @@ export class Player {
     // Add notes which to be visible
     this.soundChannels.forEach((channel, i) => {
       const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= this.lanes - 1)
-      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotes)
+      Array.prototype.push.apply(this.visibleNotes, newVisibleNotes)
       const newVisibleNotesSpecial = channel.notes.filter((note) => this.currentTime + this.specialLaneDuration - delta <= note.time && note.time < this.currentTime + this.specialLaneDuration && note.x == this.specialLane)
-      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotesSpecial)
+      Array.prototype.push.apply(this.visibleNotes, newVisibleNotesSpecial)
     })
 
-    // Erase notes which is already judged
-    this.visibleNotes.forEach((notes, index) => {
-      notes.filter((note) => note instanceof NoteShort && note.eraseTimer >= 0).forEach((note) => {
-        note.eraseTimer += delta
-      })
-      // Remove eraseTimer > 500
-      notes = notes.filter((note) => !(note instanceof NoteShort) || note.eraseTimer <= 500)
-
-      // Remove judged special lane
-      notes = notes.filter((note) => note.x != this.specialLane || note.eraseTimer < 0)
-
-      notes.filter((note) => note instanceof NoteLong).forEach((note) => {
-        if(note.noteHeadEraseTimer >= 0) {
-          note.noteHeadEraseTimer += delta
-          if(note.noteHeadEraseTimer > 500) note.noteHeadEraseTimer = 500
-        }
-        if(note.noteHeadMovable) {
-          note.noteHeadPosition = note.endY > this.currentY ? this.currentPosition : note.endPosition
-        }
-      })
-      // Remove currentTime > note.endTime + 500
-      notes = notes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime + 500)
-
-      // Set new notes list
-      this.visibleNotes.set(index, notes)
+    this.visibleNotes.filter((note) => note instanceof NoteLong && note.noteHeadMovable).forEach((note) => {
+      note.noteHeadPosition = note.endY > this.currentY ? this.currentPosition : note.endPosition
     })
+
+    // Remove currentTime > endTime && state != 1
+    this.visibleNotes = this.visibleNotes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime || note.state == 1)
 
     // Target & Judge
     // Before assigning new targets, clean up old ones
@@ -297,7 +275,7 @@ export class Player {
           note.sliceData.play(this.audioContext)
         }
 
-        if(note.active) {
+        if(note.state == 1) {
           if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
           else if(this.isJustReleased(i, input)) {
             const judge = this.getSecondJudge(this.currentTime - note.endTime)
@@ -345,6 +323,7 @@ export class Player {
         if(this.combo > this.maxCombo) this.maxCombo = this.combo
       }
       if(note.x == this.specialLane) this.specialLaneJudgeState = judgeState
+      this.visibleNotes = this.visibleNotes.filter((e) => e !== note)
     }
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
