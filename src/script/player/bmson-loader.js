@@ -105,6 +105,13 @@ export class BmsonLoader {
         const timingData = PlayerUtil.getTimingDataFromY(note.y, timingList)
         const time = PlayerUtil.yToTime(note.y, timingData)
         const position = PlayerUtil.yToPosition(note.y, barLine)
+        let unitType
+        const unit = barLine.supportLines.find((e) => e.y == note.y)
+        if(unit) {
+          unitType = unit.type
+        } else {
+          unitType = 0
+        }
         if(note.l > 0) {
           // Long note
           const endY = note.y + note.l
@@ -112,10 +119,10 @@ export class BmsonLoader {
           const endTimingData = PlayerUtil.getTimingDataFromY(endY, timingList)
           const endTime = PlayerUtil.yToTime(endY, endTimingData)
           const endPosition = PlayerUtil.yToPosition(endY, endBarLine)
-          notes.push(new NoteLong(note.x, note.y, note.c, time, position, endY, endTime, endPosition))
+          notes.push(new NoteLong(note.x, note.y, note.c, unitType, time, position, endY, endTime, endPosition))
         } else {
           // Normal note
-          notes.push(new NoteShort(note.x, note.y, note.c, time, position))
+          notes.push(new NoteShort(note.x, note.y, note.c, unitType, time, position))
         }
       }
       soundChannels.push({name: bmsonSoundChannel.name, source: null, notes: notes})

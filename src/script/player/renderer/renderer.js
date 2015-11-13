@@ -25,7 +25,7 @@ export class Renderer {
 
     if(player.playMode == 1) {
       g.save()
-      g.translate(400, 120)
+      g.translate(400, 220)
       this.renderUnit(g, controller, 0)
       g.restore()
     } else if(player.playMode == 2) {
@@ -64,7 +64,7 @@ export class Renderer {
 
     const specialLaneGradient = g.createRadialGradient(0, 0, 20 + player.specialLaneFlash * 50, 0, 0, 70 + player.specialLaneFlash * 50)
     let specialLaneJudgeColor
-    if(player.specialLaneJudgeState == JudgeState.NO) specialLaneJudgeColor = this.colorScheme.note.special
+    if(player.specialLaneJudgeState == JudgeState.NO) specialLaneJudgeColor = this.colorScheme.note.judge[JudgeState.MISS]
     else specialLaneJudgeColor = this.colorScheme.note.judge[player.specialLaneJudgeState]
     specialLaneGradient.addColorStop(0, specialLaneJudgeColor)
     specialLaneGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
@@ -108,6 +108,14 @@ export class Renderer {
     })
 
     const noteBaseX = playerNum * 4 + 1
+
+    player.eraseParticleList.forEach((e) => {
+      if(noteBaseX <= e.x && e.x <= noteBaseX + 3) {
+        const radian = this.positionToRadian(e.position)
+        this.drawEraseParticle(g, e.x - noteBaseX, radian, e.phase, e.judgeState)
+      }
+    })
+
     player.visibleNotes.forEach((note) => {
       if(note instanceof NoteLong && note.endY > player.currentY) {
         const startPosition = note.y > player.currentY ? note.position : player.currentPosition
@@ -121,24 +129,28 @@ export class Renderer {
       if(note instanceof NoteShort) {
         const radian = this.positionToRadian(note.position)
         if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-          this.drawNote(g, note.x - noteBaseX, radian, note.judgeState)
+          this.drawNote(g, note.x - noteBaseX, radian, note.phase, note.unitType)
         }
         if(note.x == player.specialLane) {
           let radius
-          let alpha
+          let clear
           if(note.time <= player.currentTime) {
             radius = 70
+            clear = 0
           } else {
             radius = 70 + (note.time - player.currentTime) / player.specialLaneDuration * 80
+            clear = (note.time - player.currentTime) / player.specialLaneDuration / 2
           }
-          const style = this.colorScheme.note.special
+          const style = Color(this.colorScheme.note.special).clearer(clear).rgbaString()
           RenderUtil.strokeCircle(g, 0, 0, radius, style, 3)
         }
       }
       if(note instanceof NoteLong) {
         const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
         if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadVisible) {
-          this.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
+          if(note.state == 1) this.drawLongNoteParticle(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
+          const unitType = note.state == 1 ? null : note.unitType
+          this.drawNote(g, note.x - noteBaseX, noteHeadRadian, note.phase, unitType)
         }
       }
     })
@@ -163,21 +175,28 @@ export class Renderer {
     return position * 2 * Math.PI - (Math.PI / 2)
   }
 
-  drawNote(g, lane, radian, judgeState) {
+  // phase: -1 - 0: showing
+  drawNote(g, lane, radian, phase, unitType) {
+    let size
+    if(-1 <= phase && phase <= 0) {
+      size = 1 - Math.pow(phase, 2)
+    } else if(0 < phase && phase <= 1) {
+      size = 1 + Math.sin(phase * Math.PI / 2) * 0.3
+    } else {
+      size = 0
+    }
     const radius = 70 + lane * 30
     const x = Math.cos(radian) * radius
     const y = Math.sin(radian) * radius
-    let style
-    if(judgeState == JudgeState.NO) {
-      style = this.colorScheme.note.lane[lane]
-    } else {
-      style = this.colorScheme.note.judge[judgeState]
+    const style = this.colorScheme.note.lane[lane]
+    const unit = this.colorScheme.note.unit[unitType]
+    if(unitType != null) {
+      const gradient = g.createRadialGradient(x, y, 10 * size, x, y, 15 * size)
+      gradient.addColorStop(0, unit)
+      gradient.addColorStop(1, Color(unit).clearer(1).rgbaString())
+      RenderUtil.fillCircle(g, x, y, 15 * size, gradient)
     }
-    const gradient = g.createRadialGradient(x, y, 10, x, y, 15)
-    gradient.addColorStop(0, "rgba(180, 10, 20, 1)")
-    gradient.addColorStop(1, "rgba(180, 10, 20, 0)")
-    RenderUtil.fillCircle(g, x, y, 20, gradient)
-    RenderUtil.fillCircle(g, x, y, 10, style)
+    RenderUtil.fillCircle(g, x, y, 10 * size, style)
   }
 
   drawLongNoteLine(g, lane, startRadian, endRadian, state) {
@@ -195,5 +214,30 @@ export class Renderer {
   drawLaneCircle(g, lane, flashing) {
     const style = Color(this.colorScheme.lane[lane]).lighten(flashing * 0.6).rgbaString()
     RenderUtil.strokeCircle(g, 0, 0, 70 + 30 * lane, style, 1)
+  }
+
+  // phase: 0-1
+  drawEraseParticle(g, lane, radian, phase, judgeState) {
+    const size = 1 - phase
+    const radius = 70 + lane * 30
+    const x = Math.cos(radian) * radius
+    const y = Math.sin(radian) * radius
+    const color = this.colorScheme.note.judge[judgeState]
+    const gradient = g.createRadialGradient(x, y, 10 * size, x, y, 20 * size)
+    gradient.addColorStop(0, Color(color).clearer(phase).rgbaString())
+    gradient.addColorStop(1, Color(color).clearer(1).rgbaString())
+    RenderUtil.fillCircle(g, x, y, 20 * size, gradient)
+  }
+
+  drawLongNoteParticle(g, lane, radian, judgeState) {
+    const size = 1.3
+    const radius = 70 + lane * 30
+    const x = Math.cos(radian) * radius
+    const y = Math.sin(radian) * radius
+    const color = this.colorScheme.note.judge[judgeState]
+    const gradient = g.createRadialGradient(x, y, 10 * size, x, y, 20 * size)
+    gradient.addColorStop(0, Color(color).clearer(0).rgbaString())
+    gradient.addColorStop(1, Color(color).clearer(1).rgbaString())
+    RenderUtil.fillCircle(g, x, y, 20 * size, gradient)
   }
 }

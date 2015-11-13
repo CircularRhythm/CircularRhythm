@@ -47,6 +47,12 @@ export class ColorScheme {
     this.note.judge[JudgeState.GOOD] = color("note.judge.2", [0, 255, 255, 1])
     this.note.judge[JudgeState.GREAT] = color("note.judge.3", [0, 255, 0, 1])
     this.note.judge[JudgeState.EXCELLENT] = color("note.judge.4", [255, 255, 0, 1])
+    this.note.unit = {}
+    this.note.unit[0] = color("note.unit.0", [0, 0, 0, 1])
+    this.note.unit[1] = color("note.unit.1", [255, 0, 0, 1])
+    this.note.unit[2] = color("note.unit.2", [0, 0, 255, 1])
+    this.note.unit[3] = color("note.unit.3", [0, 255, 0, 1])
+    this.note.unit[4] = color("note.unit.4", [255, 255, 0, 1])
     this.note.long = {}
     this.note.long.inactive = []
     this.note.long.inactive[0] = color("note.long.inactive.0", [127, 0, 0, 1])

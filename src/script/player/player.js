@@ -20,7 +20,7 @@ export class Player {
     this.specialLaneFlash = 0
     this.specialLaneJudgeState = JudgeState.NO
 
-    this.playMode = 2
+    this.playMode = 1
     this.lanes = this.playMode * 4 + 1
     this.specialLane = this.playMode * 4 + 1
 
@@ -83,6 +83,9 @@ export class Player {
     this.judgeStats = [0, 0, 0, 0, 0, 0, 0]
     this.score = 0
     this.scoreMultiply = [0, 0, 0.05, 0.25, 0.5, 1, 0]
+
+    // [{x: Number, position: Number, phase: Number, judgeState: Number}]
+    this.eraseParticleList = []
   }
 
   init() {
@@ -215,12 +218,32 @@ export class Player {
       Array.prototype.push.apply(this.visibleNotes, newVisibleNotesSpecial)
     })
 
+    this.visibleNotes.forEach((note) => {
+      if(note instanceof NoteShort && note.time - 300 <= this.currentTime) {
+        const gap = Math.max(Math.abs(this.currentTime - note.time) / 300, 0)
+        note.phase = 1 - gap
+      } else if(note instanceof NoteLong && note.time - 300 <= this.currentTime) {
+        const gap = Math.max((note.time - this.currentTime) / 300, (this.currentTime - note.endTime) / 300, 0)
+        note.phase = 1 - gap
+      } else {
+        note.phase += delta * 0.005
+        if(note.phase > 0) note.phase = 0
+      }
+    })
+
     this.visibleNotes.filter((note) => note instanceof NoteLong && note.noteHeadMovable).forEach((note) => {
       note.noteHeadPosition = note.endY > this.currentY ? this.currentPosition : note.endPosition
     })
 
+    this.visibleNotes.filter((note) => note instanceof NoteLong && this.currentTime > note.endTime && note.state != 2).forEach((note) => {
+      this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: note.judgeState})
+    })
+
     // Remove currentTime > endTime && state != 1
     this.visibleNotes = this.visibleNotes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime || note.state == 1)
+
+    this.eraseParticleList.forEach((e) => e.phase += delta * 0.003)
+    this.eraseParticleList = this.eraseParticleList.filter((e) => e.phase < 1)
 
     // Target & Judge
     // Before assigning new targets, clean up old ones
@@ -322,8 +345,13 @@ export class Player {
         this.combo++
         if(this.combo > this.maxCombo) this.maxCombo = this.combo
       }
-      if(note.x == this.specialLane) this.specialLaneJudgeState = judgeState
       this.visibleNotes = this.visibleNotes.filter((e) => e !== note)
+      if(note.x == this.specialLane) {
+        this.specialLaneJudgeState = judgeState
+        if(judgeState == JudgeState.MISS) this.specialLaneFlash = 1
+      } else {
+        this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
+      }
     }
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
@@ -335,6 +363,7 @@ export class Player {
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
         this.judgeStats[judgeState] ++
+        this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
     } else {
       this.judgeStats[judgeState] ++
@@ -352,12 +381,15 @@ export class Player {
       this.combo = 0
       this.judgeStats[JudgeState.BAD] ++
       this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
+      this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
     }
   }
 
   isJustPressed(lane, input) {
     if(this.playMode == 1 && 0 <= lane && lane <= 3) {
       return input.isJustPressed(this.keyConfig[lane]) || input.isJustPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isJustPressed(this.keyConfig[8])
     } else if(this.playMode == 2) {
       return input.isJustPressed(this.keyConfig[lane])
     }
@@ -366,6 +398,8 @@ export class Player {
   isPressed(lane, input) {
     if(this.playMode == 1 && 0 <= lane && lane <= 3) {
       return input.isPressed(this.keyConfig[lane]) || input.isPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isPressed(this.keyConfig[8])
     } else if(this.playMode == 2) {
       return input.isPressed(this.keyConfig[lane])
     }
@@ -374,7 +408,9 @@ export class Player {
   isJustReleased(lane, input) {
     if(this.playMode == 1 && 0 <= lane && lane <= 3) {
       return input.isJustReleased(this.keyConfig[lane]) || input.isJustReleased(this.keyConfig[lane + 4])
-    } else {
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isJustReleased(this.keyConfig[8])
+    } else if(this.playMode == 2){
       return input.isJustReleased(this.keyConfig[lane])
     }
   }
