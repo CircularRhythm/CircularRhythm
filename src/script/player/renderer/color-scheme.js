@@ -23,6 +23,17 @@ export class ColorScheme {
 
     this.background = color("background", [255, 255, 255, 1])
     this.bar = color("bar", [0, 0, 0, 1])
+    this.center = color("center", [255, 255, 255, 1])
+    this.beat = color("beat", [0, 127, 127, 1])
+    this.gauge = {}
+    this.gauge[0] = color("gauge.normal", [255, 127, 0, 1])
+    this.score = {}
+    this.score.current = color("score.current", [0, 255, 0, 1])
+    this.duration = color("duration", [0, 255, 255, 1])
+    this.information = {}
+    this.information.background =  color("information.background", [192, 192, 192, 1])
+    this.controller = {}
+    this.controller.background = color("controller.background", [120, 120, 120, 1])
     this.lane = []
     this.lane[0] = color("lane.0", [255, 0, 0, 1])
     this.lane[1] = color("lane.1", [255, 255, 0, 1])

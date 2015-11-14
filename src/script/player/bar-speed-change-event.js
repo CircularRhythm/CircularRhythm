@@ -10,6 +10,9 @@ export class BarSpeedChangeEvent {
     this.currentPosition = 0
     this.targetable = true
     this.showMovingLine = false
+
+    this.phase = 0
+    this.movingPhase = 0
   }
 }
 
