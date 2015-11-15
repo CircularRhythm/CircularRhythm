@@ -22,7 +22,14 @@ class CircularRhythm {
     this.musicList = null
     this.localMusicList = []
     this.localFileList = new Map()
-    this.currentColorScheme = null
+    this.preference = {
+      renderer: {
+        colorScheme: null,
+        ccwSingle: false,
+        ccwDouble1: false,
+        ccwDouble2: true
+      }
+    }
 
     const screens = new Map()
     this.screenManager = new ScreenManager(this, screens)
@@ -86,7 +93,7 @@ class CircularRhythm {
         url: "asset/colorscheme/default.json",
         responseType: "json"
       }).then((json) => {
-        this.currentColorScheme = new ColorScheme(json)
+        this.preference.renderer.colorScheme = new ColorScheme(json)
         resolve()
       }).catch((e) => {
         reject({message: "Cannot load color scheme"})

@@ -1,11 +1,11 @@
 import { JudgeState } from "../judge-state"
 
 export class RenderUtil {
-  static strokeArc(g, x, y, r, start, end, style, lineWidth) {
+  static strokeArc(g, x, y, r, start, end, style, lineWidth, reverse) {
     g.strokeStyle = style
     g.lineWidth = lineWidth
     g.beginPath()
-    g.arc(x, y, r, start, end, false)
+    g.arc(x, y, r, start, end, reverse)
     g.stroke()
   }
 

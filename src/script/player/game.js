@@ -4,14 +4,14 @@ import { AssetLoader, AssetLoaderArchive, AssetLoaderLocal } from "./asset-loade
 import { Player } from "./player"
 import { Renderer } from "./renderer/renderer"
 export class Game {
-  constructor(bmsonSetConfig, localFileList, colorScheme, endCallback) {
+  constructor(bmsonSetConfig, localFileList, preference, endCallback) {
     this.bmsonSetConfig = bmsonSetConfig
     this.bmsonPath = bmsonSetConfig.path
     this.assetPath = bmsonSetConfig.assetPath
     this.packedAssets = bmsonSetConfig.packedAssets
     this.local = bmsonSetConfig.local
     this.localFileList = localFileList
-    this.colorScheme = colorScheme
+    this.preference = preference
     this.endCallback = endCallback
 
     this.fieldWidth = 800
@@ -50,7 +50,7 @@ export class Game {
         assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
-      this.renderer = new Renderer(this, framework, this.colorScheme)
+      this.renderer = new Renderer(this, framework, this.preference)
 
       this.player.init().then(() => {
         this.state = States.READY
@@ -65,7 +65,7 @@ export class Game {
     const translateX = (framework.width - this.fieldWidth * scale) / 2 / scale
     this.belowHeight = (framework.height - this.fieldHeight * scale) / scale
 
-    g.fillStyle = this.colorScheme.background
+    g.fillStyle = this.preference.renderer.colorScheme.background
     g.beginPath()
     g.rect(0, 0, framework.width, framework.height)
     g.fill()

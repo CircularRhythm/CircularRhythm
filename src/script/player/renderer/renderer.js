@@ -9,9 +9,10 @@ import Color from "color"
 import Numeral from "numeral"
 
 export class Renderer {
-  constructor(game, framework, colorScheme) {
+  constructor(game, framework, preference) {
     this.game = game
-    this.colorScheme = colorScheme
+    this.preference = preference
+    this.colorScheme = preference.renderer.colorScheme
   }
 
   render(g, controller) {
@@ -25,16 +26,16 @@ export class Renderer {
     if(player.playMode == 1) {
       g.save()
       g.translate(400, 220)
-      this.renderUnit(g, controller, 0)
+      this.renderUnit(g, controller, 0, this.preference.renderer.ccwSingle)
       g.restore()
     } else if(player.playMode == 2) {
       g.save()
       g.translate(215, 220)
-      this.renderUnit(g, controller, 0)
+      this.renderUnit(g, controller, 0, this.preference.renderer.ccwDouble1)
       g.restore()
       g.save()
       g.translate(585, 220)
-      this.renderUnit(g, controller, 1)
+      this.renderUnit(g, controller, 1, this.preference.renderer.ccwDouble2)
       g.restore()
     }
 
@@ -52,7 +53,7 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
   }
 
-  renderUnit(g, controller, playerNum) {
+  renderUnit(g, controller, playerNum, ccw) {
     const player = this.game.player
     const noteBaseX = playerNum * 4 + 1
 
@@ -82,7 +83,7 @@ export class Renderer {
 
     // Support lines
     player.visibleSupportLines.forEach((e) => {
-      const radian = this.positionToRadian(e.position)
+      const radian = this.positionToRadian(e.position, ccw)
       g.strokeStyle = this.colorScheme.beatLine[e.type]
       if(e.type == 1) {
         g.lineWidth = 2
@@ -100,7 +101,7 @@ export class Renderer {
     // Erase particle
     player.eraseParticleList.forEach((e) => {
       if(noteBaseX <= e.x && e.x <= noteBaseX + 3) {
-        const radian = this.positionToRadian(e.position)
+        const radian = this.positionToRadian(e.position, ccw)
         this.drawEraseParticle(g, e.x - noteBaseX, radian, e.phase, e.judgeState)
       }
     })
@@ -110,14 +111,14 @@ export class Renderer {
       if(note instanceof NoteLong && note.endY > player.currentY) {
         const startPosition = note.y > player.currentY ? note.position : player.currentPosition
         const endPosition = note.endY < player.visibleEndY ? note.endPosition : player.visibleEndPosition
-        const startRadian = this.positionToRadian(startPosition)
-        const endRadian = this.positionToRadian(endPosition)
+        const startRadian = this.positionToRadian(startPosition, ccw)
+        const endRadian = this.positionToRadian(endPosition, ccw)
         if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
-          this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, note.state)
+          this.drawLongNoteLine(g, note.x - noteBaseX, startRadian, endRadian, ccw, note.state)
         }
       }
       if(note instanceof NoteShort) {
-        const radian = this.positionToRadian(note.position)
+        const radian = this.positionToRadian(note.position, ccw)
         if(noteBaseX <= note.x && note.x <= noteBaseX + 3) {
           this.drawNote(g, note.x - noteBaseX, radian, note.phase, note.unitType)
         }
@@ -126,7 +127,7 @@ export class Renderer {
         }
       }
       if(note instanceof NoteLong) {
-        const noteHeadRadian = this.positionToRadian(note.noteHeadPosition)
+        const noteHeadRadian = this.positionToRadian(note.noteHeadPosition, ccw)
         if(noteBaseX <= note.x && note.x <= noteBaseX + 3 && note.noteHeadVisible) {
           if(note.state == 1) this.drawLongNoteParticle(g, note.x - noteBaseX, noteHeadRadian, note.judgeState)
           const unitType = note.state == 1 ? null : note.unitType
@@ -137,22 +138,23 @@ export class Renderer {
 
     // Bar speed change
     player.visibleBarSpeedChangeList.forEach((e, i) => {
-      const radian = this.positionToRadian(e.position)
+      const radian = this.positionToRadian(e.position, ccw)
       this.drawBarSpeedChangeEvent(g, radian, e.type, e.phase)
     })
 
     if(player.barMovingSpeedChangeEvent && player.barMovingSpeedChangeEvent.showMovingLine) {
       const e = player.barMovingSpeedChangeEvent
-      const radian = this.positionToRadian(e.currentPosition)
+      const radian = this.positionToRadian(e.currentPosition, ccw)
       this.drawBarSpeedChangeEvent(g, radian, e.type, e.movingPhase)
     }
 
     // Bar
-    const lineRadian = this.positionToRadian(player.currentPosition)
+    const lineRadian = this.positionToRadian(player.currentPosition, ccw)
     RenderUtil.strokeLine(g, 0, 0, Math.cos(lineRadian) * 160, Math.sin(lineRadian) * 160, 5, this.colorScheme.bar)
   }
 
-  positionToRadian(position) {
+  positionToRadian(position, ccw) {
+    if(ccw) return - position * 2 * Math.PI + (Math.PI * 3 / 2)
     return position * 2 * Math.PI - (Math.PI / 2)
   }
 
@@ -180,16 +182,20 @@ export class Renderer {
     RenderUtil.fillCircle(g, x, y, 10 * size, style)
   }
 
-  drawLongNoteLine(g, lane, startRadian, endRadian, state) {
+  drawLongNoteLine(g, lane, startRadian, endRadian, ccw, state) {
     let startRadianNew = startRadian
     let endRadianNew = endRadian
-    if(startRadian > endRadian) endRadianNew += Math.PI * 2
+    if(ccw) {
+      if(startRadian < endRadian) startRadianNew += Math.PI * 2
+    } else {
+      if(startRadian > endRadian) endRadianNew += Math.PI * 2
+    }
     const radius = 70 + lane * 30
     let style
     if(state == 0) style = this.colorScheme.note.long.inactive[lane]
     else if(state == 1) style = this.colorScheme.note.long.active[lane]
     else if(state == 2) style = this.colorScheme.note.long.miss
-    RenderUtil.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5)
+    RenderUtil.strokeArc(g, 0, 0, radius, startRadianNew, endRadianNew, style, 5, ccw)
   }
 
   // phase: 0 - 1
