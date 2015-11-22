@@ -58,20 +58,28 @@ export class LocalBmsonLoader {
       entry.file((file) => {
         const reader = new FileReader()
         reader.onloadend = (event) => {
-          const bmson = JSON.parse(event.target.result)
-          const chart = {
-            title: bmson.info.title,
-            genre: bmson.info.genre,
-            artist: bmson.info.artist,
-            bpm: bmson.info.initBPM,
-            level: bmson.info.level,
-            file: filePath
+          try {
+            const bmson = JSON.parse(event.target.result)
+            if(bmson.version) {
+              const chart = {
+                title: bmson.info.title,
+                genre: bmson.info.genre,
+                artist: bmson.info.artist,
+                bpm: bmson.info.init_bpm,
+                level: bmson.info.level,
+                file: filePath
+              }
+              this.music.title = this.music.title || chart.title
+              this.music.genre = this.music.genre || chart.genre
+              this.music.artist = this.music.artist || chart.artist
+              this.music.charts.single.push(chart)
+              resolve()
+            } else {
+              reject("CircularRhythm cannot load legacy bmson. Convert to v1.0 format.")
+            }
+          } catch(e) {
+            reject("Invalid bmson")
           }
-          this.music.title = this.music.title || chart.title
-          this.music.genre = this.music.genre || chart.genre
-          this.music.artist = this.music.artist || chart.artist
-          this.music.charts.single.push(chart)
-          resolve()
         }
         reader.readAsText(file)
       })
@@ -84,7 +92,7 @@ export class LocalBmsonLoader {
       this.music.basedir = entry.filesystem.name + entry.fullPath
       this.traverse(entry).then(() => {
         if(this.music.charts.single.length == 0 && this.music.charts.double.length == 0) {
-          reject()
+          reject("No bmson")
         } else {
           resolve(this.music)
         }
