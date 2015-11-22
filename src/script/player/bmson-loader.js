@@ -9,8 +9,8 @@ export class BmsonLoader {
   }
 
   loadTimingList() {
-    const bmsonBpmList = this.bmson.bpmNotes
-    const bmsonStopList = this.bmson.stopNotes
+    const bmsonBpmList = this.bmson.bpm_events
+    const bmsonStopList = this.bmson.stop_events
     const timingList = []
 
     // y -> {bpm: {}, stop: {}}
@@ -26,7 +26,7 @@ export class BmsonLoader {
 
     let lastTime = 0
     let lastY = 0
-    let lastBpm = this.bmson.info.initBPM
+    let lastBpm = this.bmson.info.init_bpm
     Array.from(combinedList)  // Convert to an array
     .sort((a, b) => a[0] - b[0]).forEach((e) => {  // to sort by y
       const y = e[0]
@@ -69,7 +69,7 @@ export class BmsonLoader {
     })
 
     if(timingList.length == 0 || timingList[0].y != 0) {
-      timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.initBPM})
+      timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.init_bpm})
     }
 
     return timingList
@@ -96,7 +96,7 @@ export class BmsonLoader {
   loadSoundChannels(barLines, timingList) {
     const soundChannels = []
 
-    for(let bmsonSoundChannel of this.bmson.soundChannel) {
+    for(let bmsonSoundChannel of this.bmson.sound_channels) {
       const bmsonNotes = bmsonSoundChannel.notes.slice().sort((a, b) => a.y - b.y)
       const notes = []
       for(let note of bmsonNotes) {
@@ -135,8 +135,8 @@ export class BmsonLoader {
   getBarSpeedChangeList(barLines, timingList) {
     const barSpeedChangeList = []
 
-    const bmsonBpmList = this.bmson.bpmNotes
-    const bmsonStopList = this.bmson.stopNotes
+    const bmsonBpmList = this.bmson.bpm_events
+    const bmsonStopList = this.bmson.stop_events
 
     // y -> {bpm: {}, stop: {}}
     const combinedSet = new Set()
@@ -150,7 +150,7 @@ export class BmsonLoader {
     }
 
     // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
-    let lastSpeed = this.bmson.info.initBPM / 60000 * 240 / barLines[0].l
+    let lastSpeed = this.bmson.info.init_bpm / 60000 * 240 / barLines[0].l
     Array.from(combinedSet).sort((a, b) => a - b).forEach(y => {
       const timingData = PlayerUtil.getTimingDataFromY(y, timingList)
       const barLineIndex = PlayerUtil.getBarLineIndex(y, barLines)
@@ -205,15 +205,15 @@ export class BmsonLoader {
   }
 
   appendLackingBarLine(barLines) {
-    this.bmson.soundChannel.forEach((channel) => {
+    this.bmson.sound_channels.forEach((channel) => {
       channel.notes.forEach((note) => {
         this.checkAndAppendBarLine(note.y + note.l, barLines)
       })
     })
-    this.bmson.bpmNotes.forEach((e) => {
+    this.bmson.bpm_events.forEach((e) => {
       this.checkAndAppendBarLine(e.y, barLines)
     })
-    this.bmson.stopNotes.forEach((e) => {
+    this.bmson.stop_events.forEach((e) => {
       this.checkAndAppendBarLine(e.y, barLines)
     })
   }

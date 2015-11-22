@@ -33,7 +33,7 @@ export class Player {
     this.currentY = 0
     this.currentPosition = 0
     this.currentTime = 0
-    this.currentBpm = this.bmson.info.initBPM
+    this.currentBpm = this.bmson.info.init_bpm
     this.currentBarSpeed = 0
     this.currentBarLine = null
 
