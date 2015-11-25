@@ -4,14 +4,19 @@ import { AssetLoader, AssetLoaderArchive, AssetLoaderLocal } from "./asset-loade
 import { Player } from "./player"
 import { Renderer } from "./renderer/renderer"
 export class Game {
-  constructor(bmsonSetConfig, localFileList, endCallback) {
+  constructor(bmsonSetConfig, localFileList, preference, endCallback) {
     this.bmsonSetConfig = bmsonSetConfig
     this.bmsonPath = bmsonSetConfig.path
     this.assetPath = bmsonSetConfig.assetPath
     this.packedAssets = bmsonSetConfig.packedAssets
     this.local = bmsonSetConfig.local
     this.localFileList = localFileList
+    this.preference = preference
     this.endCallback = endCallback
+
+    this.fieldWidth = 800
+    this.fieldHeight = 600
+    this.belowHeight = null
   }
 
   start(framework) {
@@ -45,7 +50,7 @@ export class Game {
         assetLoader: assetLoader
       }
       this.player = new Player(this, bmsonSet, parentPath)
-      this.renderer = new Renderer(this, framework)
+      this.renderer = new Renderer(this, framework, this.preference)
 
       this.player.init().then(() => {
         this.state = States.READY
@@ -56,6 +61,14 @@ export class Game {
 
   update(framework) {
     const g = framework.g
+    const scale = Math.min(framework.width / this.fieldWidth, framework.height / this.fieldHeight)
+    const translateX = (framework.width - this.fieldWidth * scale) / 2 / scale
+    this.belowHeight = (framework.height - this.fieldHeight * scale) / scale
+
+    g.fillStyle = this.preference.renderer.colorScheme.background
+    g.beginPath()
+    g.rect(0, 0, framework.width, framework.height)
+    g.fill()
 
     switch(this.state) {
       case States.LOADING:
@@ -72,7 +85,8 @@ export class Game {
         }
 
         g.save()
-        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
+        g.scale(scale, scale)
+        g.translate(translateX, 0)
 
         this.renderer.render(g, this.controller)
 
@@ -80,7 +94,8 @@ export class Game {
         break
       case States.IN_GAME:
         g.save()
-        g.translate((framework.width - 800) / 2, (framework.height - 600) / 2)
+        g.scale(scale, scale)
+        g.translate(translateX, 0)
 
         this.player.update(framework.input)
         this.renderer.render(g)

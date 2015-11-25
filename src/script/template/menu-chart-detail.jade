@@ -2,9 +2,9 @@ if type == "single"
   .type Single
 else
   .type Double
-.difficulty &lt;Difficulty&gt;
+.difficulty #{chart.chart_name}
 .title= chart.title
 .level Level #{chart.level}
-.bpm #{chart.bpm} BPM
-.notes &lt;Notes&gt;
-#play-button Play
+.bpm #{chart.bpm.initial} BPM
+.notes #{chart.notes} Notes
+#play-button Play!

@@ -15,11 +15,11 @@ g.task("css", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, on
 g.task("css_minify", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, outputStyle: "compressed", onError: (err) => console.log(err)})).pipe(g.dest("build/")).pipe(liveReload()))
 g.task("js", () => g.src("src/script/main.js").pipe(webpack(webpackConfig)).pipe(g.dest("build/script/")).pipe(liveReload()))
 g.task("js_minify", () => g.src("src/script/main.js").pipe(webpack(webpackConfigMin)).pipe(g.dest("build/script/")).pipe(liveReload()))
-//g.task("bmson", () => g.src("bmson/**/*").pipe(g.dest("build/bmson/")))
+g.task("asset", () => g.src("asset/**/*").pipe(g.dest("build/asset/")).pipe(liveReload()))
 
 g.task("clean", (cb) => del("build/", cb))
-g.task("all", ["clean"], (cb) => runSequence(["html", "css", "js"], cb))
-g.task("all_minify", ["clean"], (cb) => runSequence(["html_minify", "css_minify", "js_minify"], cb))
+g.task("all", ["clean"], (cb) => runSequence(["html", "css", "js", "asset"], cb))
+g.task("all_minify", ["clean"], (cb) => runSequence(["html_minify", "css_minify", "js_minify", "asset"], cb))
 
 g.task("watch", () => {
     liveReload.listen()
@@ -28,7 +28,7 @@ g.task("watch", () => {
     g.watch("src/script/template/**/*.jade", ["js"])
     g.watch("src/script/template/**/*.sass", ["js"])
     g.watch("src/script/**/*.js", ["js"])
-    //g.watch("bmson/**/*", ["bmson"])
+    g.watch("asset/**/*", ["asset"])
   }
 )
 

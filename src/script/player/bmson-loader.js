@@ -1,55 +1,52 @@
 import { PlayerUtil } from "./player-util"
 import { Note, NoteShort, NoteLong } from "./note"
-import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
+import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop, BarSpeedChangeEventType } from "./bar-speed-change-event"
 
+// TODO: Exclude long special
 export class BmsonLoader {
   constructor(bmson) {
     this.bmson = bmson
   }
 
   loadTimingList() {
-    const bmsonBpmList = this.bmson.bpmNotes
-    const bmsonStopList = this.bmson.stopNotes
+    const bmsonBpmList = this.bmson.bpm_events
+    const bmsonStopList = this.bmson.stop_events
     const timingList = []
 
-    // y -> {bpm: {}, stop: {}}
+    // y -> {bpmEvent: {}, stopEvent: {}}
     const combinedList = new Map()
-    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpm: e, stop: null}))
+    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpmEvent: e, stopEvent: null}))
     bmsonStopList.forEach((e, i) => {
       if(combinedList.has(e.y)) {
-        combinedList.get(e.y)["stop"] = e
+        combinedList.get(e.y).stopEvent = e
       } else {
-        combinedList.set(e.y, {bpm: null, stop: e})
+        combinedList.set(e.y, {bpmEvent: null, stopEvent: e})
       }
     })
 
     let lastTime = 0
     let lastY = 0
-    let lastBpm = this.bmson.info.initBPM
+    let lastBpm = this.bmson.info.init_bpm
     Array.from(combinedList)  // Convert to an array
     .sort((a, b) => a[0] - b[0]).forEach((e) => {  // to sort by y
       const y = e[0]
-      const bpm = e[1].bpm
-      const stop = e[1].stop
-      if(bpm == null) {
+      const bpmEvent = e[1].bpmEvent
+      const stopEvent = e[1].stopEvent
+      if(bpmEvent  == null) {
         // Only stop
         lastTime += (y - lastY) / 240 / lastBpm * 60000
         // Start
         timingList.push({time: lastTime, y: y, bpm: 0})
         // End
-        timingList.push({time: lastTime + stop.v, y: y, bpm: lastBpm})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventStop(y, lastBpm, stop.v))
-        lastTime += stop.v
+        timingList.push({time: lastTime + stopEvent.duration, y: y, bpm: lastBpm})
+        lastTime += stopEvent.duration
         lastY = y
-      } else if(stop == null) {
+      } else if(stopEvent == null) {
         // Only bpm
         // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
         lastTime += (y - lastY) / 240 / lastBpm * 60000
-        timingList.push({time: lastTime, y: y, bpm: bpm.v})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventSpeed(y, bpm.v))
-        lastBpm = bpm.v
+        timingList.push({time: lastTime, y: y, bpm: bpmEvent.bpm})
+        lastBpm = bpmEvent.bpm
         lastY = y
       } else {
         // Both
@@ -58,17 +55,15 @@ export class BmsonLoader {
         // Start
         timingList.push({time: lastTime, y: y, bpm: 0})
         // End
-        timingList.push({time: lastTime + stop.v, y: y, bpm: bpm.v})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventStop(y, bpm.v, stop.v))
-        lastTime += stop.v
-        lastBpm = bpm.v
+        timingList.push({time: lastTime + stopEvent.duration, y: y, bpm: bpmEvent.bpm})
+        lastTime += stopEvent.duration
+        lastBpm = bpmEvent.bpm
         lastY = y
       }
     })
 
     if(timingList.length == 0 || timingList[0].y != 0) {
-      timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.initBPM})
+      timingList.unshift({time: 0, y: 0, bpm: this.bmson.info.init_bpm})
     }
 
     return timingList
@@ -95,7 +90,7 @@ export class BmsonLoader {
   loadSoundChannels(barLines, timingList) {
     const soundChannels = []
 
-    for(let bmsonSoundChannel of this.bmson.soundChannel) {
+    for(let bmsonSoundChannel of this.bmson.sound_channels) {
       const bmsonNotes = bmsonSoundChannel.notes.slice().sort((a, b) => a.y - b.y)
       const notes = []
       for(let note of bmsonNotes) {
@@ -104,6 +99,13 @@ export class BmsonLoader {
         const timingData = PlayerUtil.getTimingDataFromY(note.y, timingList)
         const time = PlayerUtil.yToTime(note.y, timingData)
         const position = PlayerUtil.yToPosition(note.y, barLine)
+        let unitType
+        const unit = barLine.supportLines.find((e) => e.y == note.y)
+        if(unit) {
+          unitType = unit.type
+        } else {
+          unitType = 0
+        }
         if(note.l > 0) {
           // Long note
           const endY = note.y + note.l
@@ -111,10 +113,10 @@ export class BmsonLoader {
           const endTimingData = PlayerUtil.getTimingDataFromY(endY, timingList)
           const endTime = PlayerUtil.yToTime(endY, endTimingData)
           const endPosition = PlayerUtil.yToPosition(endY, endBarLine)
-          notes.push(new NoteLong(note.x, note.y, note.c, time, position, endY, endTime, endPosition))
+          notes.push(new NoteLong(note.x, note.y, note.c, unitType, time, position, endY, endTime, endPosition))
         } else {
           // Normal note
-          notes.push(new NoteShort(note.x, note.y, note.c, time, position))
+          notes.push(new NoteShort(note.x, note.y, note.c, unitType, time, position))
         }
       }
       soundChannels.push({name: bmsonSoundChannel.name, source: null, notes: notes})
@@ -127,8 +129,8 @@ export class BmsonLoader {
   getBarSpeedChangeList(barLines, timingList) {
     const barSpeedChangeList = []
 
-    const bmsonBpmList = this.bmson.bpmNotes
-    const bmsonStopList = this.bmson.stopNotes
+    const bmsonBpmList = this.bmson.bpm_events
+    const bmsonStopList = this.bmson.stop_events
 
     // y -> {bpm: {}, stop: {}}
     const combinedSet = new Set()
@@ -142,7 +144,7 @@ export class BmsonLoader {
     }
 
     // speed [(pos)/ms] = bpm [beat/min] / 60000 [ms/min] * 240 [tick / beat] / length [tick/(pos)]
-    let lastSpeed = this.bmson.info.initBPM / 60000 * 240 / barLines[0].l
+    let lastSpeed = this.bmson.info.init_bpm / 60000 * 240 / barLines[0].l
     Array.from(combinedSet).sort((a, b) => a - b).forEach(y => {
       const timingData = PlayerUtil.getTimingDataFromY(y, timingList)
       const barLineIndex = PlayerUtil.getBarLineIndex(y, barLines)
@@ -165,7 +167,7 @@ export class BmsonLoader {
         if(speed > lastSpeed){
           // activate 0.5 position prior to NEW SPEED
           const barMoveTime = time - 0.5 / speed
-          barSpeedChangeList.push(new BarSpeedChangeEventSpeed("faster", y, time, position, speed, barMoveTime))
+          barSpeedChangeList.push(new BarSpeedChangeEventSpeed(BarSpeedChangeEventType.FASTER, y, time, position, speed, barMoveTime))
         } else if(speed < lastSpeed) {
           // activate 0.5 position prior to CURRENT SPEED
           let barMovePosition = position - 0.5
@@ -187,7 +189,7 @@ export class BmsonLoader {
             const barMoveTimingData = PlayerUtil.getTimingDataFromY(barMoveY, timingList)
             barMoveTime = PlayerUtil.yToTime(barMoveY, barMoveTimingData)
           }
-          barSpeedChangeList.push(new BarSpeedChangeEventSpeed("slower", y, time, position, speed, barMoveTime))
+          barSpeedChangeList.push(new BarSpeedChangeEventSpeed(BarSpeedChangeEventType.SLOWER, y, time, position, speed, barMoveTime))
         }
         lastSpeed = speed
       }
@@ -197,15 +199,15 @@ export class BmsonLoader {
   }
 
   appendLackingBarLine(barLines) {
-    this.bmson.soundChannel.forEach((channel) => {
+    this.bmson.sound_channels.forEach((channel) => {
       channel.notes.forEach((note) => {
         this.checkAndAppendBarLine(note.y + note.l, barLines)
       })
     })
-    this.bmson.bpmNotes.forEach((e) => {
+    this.bmson.bpm_events.forEach((e) => {
       this.checkAndAppendBarLine(e.y, barLines)
     })
-    this.bmson.stopNotes.forEach((e) => {
+    this.bmson.stop_events.forEach((e) => {
       this.checkAndAppendBarLine(e.y, barLines)
     })
   }
@@ -256,12 +258,23 @@ export class BmsonLoader {
     }
   }
 
-  getNumberOfNotes(soundChannels) {
+  getNumberOfNotes(soundChannels, playMode) {
     let number = 0
     soundChannels.forEach((channel) => {
-      const notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 4)
+      let notes
+      if(playMode == 1) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 5)
+      } else if(playMode == 2) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 9)
+      }
       number += notes.length
     })
     return number
+  }
+
+  getPlayMode(hook) {
+    if(this.bmson.info.mode_hint == "circularrhythm-single") return 1
+    else if(this.bmson.info.mode_hint == "circularrhythm-double") return 2
+    else return 1 // TODO
   }
 }

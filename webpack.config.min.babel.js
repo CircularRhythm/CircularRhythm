@@ -12,7 +12,7 @@ export default {
         loader: 'babel'
       },
       {
-        test: /\.bmson$/,
+        test: /\.(json|bmson)$/,
         loader: 'json-loader'
       },
       {

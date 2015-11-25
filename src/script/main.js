@@ -9,6 +9,7 @@ import ScreenMenu from "./screen/menu"
 import ScreenGame from "./screen/game"
 import ScreenResult from "./screen/result"
 import { AssetLoaderLocal } from "./player/asset-loader"
+import { ColorScheme } from "./player/renderer/color-scheme"
 
 class CircularRhythm {
   static main() {
@@ -21,6 +22,14 @@ class CircularRhythm {
     this.musicList = null
     this.localMusicList = []
     this.localFileList = new Map()
+    this.preference = {
+      renderer: {
+        colorScheme: null,
+        ccwSingle: false,
+        ccwDouble1: false,
+        ccwDouble2: true
+      }
+    }
 
     const screens = new Map()
     this.screenManager = new ScreenManager(this, screens)
@@ -31,19 +40,33 @@ class CircularRhythm {
     if(this.debug) {
       switch(screenParam) {
         case "game":
-          this.screenManager.changeScreen("game", {
-            path: this.serverUrl + "/flicknote_onlylove_remix/onlylove_remix.bmson",
-            assetPath: this.serverUrl + "/flicknote_onlylove_remix/assets.json",
-            packedAssets: true,
-            local: false
+          this.load().then(() => {
+            this.screenManager.changeScreen("game", {
+              path: this.serverUrl + "/test/test-double.bmson",
+              assetPath: this.serverUrl + "/test/assets.json",
+              packedAssets: false,
+              local: false
+            })
           })
           break
         case "result":
-          this.screenManager.changeScreen("result", {
-            musicName: "TEST",
-            judge: [1, 2, 3, 4, 5, 6, 7],
-            score: 1000000,
-            maxCombo: 100
+          this.load().then(() => {
+            this.screenManager.changeScreen("result", {
+              title: "TEST",
+              subtitle: "sub",
+              mode: 1,
+              chartName: "Test",
+              level: 0,
+              notes: 100,
+              judge: [1, 2, 3, 4, 5, 6, 7],
+              score: 1000000,
+              maxCombo: 100
+            }, {
+              path: this.serverUrl + "/test/test-double.bmson",
+              assetPath: this.serverUrl + "/test/assets.json",
+              packedAssets: false,
+              local: false
+            })
           })
           break
         case "loading":
@@ -55,6 +78,39 @@ class CircularRhythm {
     } else {
       this.screenManager.changeScreen("loading")
     }
+  }
+
+  static load() {
+    const promises = []
+    promises[0] = new Promise((resolve, reject) => {
+      XHRPromise.send({
+        url: this.serverUrl + "/index.json",
+        responseType: "json"
+      }).then((json) => {
+        return XHRPromise.send({
+          url: this.serverUrl + "/" + json.music_data,
+          responseType: "json"
+        })
+      }).then((json) => {
+        this.musicList = json
+        resolve()
+      }).catch((e) => {
+        reject({message: "Cannot connect to server: " + this.app.serverUrl})
+      })
+    })
+    promises[1] = new Promise((resolve, reject) => {
+      XHRPromise.send({
+        url: "asset/colorscheme/default.json",
+        responseType: "json"
+      }).then((json) => {
+        this.preference.renderer.colorScheme = new ColorScheme(json)
+        resolve()
+      }).catch((e) => {
+        reject({message: "Cannot load color scheme"})
+      })
+    })
+
+    return Promise.all(promises)
   }
 }
 

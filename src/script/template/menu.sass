@@ -53,11 +53,13 @@ body
     @include absolute(220, 30, 470, 32)
     @include font-size(28)
     @include ellipsis()
+    .subtitle
+      font-size: 20px
   .artist
     @include absolute(220, 64, 470, 20)
     @include font-size(16)
     @include ellipsis()
-  .subartist
+  .subartists
     @include absolute(220, 88, 470, 20)
     @include font-size(16)
     @include ellipsis()
@@ -180,6 +182,9 @@ body
     top: 10px
     left: 10px
     @include ellipsis()
+
+    .subtitle
+      font-size: 14px
 
   .artist
     position: absolute

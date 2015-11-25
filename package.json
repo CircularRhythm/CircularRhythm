@@ -6,6 +6,7 @@
   "dependencies": {
     "babel-core": "^5.8.25",
     "babel-loader": "^5.3.2",
+    "color": "^0.10.1",
     "del": "^2.0.2",
     "gulp": "^3.9.0",
     "gulp-jade": "^1.1.0",
@@ -14,6 +15,7 @@
     "jade": "^1.11.0",
     "jquery": "^2.1.4",
     "jsrender": "0.0.3",
+    "numeral": "^1.5.3",
     "parse-bmfont-ascii": "^1.0.6",
     "webpack": "^1.12.2",
     "webpack-stream": "^2.1.1"

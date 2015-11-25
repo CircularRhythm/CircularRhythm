@@ -7,7 +7,6 @@ import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 
 export class Player {
-  // TODO: Make soundChannels index-base
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
   constructor(game, bmsonSet, parentPath) {
     this.game = game
@@ -16,8 +15,15 @@ export class Player {
     this.assetLoader = bmsonSet.assetLoader
     this.bmsonLoader = new BmsonLoader(this.bmson)
     this.parentPath = parentPath
-    this.keyConfig = [72, 74, 75, 76]
-    this.keyFlashing = [0, 0, 0, 0]
+    this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
+    this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]
+    this.specialLaneFlash = 0
+    this.specialLaneJudgeState = JudgeState.NO
+
+    this.playMode = this.bmsonLoader.getPlayMode(null)
+    this.autoSpecial = false
+    this.lanes = this.playMode * 4 + 1
+    this.specialLane = this.playMode * 4 + 1
 
     this.audioContext = new AudioContext()
 
@@ -27,7 +33,7 @@ export class Player {
     this.currentY = 0
     this.currentPosition = 0
     this.currentTime = 0
-    this.currentBpm = this.bmson.info.initBPM
+    this.currentBpm = this.bmson.info.init_bpm
     this.currentBarSpeed = 0
     this.currentBarLine = null
 
@@ -35,10 +41,11 @@ export class Player {
     this.visibleEndPosition = 0.7
     this.visibleEndTime = 0
 
+    this.specialLaneDuration = 750
+
     this.supportLineVisibleEndY = 0
 
-    // String(name) -> [Note]
-    this.visibleNotes = new Map()
+    this.visibleNotes = []
     // Int -> {name: String, note: Note}
     this.targetNotes = new Map()
 
@@ -70,13 +77,18 @@ export class Player {
     // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
-    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels)
+    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
 
     this.unitPosition = 0
 
     this.judgeStats = [0, 0, 0, 0, 0, 0, 0]
     this.score = 0
-    this.scoreMultiply = [0, 0, 0.05, 0.25, 0.5, 1, 0]
+    this.scoreMultiply = [0, 0, 0.1, 0.5, 0.75, 1, 0]
+
+    this.gauge = 80
+
+    // [{x: Number, position: Number, phase: Number, judgeState: Number}]
+    this.eraseParticleList = []
   }
 
   init() {
@@ -93,7 +105,10 @@ export class Player {
     Array.prototype.push.apply(this.visibleSupportLines, newSupportLines)
 
     this.soundChannels.forEach((e, i) => {
-      this.visibleNotes.set(i, e.notes.filter((note) => note.y < this.visibleEndY && 1 <= note.x && note.x <= 4))
+      //const firstVisibleNotes = []
+      Array.prototype.push.apply(this.visibleNotes, e.notes.filter((note) => note.y < this.visibleEndY && this.isNormalLane(note.x)))
+      if(!this.autoSpecial) Array.prototype.push.apply(this.visibleNotes, e.notes.filter((note) => note.time < this.specialLaneDuration && this.isSpecialLane(note.x)))
+      //this.visibleNotes.set(i, firstVisibleNotes)
     })
 
     this.currentBarLine = this.barLines[0]
@@ -109,10 +124,16 @@ export class Player {
     this.lastTime = nowTime
     this.currentTime += delta
 
-    for(let i = 0; i < 4; i++) {
+    for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
-      if(input.isPressed(this.keyConfig[i])) this.keyFlashing[i] = 1
+      if(this.isPressed(i, input)) this.keyFlashing[i] = 1
+    }
+    this.specialLaneFlash -= 0.05
+    if(this.specialLaneFlash < 0) this.specialLaneFlash = 0
+    if(this.isJustPressed(this.specialLane - 1, input)) {
+      this.specialLaneFlash = 1
+      this.specialLaneJudgeState = JudgeState.NO
     }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
@@ -167,14 +188,21 @@ export class Player {
       if(earliestEvent.barMoveTime < this.currentTime) {
         // Approaching resumption
         earliestEvent.showMovingLine = true
+        earliestEvent.movingPhase = Math.min(1, 2 - (earliestEvent.time + earliestEvent.length - this.currentTime) / (earliestEvent.time + earliestEvent.length - earliestEvent.barMoveTime) * 2)
         earliestEvent.currentPosition = earliestEvent.position - (earliestEvent.time + earliestEvent.length - this.currentTime) * earliestEvent.speed
       }
     } else if(earliestEvent instanceof BarSpeedChangeEventSpeed) {
       if(earliestEvent.barMoveTime < this.currentTime) {
         earliestEvent.showMovingLine = true
+        earliestEvent.movingPhase = Math.min(1, 2 - (earliestEvent.time - this.currentTime) / (earliestEvent.time - earliestEvent.barMoveTime) * 2)
         earliestEvent.currentPosition = earliestEvent.position - (earliestEvent.time - this.currentTime) * earliestEvent.speed
       }
     }
+
+    this.visibleBarSpeedChangeList.forEach((e) => {
+      e.phase += 0.003 * delta
+      if(e.phase > 1) e.phase = 1
+    })
 
     // Support line
     const oldSupportLineVisibleEndY = this.supportLineVisibleEndY
@@ -194,33 +222,51 @@ export class Player {
 
     // Add notes which to be visible
     this.soundChannels.forEach((channel, i) => {
-      const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && 1 <= note.x && note.x <= 4)
-      Array.prototype.push.apply(this.visibleNotes.get(i), newVisibleNotes)
+      const newVisibleNotes = channel.notes.filter((note) => this.visibleEndY - deltaVisibleEndY <= note.y && note.y < this.visibleEndY && this.isNormalLane(note.x))
+      Array.prototype.push.apply(this.visibleNotes, newVisibleNotes)
+      if(!this.autoSpecial) {
+        const newVisibleNotesSpecial = channel.notes.filter((note) => this.currentTime + this.specialLaneDuration - delta <= note.time && note.time < this.currentTime + this.specialLaneDuration && this.isSpecialLane(note.x))
+        Array.prototype.push.apply(this.visibleNotes, newVisibleNotesSpecial)
+      }
     })
 
-    // Erase notes which is already judged
-    this.visibleNotes.forEach((notes, index) => {
-      notes.filter((note) => note instanceof NoteShort && note.eraseTimer >= 0).forEach((note) => {
-        note.eraseTimer += delta
-      })
-      // Remove eraseTimer > 500
-      notes = notes.filter((note) => !(note instanceof NoteShort) || note.eraseTimer <= 500)
-
-      notes.filter((note) => note instanceof NoteLong).forEach((note) => {
-        if(note.noteHeadEraseTimer >= 0) {
-          note.noteHeadEraseTimer += delta
-          if(note.noteHeadEraseTimer > 500) note.noteHeadEraseTimer = 500
+    this.visibleNotes.forEach((note) => {
+      if(this.isSpecialLane(note.x)) {
+        note.phase = Math.min(1 - (note.time - this.currentTime) / this.specialLaneDuration, 1)
+      } else {
+        if(note instanceof NoteShort && note.time - 300 <= this.currentTime) {
+          const gap = Math.max(Math.abs(this.currentTime - note.time) / 300, 0)
+          note.phase = 1 - gap
+        } else if(note instanceof NoteLong && note.time - 300 <= this.currentTime) {
+          const gap = Math.max((note.time - this.currentTime) / 300, (this.currentTime - note.endTime) / 300, 0)
+          note.phase = 1 - gap
+        } else {
+            note.phase += delta * 0.005
+            if(note.phase > 0) note.phase = 0
         }
-        if(note.noteHeadMovable) {
-          note.noteHeadPosition = note.endY > this.currentY ? this.currentPosition : note.endPosition
-        }
-      })
-      // Remove currentTime > note.endTime + 500
-      notes = notes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime + 500)
-
-      // Set new notes list
-      this.visibleNotes.set(index, notes)
+      }
     })
+
+    this.visibleNotes.filter((note) => note instanceof NoteLong && note.noteHeadMovable).forEach((note) => {
+      if(note.y <= this.currentY && this.currentY < note.endY) {
+        note.noteHeadPosition = this.currentPosition
+      } else if(note.endY <= this.currentY) {
+        note.noteHeadPosition = note.endPosition
+      } else {
+        note.noteHeadPosition = note.position
+      }
+      //note.noteHeadPosition = note.endY > this.currentY ? this.currentPosition : note.endPosition
+    })
+
+    this.visibleNotes.filter((note) => note instanceof NoteLong && this.currentTime > note.endTime && note.state != 2).forEach((note) => {
+      this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: note.judgeState})
+    })
+
+    // Remove currentTime > endTime && state != 1
+    this.visibleNotes = this.visibleNotes.filter((note) => !(note instanceof NoteLong) || this.currentTime <= note.endTime || note.state == 1)
+
+    this.eraseParticleList.forEach((e) => e.phase += delta * 0.003)
+    this.eraseParticleList = this.eraseParticleList.filter((e) => e.phase < 1)
 
     // Target & Judge
     // Before assigning new targets, clean up old ones
@@ -230,7 +276,7 @@ export class Player {
     })
     for(let channel of this.soundChannels) {
       // Assign new targets
-      const newTargets = channel.notes.filter((note) => note.time - this.currentTime < 1000 && note.judgeState == JudgeState.NO && 1 <= note.x && note.x <= 4)
+      const newTargets = channel.notes.filter((note) => note.time - this.currentTime < 1000 && note.judgeState == JudgeState.NO && this.isControllableLane(note.x))
       for(let note of newTargets) {
         const x = note.x
         const target = this.targetNotes.get(x)
@@ -242,13 +288,14 @@ export class Player {
           if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
         }
       }
-      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && (note.x == 0 || 4 < note.x))
-      playSoundNotes.forEach((note) => note.sliceData.play(this.audioContext))
+      const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && !this.isControllableLane(note.x))
+      playSoundNotes.forEach((note) => {
+        if(note.sliceData) note.sliceData.play(this.audioContext)
+      })
     }
 
     // Judge
-    for(let i = 0; i < 4; i++) {
-      const button = this.keyConfig[i]
+    for(let i = 0; i < this.lanes; i++) {
       const x = i + 1
       const target = this.targetNotes.get(x)
       let note
@@ -261,27 +308,27 @@ export class Player {
       if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
         // Miss
         if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
-        else if(input.isJustPressed(button)) {
+        else if(this.isJustPressed(i, input)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.judgeShortNote(note, judge)
-          note.sliceData.play(this.audioContext)
+          if(note.sliceData) note.sliceData.play(this.audioContext)
         }
       }
       if(note instanceof NoteLong) {
         // Miss
         if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
-        else if(input.isJustPressed(button)) {
+        else if(this.isJustPressed(i, input)) {
           const judge = this.getJudge(this.currentTime - note.time)
           this.firstJudgeLongNote(note, judge)
-          note.sliceData.play(this.audioContext)
+          if(note.sliceData) note.sliceData.play(this.audioContext)
         }
 
-        if(note.active) {
+        if(note.state == 1) {
           if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
-          else if(input.isJustReleased(button)) {
+          else if(this.isJustReleased(i, input)) {
             const judge = this.getSecondJudge(this.currentTime - note.endTime)
             this.secondJudgeLongNote(note, judge)
-            if(!judge) note.sliceData.stop()
+            if(!judge && note.sliceData) note.sliceData.stop()
           }
         }
       }
@@ -290,10 +337,14 @@ export class Player {
 
   end() {
     this.game.endCallback({
-      musicName: this.bmson.info.title,
+      title: this.bmson.info.title,
+      subtitle: this.bmson.info.subtitle,
+      mode: this.playMode,
+      chartName: this.bmson.info.chart_name,
+      level: this.bmson.info.level,
       judge: this.judgeStats,
       maxCombo: this.maxCombo,
-      numberOfNotes: this.numberOfNotes,
+      notes: this.numberOfNotes,
       score: Math.ceil(this.score)
     })
   }
@@ -323,6 +374,13 @@ export class Player {
         this.combo++
         if(this.combo > this.maxCombo) this.maxCombo = this.combo
       }
+      this.visibleNotes = this.visibleNotes.filter((e) => e !== note)
+      if(note.x == this.specialLane) {
+        this.specialLaneJudgeState = judgeState
+        if(judgeState == JudgeState.MISS) this.specialLaneFlash = 1
+      } else {
+        this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
+      }
     }
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
@@ -334,6 +392,7 @@ export class Player {
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
         this.judgeStats[judgeState] ++
+        this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
     } else {
       this.judgeStats[judgeState] ++
@@ -351,6 +410,50 @@ export class Player {
       this.combo = 0
       this.judgeStats[JudgeState.BAD] ++
       this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
+      this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
+    }
+  }
+
+  isNormalLane(x) {
+    return 1 <= x && x <= this.lanes - 1
+  }
+
+  isSpecialLane(x) {
+    return x == this.specialLane
+  }
+
+  isControllableLane(x) {
+    if(this.autoSpecial) return 1 <= x && x <= this.lanes - 1
+    return 1 <= x && x <= this.lanes
+  }
+
+  isJustPressed(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isJustPressed(this.keyConfig[lane]) || input.isJustPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isJustPressed(this.keyConfig[8])
+    } else if(this.playMode == 2) {
+      return input.isJustPressed(this.keyConfig[lane])
+    }
+  }
+
+  isPressed(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isPressed(this.keyConfig[lane]) || input.isPressed(this.keyConfig[lane + 4])
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isPressed(this.keyConfig[8])
+    } else if(this.playMode == 2) {
+      return input.isPressed(this.keyConfig[lane])
+    }
+  }
+
+  isJustReleased(lane, input) {
+    if(this.playMode == 1 && 0 <= lane && lane <= 3) {
+      return input.isJustReleased(this.keyConfig[lane]) || input.isJustReleased(this.keyConfig[lane + 4])
+    } else if(this.playMode == 1 && lane == 4) {
+      return input.isJustReleased(this.keyConfig[8])
+    } else if(this.playMode == 2){
+      return input.isJustReleased(this.keyConfig[lane])
     }
   }
 }
