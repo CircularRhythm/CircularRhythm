@@ -32,6 +32,6 @@ export default class ScreenGame extends Screen {
 
   endCallback(resultData) {
     this.gameFramework.end()
-    this.manager.changeScreen("result", resultData)
+    this.manager.changeScreen("result", resultData, this.bmsonSetConfig)
   }
 }

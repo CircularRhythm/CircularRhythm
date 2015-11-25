@@ -1,6 +1,7 @@
-- var tweet_text = "I played " + musicName + " and got " + score + " points in #CircularRhythm !"
+- var modeString = ["Single", "Double"]
+- var tweetText = "I played " + title + "[" + modeString[mode - 1] + " " + chartName + "] and got " + score + " points in #CircularRhythm !"
 #container
-  #music_name= musicName
+  #music_name #{title} [#{modeString[mode - 1]} #{chartName}]
   #score Score: #{score}
   #judgeList
     .judgeRow
@@ -20,8 +21,9 @@
       .judgeNumber #{judge[1] + judge[6]} (#{judge[1]})
     .judgeRow.judgeRowMaxCombo
       .judgeName Max Combo
-      .judgeNumber #{maxCombo} / #{numberOfNotes}
+      .judgeNumber #{maxCombo} / #{notes}
   #tweet
-    <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://circularrhythm.github.io/" data-text="#{tweet_text}" data-size="large" data-count="none">Tweet</a>
+    <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://circularrhythm.github.io/" data-text="#{tweetText}" data-size="large" data-count="none">Tweet</a>
     <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs)}}(document, 'script', 'twitter-wjs');</script>
-  #return_menu Return to menu
+  #retry.button Retry
+  #return_menu.button Return to menu

@@ -42,7 +42,7 @@ class CircularRhythm {
         case "game":
           this.load().then(() => {
             this.screenManager.changeScreen("game", {
-              path: this.serverUrl + "/test/test.bmson",
+              path: this.serverUrl + "/test/test-double.bmson",
               assetPath: this.serverUrl + "/test/assets.json",
               packedAssets: false,
               local: false
@@ -52,10 +52,20 @@ class CircularRhythm {
         case "result":
           this.load().then(() => {
             this.screenManager.changeScreen("result", {
-              musicName: "TEST",
+              title: "TEST",
+              subtitle: "sub",
+              mode: 1,
+              chartName: "Test",
+              level: 0,
+              notes: 100,
               judge: [1, 2, 3, 4, 5, 6, 7],
               score: 1000000,
               maxCombo: 100
+            }, {
+              path: this.serverUrl + "/test/test-double.bmson",
+              assetPath: this.serverUrl + "/test/assets.json",
+              packedAssets: false,
+              local: false
             })
           })
           break

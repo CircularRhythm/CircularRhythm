@@ -89,7 +89,6 @@ export class Player {
 
     // [{x: Number, position: Number, phase: Number, judgeState: Number}]
     this.eraseParticleList = []
-    console.log(this)
   }
 
   init() {
@@ -338,10 +337,14 @@ export class Player {
 
   end() {
     this.game.endCallback({
-      musicName: this.bmson.info.title,
+      title: this.bmson.info.title,
+      subtitle: this.bmson.info.subtitle,
+      mode: this.playMode,
+      chartName: this.bmson.info.chart_name,
+      level: this.bmson.info.level,
       judge: this.judgeStats,
       maxCombo: this.maxCombo,
-      numberOfNotes: this.numberOfNotes,
+      notes: this.numberOfNotes,
       score: Math.ceil(this.score)
     })
   }

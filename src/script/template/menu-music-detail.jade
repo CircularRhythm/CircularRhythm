@@ -3,8 +3,10 @@
   audio(controls)
 .genre= music.genre
 .title= music.title
+  if music.subtitle && music.subtitle != ""
+    span.subtitle  - #{music.subtitle}
 .artist= music.artist
-.subartist
+.subartists= music.subartists.join(", ")
 .vr
 .difficulty
   .label Single

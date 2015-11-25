@@ -1,3 +1,5 @@
 .music-container
-  .title= music.title
+  .title #{music.title}
+    if music.subtitle && music.subtitle != ""
+      span.subtitle  - #{music.subtitle}
   .artist= music.artist
