@@ -20,7 +20,7 @@ export class Player {
     this.specialLaneFlash = 0
     this.specialLaneJudgeState = JudgeState.NO
 
-    this.playMode = 2
+    this.playMode = this.bmsonLoader.getPlayMode(null)
     this.autoSpecial = false
     this.lanes = this.playMode * 4 + 1
     this.specialLane = this.playMode * 4 + 1

@@ -277,4 +277,10 @@ export class BmsonLoader {
     })
     return number
   }
+
+  getPlayMode(hook) {
+    if(this.bmson.info.mode_hint == "circularrhythm-single") return 1
+    else if(this.bmson.info.mode_hint == "circularrhythm-double") return 2
+    else return 1 // TODO
+  }
 }
