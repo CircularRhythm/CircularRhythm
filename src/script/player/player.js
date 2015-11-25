@@ -89,6 +89,7 @@ export class Player {
 
     // [{x: Number, position: Number, phase: Number, judgeState: Number}]
     this.eraseParticleList = []
+    console.log(this)
   }
 
   init() {

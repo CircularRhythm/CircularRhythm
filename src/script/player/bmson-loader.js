@@ -13,14 +13,14 @@ export class BmsonLoader {
     const bmsonStopList = this.bmson.stop_events
     const timingList = []
 
-    // y -> {bpm: {}, stop: {}}
+    // y -> {bpmEvent: {}, stopEvent: {}}
     const combinedList = new Map()
-    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpm: e, stop: null}))
+    bmsonBpmList.forEach((e, i) => combinedList.set(e.y, {bpmEvent: e, stopEvent: null}))
     bmsonStopList.forEach((e, i) => {
       if(combinedList.has(e.y)) {
-        combinedList.get(e.y)["stop"] = e
+        combinedList.get(e.y).stopEvent = e
       } else {
-        combinedList.set(e.y, {bpm: null, stop: e})
+        combinedList.set(e.y, {bpmEvent: null, stopEvent: e})
       }
     })
 
@@ -30,27 +30,23 @@ export class BmsonLoader {
     Array.from(combinedList)  // Convert to an array
     .sort((a, b) => a[0] - b[0]).forEach((e) => {  // to sort by y
       const y = e[0]
-      const bpm = e[1].bpm
-      const stop = e[1].stop
-      if(bpm == null) {
+      const bpmEvent = e[1].bpmEvent
+      const stopEvent = e[1].stopEvent
+      if(bpmEvent  == null) {
         // Only stop
         lastTime += (y - lastY) / 240 / lastBpm * 60000
         // Start
         timingList.push({time: lastTime, y: y, bpm: 0})
         // End
-        timingList.push({time: lastTime + stop.v, y: y, bpm: lastBpm})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventStop(y, lastBpm, stop.v))
-        lastTime += stop.v
+        timingList.push({time: lastTime + stopEvent.duration, y: y, bpm: lastBpm})
+        lastTime += stopEvent.duration
         lastY = y
-      } else if(stop == null) {
+      } else if(stopEvent == null) {
         // Only bpm
         // [tick] / 240 [tick/beat(4th)] / bpm [beat(4th)/min] * 60000 [ms/min]
         lastTime += (y - lastY) / 240 / lastBpm * 60000
-        timingList.push({time: lastTime, y: y, bpm: bpm.v})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventSpeed(y, bpm.v))
-        lastBpm = bpm.v
+        timingList.push({time: lastTime, y: y, bpm: bpmEvent.bpm})
+        lastBpm = bpmEvent.bpm
         lastY = y
       } else {
         // Both
@@ -59,11 +55,9 @@ export class BmsonLoader {
         // Start
         timingList.push({time: lastTime, y: y, bpm: 0})
         // End
-        timingList.push({time: lastTime + stop.v, y: y, bpm: bpm.v})
-        // Push to barSpeedChangeList
-        //this.barSpeedChangeList.push(new BarSpeedChangeEventStop(y, bpm.v, stop.v))
-        lastTime += stop.v
-        lastBpm = bpm.v
+        timingList.push({time: lastTime + stopEvent.duration, y: y, bpm: bpmEvent.bpm})
+        lastTime += stopEvent.duration
+        lastBpm = bpmEvent.bpm
         lastY = y
       }
     })
