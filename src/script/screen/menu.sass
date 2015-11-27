@@ -19,7 +19,7 @@ $shadow-style: 0 0 5px 1px #A0A0A0
 body
   background-color: #F0F0FF
 
-#music-detail
+#musicDetail
   position: fixed
   width: 900px
   height: 120px
@@ -32,7 +32,7 @@ body
   box-shadow: $shadow-style
   color: #000000
 
-  .no-music
+  .noMusic
     @include absolute(0, 45, 900, 30)
     @include font-size(30)
     text-align: center
@@ -54,6 +54,7 @@ body
     @include font-size(28)
     @include ellipsis()
     .subtitle
+      margin-left: 12px
       font-size: 20px
   .artist
     @include absolute(220, 64, 470, 20)
@@ -77,7 +78,7 @@ body
       @include font-size(12)
       height: 16px
 
-    .button-container
+    .buttonContainer
       display: flex
       flex-flow: row nowrap
       margin-bottom: 14px
@@ -97,17 +98,16 @@ body
           border-bottom-right-radius: 3px
         &:hover
           background-color: #F0F0F0
-      .button-active
+      .buttonActive
         background-color: #E0E0E0
 
   .vr
     @include absolute(700, 15, 1, 90)
     background-color: #000000
 
-#chart-detail
+#chartDetail
   position: fixed
   width: 850px
-  height: 120px
   top: 140px
   left: 50%
   margin-left: -425px
@@ -117,7 +117,10 @@ body
   border-bottom-right-radius: 5px
   box-shadow: $shadow-style
   color: #000000
-  .type
+  transition-property: height
+  transition-duration: 0.6s
+  overflow: hidden
+  .mode
     @include absolute(10, 10, 150, 30)
     @include font-size(16)
   .difficulty
@@ -135,7 +138,7 @@ body
   .title
     @include absolute(170, 45, 600, 36)
     @include font-size(24)
-  #play-button
+  #playButton
     @include absolute(760, 50, 80, 60)
     cursor: pointer
     border: 1px solid #000000
@@ -146,6 +149,11 @@ body
     text-align: center
     text-shadow: 0px 0px 5px #FFFFFF
 
+.chartDetailInvisible
+  height: 0px
+.chartDetailVisible
+  height: 120px
+
 #container
   position: absolute
   top: 150px
@@ -153,7 +161,7 @@ body
   width: 900px
   margin-left: -450px
 
-#music-list, #local-music-list
+#musicList, #localMusicList
   padding: 0px 30px
   display: flex
   flex-direction: row
@@ -162,7 +170,7 @@ body
   margin-left: auto
   margin-right: auto
 
-  .music-container
+  .musicContainer
     width: 400px
     height: 70px
     margin: 10px
@@ -173,26 +181,27 @@ body
     color: #000000
     cursor: pointer
 
-  .title
-    line-height: 20px
-    width: 300px
-    height: 30px
-    font-size: 20px
-    position: absolute
-    top: 10px
-    left: 10px
-    @include ellipsis()
+    .title
+      line-height: 20px
+      width: 300px
+      height: 30px
+      font-size: 20px
+      position: absolute
+      top: 10px
+      left: 10px
+      @include ellipsis()
 
-    .subtitle
+      .subtitle
+        margin-left: 12px
+        font-size: 14px
+
+    .artist
+      position: absolute
+      height: 14px
+      line-height: 14px
       font-size: 14px
-
-  .artist
-    position: absolute
-    height: 14px
-    line-height: 14px
-    font-size: 14px
-    top: 45px
-    left: 10px
+      top: 45px
+      left: 10px
 
 //@media (max-width: 900px)
   #music_detail

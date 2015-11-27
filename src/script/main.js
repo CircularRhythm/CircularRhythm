@@ -3,7 +3,10 @@ import $ from "jquery"
 import getParameter from "get-parameter"
 import XHRPromise from "./xhr-promise"
 
-import { Screen, ScreenManager } from "./screen/screen"
+import React from "react"
+import ReactDOM from "react-dom"
+
+import ScreenManager from "./screen-manager"
 import ScreenLoading from "./screen/loading"
 import ScreenMenu from "./screen/menu"
 import ScreenGame from "./screen/game"
@@ -31,52 +34,52 @@ class CircularRhythm {
       }
     }
 
-    const screens = new Map()
-    this.screenManager = new ScreenManager(this, screens)
-    screens.set("loading", ScreenLoading)
-    screens.set("menu", ScreenMenu)
-    screens.set("game", ScreenGame)
-    screens.set("result", ScreenResult)
+    this.screenManager = new ScreenManager(this)
     if(this.debug) {
       switch(screenParam) {
         case "game":
           this.load().then(() => {
-            this.screenManager.changeScreen("game", {
-              path: this.serverUrl + "/test/test-double.bmson",
-              assetPath: this.serverUrl + "/test/assets.json",
-              packedAssets: false,
-              local: false
+            this.screenManager.transit(ScreenGame, {
+              bmsonSetConfig: {
+                path: this.serverUrl + "/test/test-double.bmson",
+                assetPath: this.serverUrl + "/test/assets.json",
+                packedAssets: false,
+                local: false
+              }
             })
           })
           break
         case "result":
           this.load().then(() => {
-            this.screenManager.changeScreen("result", {
-              title: "TEST",
-              subtitle: "sub",
-              mode: 1,
-              chartName: "Test",
-              level: 0,
-              notes: 100,
-              judge: [1, 2, 3, 4, 5, 6, 7],
-              score: 1000000,
-              maxCombo: 100
-            }, {
-              path: this.serverUrl + "/test/test-double.bmson",
-              assetPath: this.serverUrl + "/test/assets.json",
-              packedAssets: false,
-              local: false
+            this.screenManager.transit(ScreenResult, {
+              result: {
+                title: "TEST",
+                subtitle: "sub",
+                mode: 1,
+                chartName: "Test",
+                level: 0,
+                notes: 100,
+                judge: [1, 2, 3, 4, 5, 6, 7],
+                score: 1000000,
+                maxCombo: 100
+              },
+              bmsonSetConfig: {
+                path: this.serverUrl + "/test/test-double.bmson",
+                assetPath: this.serverUrl + "/test/assets.json",
+                packedAssets: false,
+                local: false
+              }
             })
           })
           break
         case "loading":
         case "menu":
         default:
-          this.screenManager.changeScreen("loading")
+          this.screenManager.transit(ScreenLoading, {})
           break
       }
     } else {
-      this.screenManager.changeScreen("loading")
+      this.screenManager.transit(ScreenLoading, {})
     }
   }
 

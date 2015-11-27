@@ -7,7 +7,7 @@ export default {
   module: {
     loaders: [
       {
-        test: /\.js$/,
+        test: /\.jsx?$/,
         exclude: /(node_modules|bower_components)/,
         loader: 'babel'
       },
@@ -17,7 +17,7 @@ export default {
       },
       {
         test: /\.jade$/,
-        loader: 'jade-loader'
+        loader: 'react-jade-loader'
       },
       {
         test: /\.sass$/,
@@ -26,6 +26,7 @@ export default {
     ]
   },
   resolve: {
+    extensions: ["", ".js", ".jsx"]
   },
   plugins: [
   ]

@@ -25,9 +25,10 @@ g.task("watch", () => {
     liveReload.listen()
     g.watch("src/index.jade", ["html"])
     g.watch("src/style.sass", ["css"])
-    g.watch("src/script/template/**/*.jade", ["js"])
-    g.watch("src/script/template/**/*.sass", ["js"])
+    g.watch("src/script/**/*.jade", ["js"])
+    g.watch("src/script/**/*.sass", ["js"])
     g.watch("src/script/**/*.js", ["js"])
+    g.watch("src/script/**/*.jsx", ["js"])
     g.watch("asset/**/*", ["asset"])
   }
 )
