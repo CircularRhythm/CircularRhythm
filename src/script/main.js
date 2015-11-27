@@ -1,6 +1,7 @@
 //import fontParser from "parse-bmfont-ascii"
 import $ from "jquery"
 import getParameter from "get-parameter"
+import Bowser from "bowser"
 import XHRPromise from "./xhr-promise"
 
 import React from "react"
@@ -33,6 +34,10 @@ class CircularRhythm {
         ccwDouble2: true
       }
     }
+
+    this.compatibilityWarning = []
+    if(!Bowser.chrome) this.compatibilityWarning.push("Incompatible browser is detected. Currently only Google Chrome is supported. The game may not work correctly in other browsers.")
+    if(Bowser.mobile && !Bowser.tablet) this.compatibilityWarning.push("Smartphone is detected. Playing this game with smartphones is discouraged.")
 
     this.screenManager = new ScreenManager(this)
     if(this.debug) {

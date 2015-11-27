@@ -10,6 +10,7 @@ export default React.createClass({
   getInitialState() {
     return {
       showDropScreen: false,
+      showCompatibilityWarning: this.props.app.compatibilityWarning.length > 0,
       selectedMusic: {
         type: null,
         id: null,
@@ -129,6 +130,11 @@ export default React.createClass({
 
     this.props.manager.transit(ScreenGame, {bmsonSetConfig: bmsonSetConfig})
   },
+  closeCompatibilityWarning() {
+    this.setState({
+      showCompatibilityWarning: false
+    })
+  },
   render() {
     let musicDetailContent
     if(this.state.selectedMusic.element) {
@@ -219,6 +225,20 @@ export default React.createClass({
       )
     })
 
+    let compatibilityWarningContent
+    if(this.state.showCompatibilityWarning) {
+      compatibilityWarningContent = (
+        <div id="compatibilityWarning">
+          {this.props.app.compatibilityWarning.map((e, i) => {
+            return <div className="message" key={i}>{e}</div>
+          })}
+          <div className="button" onClick={(e) => this.closeCompatibilityWarning()}>Close</div>
+        </div>
+      )
+    } else {
+      compatibilityWarningContent = null
+    }
+
     const chartDetailClassName = ClassNames({
       chartDetailInvisible: (this.state.selectedChart.element == null),
       chartDetailVisible: (this.state.selectedChart.element != null)
@@ -238,6 +258,7 @@ export default React.createClass({
           onDragLeave={this.dropOnDragLeave}
           onDragOver={this.dropOnDragOver}
           onDrop={this.dropOnDrop}></div>
+        {compatibilityWarningContent}
       </div>
     )
   },
