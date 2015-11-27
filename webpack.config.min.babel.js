@@ -16,10 +16,6 @@ export default {
         loader: 'json-loader'
       },
       {
-        test: /\.jade$/,
-        loader: 'react-jade-loader'
-      },
-      {
         test: /\.sass$/,
         loaders: ['style-loader/useable', 'css-loader', 'sass-loader?indentedSyntax']
       }
