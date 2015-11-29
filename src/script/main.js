@@ -112,7 +112,7 @@ class CircularRhythm {
         this.musicList = json
         resolve()
       }).catch((e) => {
-        reject({message: "Cannot connect to server: " + this.app.serverUrl})
+        reject({message: "Cannot connect to server: " + this.serverUrl})
       })
     })
     promises[1] = new Promise((resolve, reject) => {
