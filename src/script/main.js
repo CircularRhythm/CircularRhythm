@@ -17,6 +17,8 @@ import { ColorScheme } from "./player/renderer/color-scheme"
 
 class CircularRhythm {
   static main() {
+    this.version = "0.5.0"
+
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
     const screenParam = getParameter("screen")

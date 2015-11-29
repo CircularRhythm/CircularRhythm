@@ -259,6 +259,11 @@ export default React.createClass({
           onDragOver={this.dropOnDragOver}
           onDrop={this.dropOnDrop}></div>
         {compatibilityWarningContent}
+        <div id="footer">
+          <span className="item">Version {this.props.app.version}</span>
+          <span className="spacer"></span>
+          <a className="item" href="https://github.com/CircularRhythm/CircularRhythm" target="_blank">Github</a>
+        </div>
       </div>
     )
   },
