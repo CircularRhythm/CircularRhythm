@@ -22,6 +22,7 @@ class CircularRhythm {
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
     const screenParam = getParameter("screen")
+    const forceCompatibilityWarningParam = getParameter("forcecompat")
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
     this.debug = debugParam == "true"
 
@@ -43,6 +44,12 @@ class CircularRhythm {
 
     this.screenManager = new ScreenManager(this)
     if(this.debug) {
+      if(forceCompatibilityWarningParam == "true") {
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 1")
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 2")
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 3")
+      }
+
       switch(screenParam) {
         case "game":
           this.load().then(() => {
