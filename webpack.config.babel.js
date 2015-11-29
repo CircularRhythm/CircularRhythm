@@ -2,7 +2,8 @@ import webpack from "webpack";
 
 export default {
   output: {
-    filename: 'main.js'
+    filename: 'main.js',
+    publicPath: 'asset/'
   },
   module: {
     loaders: [

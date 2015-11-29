@@ -188,14 +188,21 @@ export default React.createClass({
     let chartDetailContent
     if(this.state.selectedChart.element){
       const chart = this.state.selectedChart.element
+      let bpmContent
+      if(chart.bpm.min != chart.bpm.max) {
+        bpmContent = <span className="content"><span className="bpmMin">{chart.bpm.min}</span><span className="bpmInitial">{chart.bpm.initial}</span><span className="bpmMax">{chart.bpm.max}</span></span>
+      } else {
+        bpmContent = <span className="content"><span className="bpmInitial">{chart.bpm.initial}</span></span>
+      }
       chartDetailContent = (
         <div>
+          <div className="typeColor typeColorEasy"></div>
           <div className="mode">{this.modeString[this.state.selectedChart.mode]}</div>
-          <div className="difficulty">{chart.chart_name}</div>
-          <div className="level">Level {chart.level}</div>
-          <div className="bpm">{chart.bpm.initial} BPM</div>
-          <div className="notes">{chart.notes} Notes</div>
-          <div id="playButton" onClick={(e) => this.play()}>Play!</div>
+          <div className="chartName">{chart.chart_name}</div>
+          <div className="level">{chart.level}</div>
+          <div className="levelVr"></div>
+          <div className="bpmNotes"><span className="prefix">BPM:</span>{bpmContent}<span className="prefix">Notes:</span><span className="content">{chart.notes}</span></div>
+          <div id="playButton" onClick={(e) => this.play()}><i className="fa fa-play"></i></div>
         </div>
       )
     } else {

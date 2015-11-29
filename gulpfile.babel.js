@@ -11,10 +11,10 @@ import liveReload from "gulp-livereload"
 
 g.task("html", () => g.src("src/index.jade").pipe(jade({ pretty: true })).pipe(g.dest("build/")).pipe(liveReload()))
 g.task("html_minify", () => g.src("src/index.jade").pipe(jade({ pretty: false })).pipe(g.dest("build/")).pipe(liveReload()))
-g.task("css", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, onError: (err) => console.log(err)})).pipe(g.dest("build/")).pipe(liveReload()))
-g.task("css_minify", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, outputStyle: "compressed", onError: (err) => console.log(err)})).pipe(g.dest("build/")).pipe(liveReload()))
-g.task("js", () => g.src("src/script/main.js").pipe(webpack(webpackConfig)).pipe(g.dest("build/script/")).pipe(liveReload()))
-g.task("js_minify", () => g.src("src/script/main.js").pipe(webpack(webpackConfigMin)).pipe(g.dest("build/script/")).pipe(liveReload()))
+g.task("css", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, onError: (err) => console.log(err)})).pipe(g.dest("build/asset/")).pipe(liveReload()))
+g.task("css_minify", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: true, outputStyle: "compressed", onError: (err) => console.log(err)})).pipe(g.dest("build/asset/")).pipe(liveReload()))
+g.task("js", () => g.src("src/script/main.js").pipe(webpack(webpackConfig)).pipe(g.dest("build/asset/")).pipe(liveReload()))
+g.task("js_minify", () => g.src("src/script/main.js").pipe(webpack(webpackConfigMin)).pipe(g.dest("build/asset/")).pipe(liveReload()))
 g.task("asset", () => g.src("asset/**/*").pipe(g.dest("build/asset/")).pipe(liveReload()))
 
 g.task("clean", (cb) => del("build/", cb))
