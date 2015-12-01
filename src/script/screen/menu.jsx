@@ -3,6 +3,7 @@ import style from "./menu.sass"
 import ScreenGame from "./game"
 import ClassNames from "classnames"
 import { LocalBmsonLoader } from "../local-bmson-loader"
+import { getTypeStyle } from "../util"
 
 // TODO: cleanup
 export default React.createClass({
@@ -159,6 +160,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.single.map((e, i) => {
                 const className = ClassNames({
                   button: true,
+                  ["button" + getTypeStyle(e.chart_name)]: true,
                   buttonActive: (this.state.selectedChart.mode == "single" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -171,6 +173,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.double.map((e, i) => {
                 const className = ClassNames({
                   button: true,
+                  ["button" + getTypeStyle(e.chart_name)]: true,
                   buttonActive: (this.state.selectedChart.mode == "double" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -194,9 +197,13 @@ export default React.createClass({
       } else {
         bpmContent = <span className="content"><span className="bpmInitial">{chart.bpm.initial}</span></span>
       }
+      const className = ClassNames({
+        typeColor: true,
+        ["typeColor" + getTypeStyle(chart.chart_name)]: true
+      })
       chartDetailContent = (
         <div>
-          <div className="typeColor typeColorEasy"></div>
+          <div className={className}></div>
           <div className="mode">{this.modeString[this.state.selectedChart.mode]}</div>
           <div className="chartName">{chart.chart_name}</div>
           <div className="level">{chart.level}</div>

@@ -16,10 +16,24 @@
 
 $shadow-style: 0 0 5px 1px #A0A0A0
 
-$type-back-easy: rgba(127, 255, 127, 1)
+$type-back-veryeasy: rgba(127, 255, 127, 1)
+$type-back-easy: rgba(127, 255, 255, 1)
+$type-back-medium: rgba(255, 255, 127, 1)
+$type-back-hard: rgba(255, 127, 127, 1)
+$type-back-veryhard: rgba(127, 127, 127, 1)
+$type-back-unknown: rgba(255, 255, 255, 1)
 
 @mixin type-back-gradient($color)
   background: linear-gradient(90deg, rgba($color, 1), rgba($color, 0))
+
+@mixin type-button($color)
+  background-color: $color
+  border: 1px solid darken($color, 50%)
+  &:hover
+    background-color: lighten($color, 10%)
+  &.buttonActive
+    background-color: darken($color, 10%)
+    box-shadow: 0px 0px 3px 1px rgba(0, 0, 0, 0.3) inset
 
 body
   background-color: #F0F0FF
@@ -94,17 +108,24 @@ body
         cursor: pointer
         flex-grow: 1
         text-align: center
-        border: 1px solid #000000
         &:first-child
           border-top-left-radius: 3px
           border-bottom-left-radius: 3px
         &:last-child
           border-top-right-radius: 3px
           border-bottom-right-radius: 3px
-        &:hover
-          background-color: #F0F0F0
-      .buttonActive
-        background-color: #E0E0E0
+      .buttonVeryEasy
+        @include type-button($type-back-veryeasy)
+      .buttonEasy
+        @include type-button($type-back-easy)
+      .buttonMedium
+        @include type-button($type-back-medium)
+      .buttonHard
+        @include type-button($type-back-hard)
+      .buttonVeryHard
+        @include type-button($type-back-veryhard)
+      .buttonUnknown
+        @include type-button($type-back-unknown)
 
   .vr
     @include absolute(700, 15, 1, 90)
@@ -127,8 +148,18 @@ body
   overflow: hidden
   .typeColor
     @include absolute(0, 0, 160, 120)
+  .typeColorVeryEasy
+    @include type-back-gradient($type-back-veryeasy)
   .typeColorEasy
     @include type-back-gradient($type-back-easy)
+  .typeColorMedium
+    @include type-back-gradient($type-back-medium)
+  .typeColorHard
+    @include type-back-gradient($type-back-hard)
+  .typeColorVeryHard
+    @include type-back-gradient($type-back-veryhard)
+  .typeColorUnknown
+    @include type-back-gradient($type-back-unknown)
   .mode
     @include absolute(10, 15, 150, 30)
     @include font-size(14)
