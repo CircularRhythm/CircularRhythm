@@ -51,6 +51,19 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 440, 800, 10, this.colorScheme.duration)
     RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
+
+    RenderUtil.fillText(g, "Judge", 400, 470, "bold 12px sans-serif", "#000000", "center", "bottom")
+    RenderUtil.fillText(g, "Perfect:", 350, 490, "12px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, "Great:", 350, 510, "12px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, "Good:", 350, 530, "12px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, "Bad:", 350, 550, "12px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, "Miss:", 350, 570, "12px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, "0", 450, 490, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, "0", 450, 510, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, "0", 450, 530, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, "0", 450, 550, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, "0", 450, 570, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, "(0)", 450, 590, "16px sans-serif", "#000000", "right", "bottom")
   }
 
   renderUnit(g, controller, playerNum, ccw) {
