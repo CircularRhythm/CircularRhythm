@@ -26,6 +26,14 @@ export class RenderUtil {
     g.fill()
   }
 
+  static strokeRect(g, x, y, w, h, width, style) {
+    g.lineWidth = width
+    g.strokeStyle = style
+    g.beginPath()
+    g.rect(x, y, w, h)
+    g.stroke()
+  }
+
   static fillRect(g, x, y, w, h, style) {
     g.fillStyle = style
     g.beginPath()
@@ -48,5 +56,10 @@ export class RenderUtil {
     g.moveTo(x1, y1)
     g.lineTo(x2, y2)
     g.stroke()
+  }
+
+  static measureText(g, text, font) {
+    g.font = font
+    return g.measureText(text)
   }
 }

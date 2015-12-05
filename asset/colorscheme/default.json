@@ -14,7 +14,29 @@
   },
   "duration": [114, 159, 207, 1],
   "information": {
-    "background": [211, 215, 207, 1]
+    "background": [211, 215, 207, 1],
+    "separator": [136, 138, 133, 1],
+    "header": [46, 52, 54, 1],
+    "judge": {
+      "header": [85, 87, 83, 1],
+      "number": [46, 52, 54, 1]
+    },
+    "chart_name": {
+      "text": [46, 52, 54, 1],
+      "background": {
+        "hard": [239, 41, 41, 0.5]
+      }
+    },
+    "level": {
+      "header": [85, 87, 83, 1],
+      "number": [46, 52, 54, 1]
+    },
+    "title": [46, 52, 54, 1],
+    "subtitle": [85, 87, 83, 1],
+    "analyzer": {
+      "background": [238, 238, 236, 1],
+      "border": [85, 87, 83, 1]
+    }
   },
   "controller": {
     "background": [136, 138, 133, 1]

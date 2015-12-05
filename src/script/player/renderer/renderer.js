@@ -52,18 +52,8 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
 
-    RenderUtil.fillText(g, "Judge", 400, 470, "bold 12px sans-serif", "#000000", "center", "bottom")
-    RenderUtil.fillText(g, "Perfect:", 350, 490, "12px sans-serif", "#000000", "left", "bottom")
-    RenderUtil.fillText(g, "Great:", 350, 510, "12px sans-serif", "#000000", "left", "bottom")
-    RenderUtil.fillText(g, "Good:", 350, 530, "12px sans-serif", "#000000", "left", "bottom")
-    RenderUtil.fillText(g, "Bad:", 350, 550, "12px sans-serif", "#000000", "left", "bottom")
-    RenderUtil.fillText(g, "Miss:", 350, 570, "12px sans-serif", "#000000", "left", "bottom")
-    RenderUtil.fillText(g, "0", 450, 490, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, "0", 450, 510, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, "0", 450, 530, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, "0", 450, 550, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, "0", 450, 570, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, "(0)", 450, 590, "16px sans-serif", "#000000", "right", "bottom")
+    this.drawInfo(g, 1)
+    //this.drawSongInfo()
   }
 
   renderUnit(g, controller, playerNum, ccw) {
@@ -253,5 +243,44 @@ export class Renderer {
       g.globalAlpha = phase
       RenderUtil.strokeLine(g, 0, 0, Math.cos(radian) * 160, Math.sin(radian) * 160, 3, this.colorScheme.speedChangeLine[type])
       g.globalAlpha = 1
+  }
+
+  drawInfo(g, state) {
+    const player = this.game.player
+    RenderUtil.fillText(g, "- Judge -", 80, 470, "bold 12px sans-serif", this.colorScheme.information.header, "center", "bottom")
+    RenderUtil.fillText(g, "Perfect:", 20, 490, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Great:", 20, 510, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Good:", 20, 530, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Bad:", 20, 550, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Miss:", 20, 570, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "0", 150, 490, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "0", 150, 510, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "0", 150, 530, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "0", 150, 550, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "0", 150, 570, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "(0)", 150, 590, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.strokeLine(g, 170, 460, 170, 590, 1, this.colorScheme.information.separator)
+    if(state > 0) {
+      g.globalAlpha = state
+      const gradient = g.createLinearGradient(0, 475, 0, 485)
+      gradient.addColorStop(0, Color(this.colorScheme.information.chartName.background["hard"]).clearer(1).rgbaString())
+      gradient.addColorStop(1, this.colorScheme.information.chartName.background["hard"])
+      RenderUtil.fillRect(g, 190, 475, 420, 10, gradient)
+      RenderUtil.fillText(g, "Hard", 190, 480, "16px sans-serif", this.colorScheme.information.chartName.text, "left", "bottom")
+      RenderUtil.fillText(g, "Level", 540, 480, "12px sans-serif", this.colorScheme.information.level.header, "left", "bottom")
+      RenderUtil.fillText(g, "10", 610, 480, "16px sans-serif", this.colorScheme.information.level.number, "right", "bottom")
+      const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px sans-serif").width
+      RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
+      RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
+      RenderUtil.strokeLine(g, 190, 510, 610, 510, 1, this.colorScheme.information.separator)
+      this.drawAnalyzer(g)
+      g.globalAlpha = 1
+    }
+    RenderUtil.strokeLine(g, 630, 460, 630, 590, 1, this.colorScheme.information.separator)
+  }
+
+  drawAnalyzer(g) {
+    RenderUtil.fillRect(g, 190, 520, 420, 70, this.colorScheme.information.analyzer.background)
+    RenderUtil.strokeRect(g, 190, 520, 420, 70, 1, this.colorScheme.information.analyzer.border)
   }
 }
