@@ -1,5 +1,6 @@
 import { JudgeState } from "../judge-state"
 import { BarSpeedChangeEventType } from "../bar-speed-change-event"
+import { ChartType } from "../../chart-type"
 export class ColorScheme {
   constructor(json) {
     function getData(keyArray, data) {
@@ -38,9 +39,12 @@ export class ColorScheme {
     this.information.judge.header = color("information.judge.header", [0, 0, 0, 1])
     this.information.judge.number = color("information.judge.number", [0, 0, 0, 1])
     this.information.chartName = {}
-    this.information.chartName.text = color("information.chart_name.text", [0, 0, 0, 1])
-    this.information.chartName.background = {}
-    this.information.chartName.background["hard"] = color("information.chart_name.background.hard", [255, 0, 0, 1])
+    this.information.chartName[ChartType.UNKNOWN] = color("information.chart_name.unknown", [255, 255, 255, 1])
+    this.information.chartName[ChartType.VERYEASY] = color("information.chart_name.very_easy", [0, 255, 0, 1])
+    this.information.chartName[ChartType.EASY] = color("information.chart_name.easy", [0, 255, 255, 1])
+    this.information.chartName[ChartType.MEDIUM] = color("information.chart_name.medium", [255, 255, 0, 1])
+    this.information.chartName[ChartType.HARD] = color("information.chart_name.hard", [255, 0, 0, 1])
+    this.information.chartName[ChartType.VERYHARD] = color("information.chart_name.very_hard", [0, 0, 0, 1])
     this.information.level = {}
     this.information.level.header = color("information.level.header", [0, 0, 0, 1])
     this.information.level.number = color("information.level.number", [0, 0, 0, 1])
@@ -49,6 +53,19 @@ export class ColorScheme {
     this.information.analyzer = {}
     this.information.analyzer.background = color("information.analyzer.background", [255, 255, 255, 1])
     this.information.analyzer.border = color("information.analyzer.border", [0, 0, 0, 1])
+    this.information.status = {}
+    this.information.meter = {}
+    this.information.meter.header = color("information.meter.header", [0, 0, 0, 1])
+    this.information.meter.border = color("information.meter.border", [0, 0, 0, 1])
+    this.information.status.header = color("information.status.header", [0, 0, 0, 1])
+    this.information.status.content = color("information.status.content", [0, 0, 0, 1])
+    this.information.rank = {}
+    this.information.rank[0] = color("information.rank.d", [0, 0, 0, 1])
+    this.information.rank[1] = color("information.rank.c", [0, 0, 0, 1])
+    this.information.rank[2] = color("information.rank.b", [0, 0, 0, 1])
+    this.information.rank[3] = color("information.rank.a", [0, 0, 0, 1])
+    this.information.rank[4] = color("information.rank.aa", [0, 0, 0, 1])
+    this.information.rank[5] = color("information.rank.aaa", [0, 0, 0, 1])
     this.controller = {}
     this.controller.background = color("controller.background", [120, 120, 120, 1])
     this.lane = []

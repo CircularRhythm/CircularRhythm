@@ -3,7 +3,7 @@ import style from "./menu.sass"
 import ScreenGame from "./game"
 import ClassNames from "classnames"
 import { LocalBmsonLoader } from "../local-bmson-loader"
-import { getTypeStyle } from "../util"
+import { ChartType } from "../chart-type"
 
 // TODO: cleanup
 export default React.createClass({
@@ -160,7 +160,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.single.map((e, i) => {
                 const className = ClassNames({
                   button: true,
-                  ["button" + getTypeStyle(e.chart_name)]: true,
+                  ["button" + ChartType.toCamelCaseString(ChartType.fromString(e.chart_name))]: true,
                   buttonActive: (this.state.selectedChart.mode == "single" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -173,7 +173,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.double.map((e, i) => {
                 const className = ClassNames({
                   button: true,
-                  ["button" + getTypeStyle(e.chart_name)]: true,
+                  ["button" + ChartType.toCamelCaseString(ChartType.fromString(e.chart_name))]: true,
                   buttonActive: (this.state.selectedChart.mode == "double" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -199,7 +199,7 @@ export default React.createClass({
       }
       const className = ClassNames({
         typeColor: true,
-        ["typeColor" + getTypeStyle(chart.chart_name)]: true
+        ["typeColor" + ChartType.toCamelCaseString(ChartType.fromString(chart.chart_name))]: true
       })
       chartDetailContent = (
         <div>

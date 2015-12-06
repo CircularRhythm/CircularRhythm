@@ -5,6 +5,7 @@ import { AudioLoader } from "./audio-loader"
 import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
+import { ChartType } from "../chart-type"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -14,6 +15,7 @@ export class Player {
     this.bmson = bmsonSet.bmson
     this.assetLoader = bmsonSet.assetLoader
     this.bmsonLoader = new BmsonLoader(this.bmson)
+    this.chartType = ChartType.fromString(this.bmson.info.chart_name)
     this.parentPath = parentPath
     this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
     this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]

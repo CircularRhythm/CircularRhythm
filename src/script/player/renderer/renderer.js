@@ -247,7 +247,7 @@ export class Renderer {
 
   drawInfo(g, state) {
     const player = this.game.player
-    RenderUtil.fillText(g, "- Judge -", 80, 470, "bold 12px sans-serif", this.colorScheme.information.header, "center", "bottom")
+    RenderUtil.fillText(g, "- Judge -", 85, 470, "bold 12px sans-serif", this.colorScheme.information.header, "center", "bottom")
     RenderUtil.fillText(g, "Perfect:", 20, 490, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
     RenderUtil.fillText(g, "Great:", 20, 510, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
     RenderUtil.fillText(g, "Good:", 20, 530, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
@@ -262,13 +262,9 @@ export class Renderer {
     RenderUtil.strokeLine(g, 170, 460, 170, 590, 1, this.colorScheme.information.separator)
     if(state > 0) {
       g.globalAlpha = state
-      const gradient = g.createLinearGradient(0, 475, 0, 485)
-      gradient.addColorStop(0, Color(this.colorScheme.information.chartName.background["hard"]).clearer(1).rgbaString())
-      gradient.addColorStop(1, this.colorScheme.information.chartName.background["hard"])
-      RenderUtil.fillRect(g, 190, 475, 420, 10, gradient)
-      RenderUtil.fillText(g, "Hard", 190, 480, "16px sans-serif", this.colorScheme.information.chartName.text, "left", "bottom")
-      RenderUtil.fillText(g, "Level", 540, 480, "12px sans-serif", this.colorScheme.information.level.header, "left", "bottom")
-      RenderUtil.fillText(g, "10", 610, 480, "16px sans-serif", this.colorScheme.information.level.number, "right", "bottom")
+      RenderUtil.fillText(g, "Hard", 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
+      RenderUtil.fillText(g, "Level", 540, 466, "12px sans-serif", this.colorScheme.information.level.header, "left", "top")
+      RenderUtil.fillText(g, "10", 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
       const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px sans-serif").width
       RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
       RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
@@ -277,6 +273,19 @@ export class Renderer {
       g.globalAlpha = 1
     }
     RenderUtil.strokeLine(g, 630, 460, 630, 590, 1, this.colorScheme.information.separator)
+    RenderUtil.fillText(g, "Current", 650, 475, "12px sans-serif", this.colorScheme.information.meter.header, "left", "bottom")
+    RenderUtil.fillRect(g, 762, 457, 16, 16, this.colorScheme.score.current)
+    RenderUtil.strokeRect(g, 762, 457, 16, 16, 1, this.colorScheme.information.meter.border)
+    /*RenderUtil.fillText(g, "Current", 650, 495, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "Current", 650, 515, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "Current", 650, 535, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")*/
+    RenderUtil.strokeLine(g, 650, 545, 780, 542, 1, this.colorScheme.information.separator)
+    RenderUtil.fillText(g, "Max combo:", 650, 565, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "0", 780, 565, "16px sans-serif", this.colorScheme.information.status.content, "right", "bottom")
+    RenderUtil.fillText(g, "Rank:", 650, 590, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "AAA", 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[5]).darken(0.5).rgbaString(), "right", "bottom")
+    RenderUtil.fillText(g, "AAA", 780, 590, "20px sans-serif", this.colorScheme.information.rank[5], "right", "bottom")
+
   }
 
   drawAnalyzer(g) {

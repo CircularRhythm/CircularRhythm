@@ -49,6 +49,15 @@ export class RenderUtil {
     g.fillText(text, x, y)
   }
 
+  static strokeText(g, text, x, y, width, font, style, align, baseline) {
+    g.lineWidth = width
+    g.strokeStyle = style
+    g.font = font
+    g.textAlign = align
+    g.textBaseline = baseline
+    g.strokeText(text, x, y)
+  }
+
   static strokeLine(g, x1, y1, x2, y2, width, style) {
     g.lineWidth = width
     g.strokeStyle = style
