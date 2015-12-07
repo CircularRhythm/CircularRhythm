@@ -7,6 +7,7 @@ import $ from "jquery"
 import { ColorScheme } from "./color-scheme"
 import Color from "color"
 import Numeral from "numeral"
+import { Rank } from "../rank"
 
 export class Renderer {
   constructor(game, framework, preference) {
@@ -253,18 +254,18 @@ export class Renderer {
     RenderUtil.fillText(g, "Good:", 20, 530, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
     RenderUtil.fillText(g, "Bad:", 20, 550, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
     RenderUtil.fillText(g, "Miss:", 20, 570, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, "0", 150, 490, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, "0", 150, 510, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, "0", 150, 530, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, "0", 150, 550, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, "0", 150, 570, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, "(0)", 150, 590, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.PERFECT], 150, 490, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.GREAT], 150, 510, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.GOOD], 150, 530, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.BAD], 150, 550, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.MISS] + player.judgeStats[JudgeState.MISS_EMPTY], 150, 570, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, `(${player.judgeStats[JudgeState.MISS]})`, 150, 590, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
     RenderUtil.strokeLine(g, 170, 460, 170, 590, 1, this.colorScheme.information.separator)
     if(state > 0) {
       g.globalAlpha = state
-      RenderUtil.fillText(g, "Hard", 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
+      RenderUtil.fillText(g, player.bmson.info.chart_name, 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
       RenderUtil.fillText(g, "Level", 540, 466, "12px sans-serif", this.colorScheme.information.level.header, "left", "top")
-      RenderUtil.fillText(g, "10", 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
+      RenderUtil.fillText(g, player.bmson.info.level, 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
       const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px sans-serif").width
       RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
       RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
@@ -281,10 +282,10 @@ export class Renderer {
     RenderUtil.fillText(g, "Current", 650, 535, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")*/
     RenderUtil.strokeLine(g, 650, 545, 780, 542, 1, this.colorScheme.information.separator)
     RenderUtil.fillText(g, "Max combo:", 650, 565, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, "0", 780, 565, "16px sans-serif", this.colorScheme.information.status.content, "right", "bottom")
+    RenderUtil.fillText(g, player.maxCombo, 780, 565, "16px sans-serif", this.colorScheme.information.status.content, "right", "bottom")
     RenderUtil.fillText(g, "Rank:", 650, 590, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, "AAA", 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[5]).darken(0.5).rgbaString(), "right", "bottom")
-    RenderUtil.fillText(g, "AAA", 780, 590, "20px sans-serif", this.colorScheme.information.rank[5], "right", "bottom")
+    RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).rgbaString(), "right", "bottom")
+    RenderUtil.fillText(g, Rank.toString(player.rank), 780, 590, "20px sans-serif", this.colorScheme.information.rank[player.rank], "right", "bottom")
 
   }
 

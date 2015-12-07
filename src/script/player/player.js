@@ -6,6 +6,7 @@ import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
 import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 import { ChartType } from "../chart-type"
+import { Rank } from "./rank"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -83,9 +84,26 @@ export class Player {
 
     this.unitPosition = 0
 
-    this.judgeStats = [0, 0, 0, 0, 0, 0, 0]
+    this.judgeStats = {
+      [JudgeState.MISS_EMPTY]: 0,
+      [JudgeState.MISS]: 0,
+      [JudgeState.BAD]: 0,
+      [JudgeState.GOOD]: 0,
+      [JudgeState.GREAT]: 0,
+      [JudgeState.PERFECT]: 0
+    }
     this.score = 0
-    this.scoreMultiply = [0, 0, 0.1, 0.5, 0.75, 1, 0]
+    this.scoreMultiply = {
+      [JudgeState.NO]: 0,
+      [JudgeState.MISS]: 0,
+      [JudgeState.MISS_EMPTY]: 0,
+      [JudgeState.BAD]: 0.1,
+      [JudgeState.GOOD]: 0.5,
+      [JudgeState.GREAT]: 0.75,
+      [JudgeState.PERFECT]: 1
+    }
+    this.theoreticalScore = 0
+    this.rank = Rank.D
 
     this.gauge = 80
 
@@ -311,7 +329,7 @@ export class Player {
         // Miss
         if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
         else if(this.isJustPressed(i, input)) {
-          const judge = this.getJudge(this.currentTime - note.time)
+          const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
           this.judgeShortNote(note, judge)
           if(note.sliceData) note.sliceData.play(this.audioContext)
         }
@@ -320,7 +338,7 @@ export class Player {
         // Miss
         if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
         else if(this.isJustPressed(i, input)) {
-          const judge = this.getJudge(this.currentTime - note.time)
+          const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
           this.firstJudgeLongNote(note, judge)
           if(note.sliceData) note.sliceData.play(this.audioContext)
         }
@@ -328,7 +346,7 @@ export class Player {
         if(note.state == 1) {
           if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
           else if(this.isJustReleased(i, input)) {
-            const judge = this.getSecondJudge(this.currentTime - note.endTime)
+            const judge = JudgeState.secondFromDelta(this.currentTime - note.endTime)
             this.secondJudgeLongNote(note, judge)
             if(!judge && note.sliceData) note.sliceData.stop()
           }
@@ -351,22 +369,6 @@ export class Player {
     })
   }
 
-  // currentTime - noteTime; Early : <0, Slow: >0
-  getJudge(difference) {
-    const diffAbs = Math.abs(difference)
-    if(diffAbs < 20) return JudgeState.EXCELLENT
-    if(diffAbs < 50) return JudgeState.GREAT
-    if(diffAbs < 100) return JudgeState.GOOD
-    if(diffAbs < 200) return JudgeState.BAD
-    return JudgeState.MISS_EMPTY
-  }
-
-  getSecondJudge(difference) {
-    const diffAbs = Math.abs(difference)
-    if(diffAbs <= 200) return true
-    return false
-  }
-
   judgeShortNote(note, judgeState) {
     if(judgeState != JudgeState.MISS_EMPTY) {
       note.judge(judgeState)
@@ -386,6 +388,8 @@ export class Player {
     }
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
+    this.theoreticalScore += 1000000 / this.numberOfNotes
+    this.rank = Rank.fromRate(this.score / this.theoreticalScore)
   }
 
   firstJudgeLongNote(note, judgeState) {
@@ -394,6 +398,9 @@ export class Player {
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
         this.judgeStats[judgeState] ++
+        this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
+        this.theoreticalScore += 1000000 / this.numberOfNotes
+        this.rank = Rank.fromRate(this.score / this.theoreticalScore)
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
     } else {
@@ -414,6 +421,8 @@ export class Player {
       this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
       this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
     }
+    this.theoreticalScore += 1000000 / this.numberOfNotes
+    this.rank = Rank.fromRate(this.score / this.theoreticalScore)
   }
 
   isNormalLane(x) {
