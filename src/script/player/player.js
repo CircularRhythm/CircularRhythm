@@ -83,6 +83,13 @@ export class Player {
     this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
     this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
 
+    this.analyzer = {
+      density: []
+    }
+    for(let i = 0; i < 100; i++) {
+      this.analyzer.density[i] = Math.random()
+    }
+
     this.unitPosition = 0
 
     this.judgeStats = {

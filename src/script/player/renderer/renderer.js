@@ -58,7 +58,6 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
 
     this.drawInfo(g, 1)
-    //this.drawSongInfo()
   }
 
   renderUnit(g, controller, playerNum, ccw) {
@@ -294,7 +293,15 @@ export class Renderer {
   }
 
   drawAnalyzer(g) {
+    const player = this.game.player
     RenderUtil.fillRect(g, 190, 520, 420, 70, this.colorScheme.information.analyzer.background)
     RenderUtil.strokeRect(g, 190, 520, 420, 70, 1, this.colorScheme.information.analyzer.border)
+    const position = player.currentTime / player.duration
+    RenderUtil.fillRect(g, 190 + 420 * position, 520, 4.2, 70, "#000000")
+    for(let i = 0; i < 99; i++) {
+      const p1 = (i + 0.5) / 100
+      const p2 = (i + 1.5) / 100
+      RenderUtil.strokeLine(g, 190 + 420 * p1, 590 - 70 * player.analyzer.density[i], 190 + 420 * p2, 590 - 70 * player.analyzer.density[i + 1], 1, "#000000")
+    }
   }
 }
