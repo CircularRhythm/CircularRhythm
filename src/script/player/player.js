@@ -81,6 +81,7 @@ export class Player {
     this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
 
     this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
+    this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
 
     this.unitPosition = 0
 

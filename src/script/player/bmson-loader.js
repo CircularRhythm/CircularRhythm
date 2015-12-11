@@ -277,4 +277,10 @@ export class BmsonLoader {
     else if(this.bmson.info.mode_hint == "circularrhythm-double") return 2
     else return 1 // TODO
   }
+
+  getDuration(barLines, timingList) {
+    const lastBarLine = barLines[barLines.length - 1]
+    const lastTimingData = timingList[timingList.length - 1]
+    return PlayerUtil.yToTime(lastBarLine.y + lastBarLine.l, lastTimingData)
+  }
 }

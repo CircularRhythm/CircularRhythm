@@ -6,8 +6,9 @@ import { RenderUtil } from "./render-util"
 import $ from "jquery"
 import { ColorScheme } from "./color-scheme"
 import Color from "color"
-import Numeral from "numeral"
 import { Rank } from "../rank"
+import FormatNumber from "format-number"
+import Util from "../../util"
 
 export class Renderer {
   constructor(game, framework, preference) {
@@ -42,14 +43,17 @@ export class Renderer {
 
     //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
     RenderUtil.fillText(g, Math.ceil(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
-    //RenderUtil.fillText(g, "0:00/2:30", 780, 440, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
     RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
 
     const gaugeHeight = 440 * player.gauge / 100
+    RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
     RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
     const scoreHeight = 440 * player.score / 1000000
+    RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
     RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
-    RenderUtil.fillRect(g, 0, 440, 800, 10, this.colorScheme.duration)
+    RenderUtil.fillRect(g, 0, 440, 800, 10, Color(this.colorScheme.duration).clearer(0.7).rgbaString())
+    RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
     RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
 
@@ -284,7 +288,7 @@ export class Renderer {
     RenderUtil.fillText(g, "Max combo:", 650, 565, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
     RenderUtil.fillText(g, player.maxCombo, 780, 565, "16px sans-serif", this.colorScheme.information.status.content, "right", "bottom")
     RenderUtil.fillText(g, "Rank:", 650, 590, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).rgbaString(), "right", "bottom")
+    RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).clearer(0.5).rgbaString(), "right", "bottom")
     RenderUtil.fillText(g, Rank.toString(player.rank), 780, 590, "20px sans-serif", this.colorScheme.information.rank[player.rank], "right", "bottom")
 
   }
