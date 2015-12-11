@@ -13,6 +13,7 @@
     "color": "^0.10.1",
     "css-loader": "^0.20.1",
     "del": "^2.0.2",
+    "format-number": "^2.0.0",
     "get-parameter": "^1.0.8",
     "gulp": "^3.9.0",
     "gulp-gh-pages": "^0.5.4",
@@ -37,8 +38,7 @@
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
-    "webpack-dev-server": "^1.14.0",
-    "webpack-module-hot-accept": "^1.0.3"
+    "webpack-dev-server": "^1.14.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

@@ -40,7 +40,7 @@ export default function(type) {
     config.devtool = "cheap-module-eval-source-map"
     config.debug = true
     config.entry.push("webpack/hot/dev-server")
-    config.module.loaders[0].loaders.push("webpack-module-hot-accept")
+    //config.module.loaders[0].loaders.push("webpack-module-hot-accept")
     config.plugins.push(new webpack.HotModuleReplacementPlugin())
   }
 
