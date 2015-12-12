@@ -51,9 +51,6 @@ export class ColorScheme {
     this.information.level.number = color("information.level.number", [0, 0, 0, 1])
     this.information.title = color("information.title", [0, 0, 0, 1])
     this.information.subtitle = color("information.subtitle", [0, 0, 0, 1])
-    this.information.analyzer = {}
-    this.information.analyzer.background = color("information.analyzer.background", [255, 255, 255, 1])
-    this.information.analyzer.border = color("information.analyzer.border", [0, 0, 0, 1])
     this.information.status = {}
     this.information.meter = {}
     this.information.meter.header = color("information.meter.header", [0, 0, 0, 1])
@@ -67,6 +64,13 @@ export class ColorScheme {
     this.information.rank[Rank.A] = color("information.rank.a", [0, 0, 0, 1])
     this.information.rank[Rank.AA] = color("information.rank.aa", [0, 0, 0, 1])
     this.information.rank[Rank.AAA] = color("information.rank.aaa", [0, 0, 0, 1])
+    this.analyzer = {}
+    this.analyzer.background = color("analyzer.background", [255, 255, 255, 1])
+    this.analyzer.border = color("analyzer.border", [0, 0, 0, 1])
+    this.analyzer.position = color("analyzer.position", [0, 0, 0, 1])
+    this.analyzer.trail = color("analyzer.trail", [255, 255, 255, 1])
+    this.analyzer.density = color("analyzer.density", [0, 0, 0, 1])
+    this.analyzer.accuracy = color("analyzer.accuracy", [0, 255, 0, 1])
     this.controller = {}
     this.controller.background = color("controller.background", [120, 120, 120, 1])
     this.lane = []

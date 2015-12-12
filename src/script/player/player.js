@@ -83,12 +83,11 @@ export class Player {
     this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
     this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
 
-    this.analyzer = {
-      density: []
-    }
-    for(let i = 0; i < 100; i++) {
-      this.analyzer.density[i] = Math.random()
-    }
+    this.currentAnalyzerPosition = 0
+    this.analyzer = {}
+    this.analyzer.density = this.bmsonLoader.getDensity(this.soundChannels, this.duration, this.playMode)
+    this.analyzer.densityMax = Math.max(...this.analyzer.density)
+    this.analyzer.accuracy = new Array(100).fill(0)
 
     this.unitPosition = 0
 
@@ -106,6 +105,15 @@ export class Player {
       [JudgeState.MISS]: 0,
       [JudgeState.MISS_EMPTY]: 0,
       [JudgeState.BAD]: 0.1,
+      [JudgeState.GOOD]: 0.5,
+      [JudgeState.GREAT]: 0.75,
+      [JudgeState.PERFECT]: 1
+    }
+    this.accuracyMultiply = {
+      [JudgeState.NO]: 0,
+      [JudgeState.MISS]: 0,
+      [JudgeState.MISS_EMPTY]: 0,
+      [JudgeState.BAD]: 0,
       [JudgeState.GOOD]: 0.5,
       [JudgeState.GREAT]: 0.75,
       [JudgeState.PERFECT]: 1
@@ -151,6 +159,13 @@ export class Player {
     const delta = nowTime - this.lastTime
     this.lastTime = nowTime
     this.currentTime += delta
+
+    const lastAnalyzerPosition = this.currentAnalyzerPosition
+    this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
+    /*if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
+      // TODO: Add accuracy of long note
+      //this.analyzer.accuracy[lastAnalyzerPosition]
+    }*/
 
     for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
@@ -397,6 +412,7 @@ export class Player {
     this.judgeStats[judgeState] ++
     this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
     this.theoreticalScore += 1000000 / this.numberOfNotes
+    this.analyzer.accuracy[Math.floor(note.time / this.duration * 100)] += this.accuracyMultiply[judgeState]
     this.rank = Rank.fromRate(this.score / this.theoreticalScore)
   }
 
@@ -411,12 +427,19 @@ export class Player {
         this.rank = Rank.fromRate(this.score / this.theoreticalScore)
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
+
+      const startIndex = Math.floor(note.time / this.duration * 100)
+      const endIndex = Math.floor(note.endTime / this.duration * 100)
+      for(let i = startIndex; i <= endIndex; i++) {
+        this.analyzer.accuracy[i] += this.accuracyMultiply[judgeState]
+      }
     } else {
       this.judgeStats[judgeState] ++
     }
   }
 
   secondJudgeLongNote(note, success) {
+    const firstJudgeState = note.judgeState
     note.secondJudge(success)
     if(success) {
       this.combo++
@@ -428,6 +451,12 @@ export class Player {
       this.judgeStats[JudgeState.BAD] ++
       this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
       this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
+
+      const startIndex = Math.floor(note.time / this.duration * 100)
+      const endIndex = Math.floor(note.endTime / this.duration * 100)
+      for(let i = startIndex; i <= endIndex; i++) {
+        this.analyzer.accuracy[i] -= this.accuracyMultiply[firstJudgeState]
+      }
     }
     this.theoreticalScore += 1000000 / this.numberOfNotes
     this.rank = Rank.fromRate(this.score / this.theoreticalScore)

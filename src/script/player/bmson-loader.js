@@ -283,4 +283,29 @@ export class BmsonLoader {
     const lastTimingData = timingList[timingList.length - 1]
     return PlayerUtil.yToTime(lastBarLine.y + lastBarLine.l, lastTimingData)
   }
+
+  getDensity(soundChannels, duration, playMode) {
+    const density = new Array(100).fill(0)
+    soundChannels.forEach((channel) => {
+      let notes
+      if(playMode == 1) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 5)
+      } else if(playMode == 2) {
+        notes = channel.notes.filter((note) => 1 <= note.x && note.x <= 9)
+      }
+      notes.forEach((e) => {
+        if(e instanceof NoteShort) {
+          const index = Math.floor(e.time / duration * 100)
+          density[index] ++
+        } else if(e instanceof NoteLong) {
+          const startIndex = Math.floor(e.time / duration * 100)
+          const endIndex = Math.floor(e.endTime / duration * 100)
+          for(let i = startIndex; i <= endIndex; i++) {
+            density[i] ++
+          }
+        }
+      })
+    })
+    return density
+  }
 }
