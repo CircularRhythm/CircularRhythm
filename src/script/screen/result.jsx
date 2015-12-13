@@ -16,40 +16,66 @@ export default React.createClass({
     const result = this.props.result
     return (
       <div>
-        <div id="musicName">{result.title} [{this.modeString[result.mode]} {result.chartName}]</div>
+        <div id="header">
+          <div id="title">{result.title}<span className="subtitle">{result.subtitle}</span></div>
+          <div id="chartType">
+            <span className="mode">{this.modeString[result.mode]}</span>
+            <span className="chartName">{result.chartName}</span>
+            <span className="level">Level {result.level}</span>
+          </div>
+        </div>
         <div id="score">Score: {result.score}</div>
-        <div id="judgeList">
-          <div className="judgeRow">
-            <div className="judgeName">Perfect</div>
-            <div className="judgeNumber">{result.judge[5]}</div>
+        <div id="analyzerContainer">
+          <canvas id="analyzer"></canvas>
+        </div>
+        <div id="column">
+          <div id="left">
+            <div className="judgeList">
+              <div className="judge">
+                <div className="judgeRow">
+                  <span className="judgeName">Perfect</span>
+                  <span className="judgeNumber">{result.judge[5]}</span>
+                </div>
+                <div className="judgeRow">
+                  <span className="judgeName">Great</span>
+                  <span className="judgeNumber">{result.judge[4]}</span>
+                </div>
+                <div className="judgeRow">
+                  <span className="judgeName">Good</span>
+                  <span className="judgeNumber">{result.judge[3]}</span>
+                </div>
+                <div className="judgeRow">
+                  <span className="judgeName">Bad</span>
+                  <span className="judgeNumber">{result.judge[2]}</span>
+                </div>
+                <div className="judgeRow">
+                  <span className="judgeName">Miss</span>
+                  <span className="judgeNumber">{result.judge[1] + result.judge[6]} ({result.judge[1]})</span>
+                </div>
+              </div>
+              <div className="rank">
+                <div className="rankHeader">Rank</div>
+                <div className="rankContent">AAA</div>
+              </div>
+            </div>
+            <div className="maxCombo">
+              <div className="judgeName">Max Combo</div>
+              <div className="judgeNumber">{result.maxCombo} / {result.notes}</div>
+            </div>
           </div>
-          <div className="judgeRow">
-            <div className="judgeName">Great</div>
-            <div className="judgeNumber">{result.judge[4]}</div>
-          </div>
-          <div className="judgeRow">
-            <div className="judgeName">Good</div>
-            <div className="judgeNumber">{result.judge[3]}</div>
-          </div>
-          <div className="judgeRow">
-            <div className="judgeName">Bad</div>
-            <div className="judgeNumber">{result.judge[2]}</div>
-          </div>
-          <div className="judgeRow">
-            <div className="judgeName">Miss</div>
-            <div className="judgeNumber">{result.judge[1] + result.judge[6]} ({result.judge[1]})</div>
-          </div>
-          <div className="judgeRow judgeRowMaxCombo">
-            <div className="judgeName">Max Combo</div>
-            <div className="judgeNumber">{result.maxCombo} / {result.notes}</div>
+          <div id="right">
+            <span id="tweet">
+              <a href="https://twitter.com/share" className="twitter-share-button" data-url="http://circularrhythm.github.io/" data-text={this.getTweetText(result)} data-size="large" data-count="none">Tweet</a>
+            </span>
           </div>
         </div>
-        <div id="tweet">
-          <a href="https://twitter.com/share" className="twitter-share-button" data-url="http://circularrhythm.github.io/" data-text={this.getTweetText(result)} data-size="large" data-count="none">Tweet</a>
-          {/*<script dangerouslySetInnerHTML={{__html: `!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs)}}(document, 'script', 'twitter-wjs');`}} />*/}
+        <div id="footer">
+          <div className="button returnToMenu" onClick={(e) => this.returnToMenu()}><i className="fa fa-arrow-left"></i></div>
+          <div className="retry">
+            <div className="button buttonRetry" onClick={(e) => this.retry()}><i className="fa fa-repeat"></i></div>
+            <div className="button buttonRetryMenu" onClick={(e) => this.retry()}><i className="fa fa-angle-down"></i></div>
+          </div>
         </div>
-        <div id="retry" className="button" onClick={(e) => this.retry()}>Retry</div>
-        <div id="returnMenu" className="button" onClick={(e) => this.returnToMenu()}>Return to menu</div>
       </div>
     )
   },
@@ -67,5 +93,3 @@ export default React.createClass({
     style.unuse()
   }
 })
-
-//if(typeof twttr !== "undefined") twttr.widgets.load()

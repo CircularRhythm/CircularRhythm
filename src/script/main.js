@@ -72,10 +72,10 @@ class CircularRhythm {
                 mode: 1,
                 chartName: "Test",
                 level: 0,
-                notes: 100,
+                notes: 1000,
                 judge: [1, 2, 3, 4, 5, 6, 7],
                 score: 1000000,
-                maxCombo: 100
+                maxCombo: 1000
               },
               bmsonSetConfig: {
                 path: this.serverUrl + "/test/test-double.bmson",

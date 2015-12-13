@@ -1,40 +1,153 @@
+$shadow-style: 0 0 5px 1px #A0A0A0
+
+body
+  background-color: #F0F0FF
+
 #container
-  margin: 10px
-.judgeRow
-  position: relative
-  width: 300px
-  height: 40px
-  border-bottom: 1px solid #000000
-.judgeRowMaxCombo
-  border-top: 1px solid #000000
-.judgeName
   position: absolute
-  bottom: 0px
-  left: 0px
-  width: 100px
-.judgeNumber
-  position: absolute
-  bottom: 0px
-  right: 0px
-  width: 200px
+  left: 50%
+  width: 900px
+  margin-left: -450px
+  border-radius: 5px
+  background-color: #FFFFFF
+  box-shadow: $shadow-style
+
+#header
+  width: 900px
+  height: 52px
+  line-height: 32px
+  padding: 10px
+  box-sizing: border-box
+  background-color: #E0E0EE
+  border-top-left-radius: 5px
+  border-top-right-radius: 5px
+
+  #title
+    float: left
+    font-size: 24px
+    .subtitle
+      font-size: 18px
+      margin-left: 10px
+  #chartType
+    font-size: 18px
+    float: right
+    .mode, .chartName, .level
+      margin-left: 10px
+
+#score
   font-size: 24px
-  text-align: right
-#musicName
-  font-size: 24px
-  margin-bottom: 4px
-  border-bottom: 2px solid #000000
+  padding: 10px 10px 0px 10px
+  box-shadow: inset 0px 7px 7px -7px #A0A0A0
+
+#analyzerContainer
+  width: 880px
+  height: 150px
+  margin: 0px 10px
+  box-sizing: border-box
+  border: 1px solid #000
+#analyzer
+
+#column
+  width: 900px
+  padding: 10px 0px
+  box-shadow: inset 0px -7px 7px -7px #A0A0A0
+  &:after
+    content: ""
+    clear: both
+    height: 0
+    display: block
+    visibility: hidden
+  #left
+    box-sizing: border-box
+    float: left
+    width: 450px
+    padding: 0px 20px
+    border-right: 1px solid #000000
+  #right
+    box-sizing: border-box
+    float: right
+    width: 450px
+    padding: 0px 20px
+
 #tweet
   margin-top: 12px
   margin-bottom: 12px
-#score
+
+.judgeList
+  .judge
+    float: left
+    .judgeRow
+      width: 270px
+      height: 40px
+      line-height: 40px
+      border-bottom: 1px solid #000000
+  .rank
+    float: right
+    width: 120px
+    height: 100px
+    border: 1px solid #000
+    border-radius: 5px
+    margin-top: 50px
+    .rankHeader
+      margin-top: 10px
+      text-align: center
+    .rankContent
+      text-align: center
+      font-size: 40px
+  &:after
+    content: ""
+    clear: both
+    height: 0
+    display: block
+    visibility: hidden
+
+.maxCombo
+  width: 410px
+  height: 40px
+  line-height: 40px
+  border-bottom: 1px solid #000000
+
+.judgeName
+  float: left
+.judgeNumber
+  float: right
   font-size: 24px
 
+#footer
+  background-color: #E0E0EE
+  padding: 10px
+  border-bottom-left-radius: 5px
+  border-bottom-right-radius: 5px
+  &:after
+    content: ""
+    clear: both
+    height: 0
+    display: block
+    visibility: hidden
+
 .button
-  height: 25px
-  line-height: 25px
+  height: 48px
+  line-height: 48px
+  font-size: 32px
+  width: 60px
   cursor: pointer
   text-align: center
   border: 1px solid #000000
+  background-color: #B0FFB0
   border-radius: 3px
   &:hover
-    background-color: #F0F0F0
+    background-color: #E0FFE0
+.returnToMenu
+  float: left
+.retry
+  float: right
+  .buttonRetry
+    float: left
+    border-top-right-radius: 0px
+    border-bottom-right-radius: 0px
+  .buttonRetryMenu
+    float: left
+    width: 20px
+    font-size: 16px
+    border-top-left-radius: 0px
+    border-bottom-left-radius: 0px
