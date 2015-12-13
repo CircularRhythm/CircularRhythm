@@ -388,7 +388,7 @@ export class Player {
       judge: this.judgeStats,
       maxCombo: this.maxCombo,
       notes: this.numberOfNotes,
-      score: Math.ceil(this.score)
+      score: Math.round(this.score)
     })
   }
 
@@ -408,12 +408,12 @@ export class Player {
       } else {
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
+      this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
+      this.theoreticalScore += 1000000 / this.numberOfNotes
+      this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+      this.analyzer.accuracy[Math.floor(note.time / this.duration * 100)] += this.accuracyMultiply[judgeState]
     }
     this.judgeStats[judgeState] ++
-    this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
-    this.theoreticalScore += 1000000 / this.numberOfNotes
-    this.analyzer.accuracy[Math.floor(note.time / this.duration * 100)] += this.accuracyMultiply[judgeState]
-    this.rank = Rank.fromRate(this.score / this.theoreticalScore)
   }
 
   firstJudgeLongNote(note, judgeState) {
