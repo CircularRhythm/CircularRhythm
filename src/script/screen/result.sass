@@ -79,7 +79,7 @@ body
     .judgeRow
       width: 270px
       height: 40px
-      line-height: 40px
+      display: table
       border-bottom: 1px solid #000000
   .rank
     float: right
@@ -104,13 +104,16 @@ body
 .maxCombo
   width: 410px
   height: 40px
-  line-height: 40px
+  display: table
   border-bottom: 1px solid #000000
 
 .judgeName
-  float: left
+  display: table-cell
+  vertical-align: bottom
 .judgeNumber
-  float: right
+  display: table-cell
+  vertical-align: bottom
+  text-align: right
   font-size: 24px
 
 #footer
