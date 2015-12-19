@@ -388,7 +388,9 @@ export class Player {
       judge: this.judgeStats,
       maxCombo: this.maxCombo,
       notes: this.numberOfNotes,
-      score: Math.round(this.score)
+      score: Math.round(this.score),
+      rank: this.rank,
+      analyzer: this.analyzer
     })
   }
 

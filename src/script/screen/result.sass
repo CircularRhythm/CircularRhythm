@@ -1,5 +1,9 @@
 $shadow-style: 0 0 5px 1px #A0A0A0
 
+@mixin rank-content($color)
+  color: $color
+  text-shadow: 2px 2px 1px darken($color, 20%)
+
 body
   background-color: #F0F0FF
 
@@ -42,10 +46,14 @@ body
 #analyzerContainer
   width: 880px
   height: 150px
-  margin: 0px 10px
-  box-sizing: border-box
+  margin: 0px 9px
   border: 1px solid #000
+  position: relative
 #analyzer
+  position: absolute
+  width: 880px
+  height: 200px
+  bottom: 0px
 
 #column
   width: 900px
@@ -94,6 +102,18 @@ body
     .rankContent
       text-align: center
       font-size: 40px
+    .rankContentAAA
+      @include rank-content(#EDD400)
+    .rankContentAA
+      @include rank-content(#F57900)
+    .rankContentA
+      @include rank-content(#73D216)
+    .rankContentB
+      @include rank-content(#3465A4)
+    .rankContentC
+      @include rank-content(#75507B)
+    .rankContentD
+      @include rank-content(#CC0000)
   &:after
     content: ""
     clear: both
@@ -143,6 +163,7 @@ body
 .returnToMenu
   float: left
 .retry
+  position: relative
   float: right
   .buttonRetry
     float: left
@@ -154,3 +175,22 @@ body
     font-size: 16px
     border-top-left-radius: 0px
     border-bottom-left-radius: 0px
+  .dd-menu
+    position: absolute
+    bottom: 50px
+    right: 0px
+    width: 200px
+    background-color: #FFFFFF
+    border: 1px solid #000000
+    border-radius: 5px
+    ul
+      margin: 10px 0px
+      padding: 0px
+      li
+        list-style: none
+        padding: 0px 10px
+        cursor: pointer
+        &:hover
+          background-color: #E0E0EE
+  .dd-menu-invisible
+    display: none

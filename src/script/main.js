@@ -14,6 +14,7 @@ import ScreenGame from "./screen/game"
 import ScreenResult from "./screen/result"
 import { AssetLoaderLocal } from "./player/asset-loader"
 import { ColorScheme } from "./player/renderer/color-scheme"
+import { Rank } from "./player/rank"
 
 class CircularRhythm {
   static main() {
@@ -65,6 +66,10 @@ class CircularRhythm {
           break
         case "result":
           this.load().then(() => {
+            const analyzer = {}
+            analyzer.density = new Array(100).fill(null).map((e, i) => Math.random() * 5)
+            analyzer.densityMax = Math.max(...analyzer.density)
+            analyzer.accuracy = new Array(100).fill(null).map((e, i) => analyzer.density[i] * Math.random())
             this.screenManager.transit(ScreenResult, {
               result: {
                 title: "TEST",
@@ -75,7 +80,9 @@ class CircularRhythm {
                 notes: 1000,
                 judge: [1, 2, 3, 4, 5, 6, 7],
                 score: 1000000,
-                maxCombo: 1000
+                maxCombo: 1000,
+                rank: Rank.AAA,
+                analyzer: analyzer
               },
               bmsonSetConfig: {
                 path: this.serverUrl + "/test/test-double.bmson",

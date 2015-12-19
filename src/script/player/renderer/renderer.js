@@ -9,12 +9,14 @@ import Color from "color"
 import { Rank } from "../rank"
 import FormatNumber from "format-number"
 import Util from "../../util"
+import { AnalyzerRenderer } from "./analyzer-renderer"
 
 export class Renderer {
   constructor(game, framework, preference) {
     this.game = game
     this.preference = preference
     this.colorScheme = preference.renderer.colorScheme
+    this.analyzerRenderer = new AnalyzerRenderer(190, 520, 420, 70)
   }
 
   render(g, controller) {
@@ -300,8 +302,8 @@ export class Renderer {
     g.rect(190, 520, 420, 70)
     g.clip()
     const position = player.currentTime / player.duration
-    this.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
-    this.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
+    this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
+    this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
     const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
     gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
     gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)
@@ -310,33 +312,5 @@ export class Renderer {
     RenderUtil.fillRect(g, 190 + 420 * position - 2.1, 520, 4.2, 70, this.colorScheme.analyzer.position)
     g.restore()
     RenderUtil.strokeRect(g, 190, 520, 420, 70, 1, this.colorScheme.analyzer.border)
-  }
-
-  strokeAnalyzerComponent(g, component, maxValue, width, style, length = 100) {
-    g.strokeWidth = width
-    g.strokeStyle = style
-    g.beginPath()
-    g.moveTo(190, 590)
-    if(length > 0) RenderUtil.strokeLine(g, 190, 590, 190 + 420 * 0.01, 590 - 70 * (component[0] / maxValue), width, style)
-    for(let i = 0; i < length - 1; i++) {
-      const p = (i + 1) / 100
-      const d = component[i] / maxValue
-      g.lineTo(190 + 420 * p, 590 - 70 * d)
-    }
-    g.stroke()
-  }
-
-  fillAnalyzerComponent(g, component, maxValue, style, length = 100) {
-    g.fillStyle = style
-    g.beginPath()
-    g.moveTo(190, 590)
-    for(let i = 0; i < length; i++) {
-      const p = (i + 1) / 100
-      const d = component[i] / maxValue
-      g.lineTo(190 + 420 * p, 590 - 70 * d)
-    }
-    g.lineTo(190 + 420 * length / 100, 590)
-    g.closePath()
-    g.fill()
   }
 }

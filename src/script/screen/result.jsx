@@ -2,9 +2,19 @@ import React from "react"
 import style from "./result.sass"
 import ScreenGame from "./game"
 import ScreenMenu from "./menu"
+import ClassNames from "classnames"
+import DropdownMenu from "react-dd-menu"
+import { Rank } from "../player/rank"
+import { AnalyzerRenderer } from "../player/renderer/analyzer-renderer"
 
 export default React.createClass({
   modeString: {1: "Single", 2: "Double"},
+  getInitialState() {
+    return {
+      showRetryMenu: false,
+      analyzerRenderer: new AnalyzerRenderer(0, 50, 880, 150)
+    }
+  },
   getTweetText(result) { return `I played ${result.title} [${this.modeString[result.mode]} ${result.chartName}] and got ${result.score} points in #CircularRhythm !` },
   returnToMenu() {
     this.props.manager.transit(ScreenMenu, {})
@@ -14,6 +24,13 @@ export default React.createClass({
   },
   render() {
     const result = this.props.result
+    const menuOptions = {
+      isOpen: this.state.showRetryMenu,
+      close: () => this.closeRetryMenu(),
+      toggle: <span></span>,
+      align: "left",
+      className: ClassNames({ "dd-menu-invisible": !this.state.showRetryMenu })
+    }
     return (
       <div>
         <div id="header">
@@ -26,7 +43,7 @@ export default React.createClass({
         </div>
         <div id="score">Score: {result.score}</div>
         <div id="analyzerContainer">
-          <canvas id="analyzer"></canvas>
+          <canvas id="analyzer" width="880px" height="200px"></canvas>
         </div>
         <div id="column">
           <div id="left">
@@ -55,7 +72,7 @@ export default React.createClass({
               </div>
               <div className="rank">
                 <div className="rankHeader">Rank</div>
-                <div className="rankContent">AAA</div>
+                <div className={ClassNames({rankContent: true, ["rankContent" + Rank.toString(result.rank)]: true})}>{Rank.toString(result.rank)}</div>
               </div>
             </div>
             <div className="maxCombo">
@@ -73,11 +90,20 @@ export default React.createClass({
           <div className="button returnToMenu" onClick={(e) => this.returnToMenu()}><i className="fa fa-arrow-left"></i></div>
           <div className="retry">
             <div className="button buttonRetry" onClick={(e) => this.retry()}><i className="fa fa-repeat"></i></div>
-            <div className="button buttonRetryMenu" onClick={(e) => this.retry()}><i className="fa fa-angle-down"></i></div>
+            <div className="button buttonRetryMenu" onClick={() => this.toggleRetryMenu()}><i className="fa fa-angle-up"></i></div>
+            <DropdownMenu {...menuOptions}>
+              <li onClick={(e) => this.retry()}>Retry</li>
+            </DropdownMenu>
           </div>
         </div>
       </div>
     )
+  },
+  toggleRetryMenu() {
+    this.setState({showRetryMenu: !this.state.showRetryMenu})
+  },
+  closeRetryMenu() {
+    this.setState({showRetryMenu: false})
   },
   componentWillMount() {
     style.use()
@@ -88,6 +114,15 @@ export default React.createClass({
     } else {
       twttr.widgets.load()
     }
+
+    const analyzer = this.props.result.analyzer
+    const colorScheme = this.props.app.preference.renderer.colorScheme
+    const analyzerElement = document.getElementById("analyzer")
+    const ctx = analyzerElement.getContext("2d")
+    const analyzerRenderer = this.state.analyzerRenderer
+    console.log(analyzer)
+    analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.density, analyzer.densityMax, 1, colorScheme.analyzer.density)
+    analyzerRenderer.fillAnalyzerComponent(ctx, analyzer.accuracy, analyzer.densityMax, colorScheme.analyzer.accuracy)
   },
   componentWillUnmount() {
     style.unuse()
