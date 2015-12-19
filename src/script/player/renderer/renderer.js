@@ -14,6 +14,7 @@ import { AnalyzerRenderer } from "./analyzer-renderer"
 export class Renderer {
   constructor(game, framework, preference) {
     this.game = game
+    this.framework = framework
     this.preference = preference
     this.colorScheme = preference.renderer.colorScheme
     this.analyzerRenderer = new AnalyzerRenderer(190, 520, 420, 70)
@@ -21,11 +22,6 @@ export class Renderer {
 
   render(g, controller) {
     const player = this.game.player
-
-    g.strokeStyle = "#000000"
-    g.beginPath()
-    g.rect(0, 0, 800, 600)
-    g.stroke()
 
     if(player.playMode == 1) {
       g.save()
@@ -60,6 +56,8 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
 
     this.drawInfo(g, 1)
+
+    RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px sans-serif", "#000000", "left", "bottom")
   }
 
   renderUnit(g, controller, playerNum, ccw) {
