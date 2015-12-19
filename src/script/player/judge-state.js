@@ -10,16 +10,16 @@ export class JudgeState {
   // currentTime - noteTime; Early : <0, Slow: >0
   static firstFromDelta(difference) {
     const diffAbs = Math.abs(difference)
-    if(diffAbs < 20) return JudgeState.PERFECT
-    if(diffAbs < 50) return JudgeState.GREAT
-    if(diffAbs < 100) return JudgeState.GOOD
-    if(diffAbs < 200) return JudgeState.BAD
+    if(diffAbs < 30) return JudgeState.PERFECT
+    if(diffAbs < 80) return JudgeState.GREAT
+    if(diffAbs < 150) return JudgeState.GOOD
+    if(diffAbs < 250) return JudgeState.BAD
     return JudgeState.MISS_EMPTY
   }
 
   static secondFromDelta(difference) {
     const diffAbs = Math.abs(difference)
-    if(diffAbs <= 200) return true
+    if(diffAbs <= 250) return true
     return false
   }
 }
