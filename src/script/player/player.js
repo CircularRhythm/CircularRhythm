@@ -7,26 +7,36 @@ import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 import { ChartType } from "../chart-type"
 import { Rank } from "./rank"
+import XHRPromise from "../xhr-promise"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
-  constructor(game, bmsonSet, parentPath) {
+  constructor(game, bmsonSetConfig) {
     this.game = game
-    this.bmsonSet = bmsonSet
-    this.bmson = bmsonSet.bmson
-    this.assetLoader = bmsonSet.assetLoader
-    this.bmsonLoader = new BmsonLoader(this.bmson)
-    this.chartType = ChartType.fromString(this.bmson.info.chart_name)
-    this.parentPath = parentPath
+    this.state = States.LOADING
+    this.playMode = bmsonSetConfig.playMode
+    this.lanes = this.playMode * 4 + 1
+    this.specialLane = this.playMode * 4 + 1
+    this.autoSpecial = bmsonSetConfig.config.autoSpecial
     this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
+
+    // Preload chart info
+    this.title = bmsonSetConfig.title
+    this.subtitle = bmsonSetConfig.subtitle
+    this.artist = bmsonSetConfig.artist
+    this.subartists = bmsonSetConfig.subartists
+    this.level = bmsonSetConfig.level
+    this.chartName = bmsonSetConfig.chartName
+
+    this.bmson = null
+
     this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]
     this.specialLaneFlash = 0
     this.specialLaneJudgeState = JudgeState.NO
-
-    this.playMode = this.bmsonLoader.getPlayMode(null)
-    this.autoSpecial = false
-    this.lanes = this.playMode * 4 + 1
-    this.specialLane = this.playMode * 4 + 1
+    this.visibleNotes = []
+    // [{x: Number, position: Number, phase: Number, judgeState: Number}]
+    this.eraseParticleList = []
+    this.unitPosition = 0
 
     this.audioContext = new AudioContext()
 
@@ -36,7 +46,8 @@ export class Player {
     this.currentY = 0
     this.currentPosition = 0
     this.currentTime = 0
-    this.currentBpm = this.bmson.info.init_bpm
+    //this.currentBpm = this.bmson.info.init_bpm
+    this.currentBpm = bmsonSetConfig.bpm.initial
     this.currentBarSpeed = 0
     this.currentBarLine = null
 
@@ -48,48 +59,21 @@ export class Player {
 
     this.supportLineVisibleEndY = 0
 
-    this.visibleNotes = []
+    this.visibleBarSpeedChangeList = []
+    this.barMovingSpeedChangeEvent = null
+    this.visibleSupportLines = []
+
     // Int -> {name: String, note: Note}
     this.targetNotes = new Map()
 
     this.combo = 0
     this.maxCombo = 0
 
-    // [{time: Number, y: Number, bpm: Number}]
-    // used by timeToY, yToTime
-    // yToTime on a stop event will return start time of the stop
-    this.timingList = this.bmsonLoader.loadTimingList()
-
-    // [{y: Number, l: Number}]
-    this.barLines = this.bmsonLoader.loadBarLines()
-    this.bmsonLoader.appendLackingBarLine(this.barLines)
-    this.bmsonLoader.makeBeatData(this.barLines)
-
-    this.supportLines = this.bmsonLoader.makeSupportLines(this.barLines)
-    this.visibleSupportLines = []
-
-    // [{y: Number, bpm: Number, time: Number}]
-    /*this.bpmList = []
-    this.stopList = []
-    this.lengthChangeList = []*/
-    this.barSpeedChangeList = this.bmsonLoader.getBarSpeedChangeList(this.barLines, this.timingList)
-
-    this.visibleBarSpeedChangeList = []
-    this.barMovingSpeedChangeEvent = null
-
-    // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
-    this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
-
-    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
-    this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
-
     this.currentAnalyzerPosition = 0
     this.analyzer = {}
-    this.analyzer.density = this.bmsonLoader.getDensity(this.soundChannels, this.duration, this.playMode)
-    this.analyzer.densityMax = Math.max(...this.analyzer.density)
+    this.analyzer.density = null
+    this.analyzer.densityMax = null
     this.analyzer.accuracy = new Array(100).fill(0)
-
-    this.unitPosition = 0
 
     this.judgeStats = {
       [JudgeState.MISS_EMPTY]: 0,
@@ -122,15 +106,90 @@ export class Player {
     this.rank = Rank.D
 
     this.gauge = 80
-
-    // [{x: Number, position: Number, phase: Number, judgeState: Number}]
-    this.eraseParticleList = []
   }
 
-  init() {
-    return new Promise((resolve, reject) => {
+  load() {
+    const bmsonSetConfig = this.bmsonSetConfig
+    const bmsonPath = bmsonSetConfig.path
+    const assetPath = bmsonSetConfig.assetPath
+    const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
+    const packedAssets = bmsonSetConfig.packedAssets
+    const local = bmsonSetConfig.local
+    const localFileList = bmsonSetConfig.localFileList
+
+    this.promiseBmson = null
+    this.promiseChart = null
+    this.promiseAsset = null
+
+    this.promiseBmson = new Promise((resolve, reject) => {
+      const promises = []
+      if(local) {
+        promises.push(LocalFileLoader.get(bmsonPath, "json", localFileList))
+      } else {
+        promises.push(XHRPromise.send({ url: bmsonPath, responseType: "json" }))
+        if(packedAssets) promises.push(XHRPromise.send({ url: assetPath, responseType: "json" }))
+      }
+
+      Promise.all(promises).then((result) => {
+        if(packedAssets) {
+          resolve({ bmson: result[0], asset: result[1] })
+        } else {
+          resolve({ bmson: result[0] })
+        }
+      })
+    })
+
+    this.promiseChart = new Promise((resolve, reject))
+
+    this.promiseAsset = new Promise((resolve, reject) => {
+      let assetLoader
+      if(local) assetLoader = new AssetLoaderLocal(parentPath, this.localFileList)
+      else if(packedAssets) assetLoader = new AssetLoaderArchive(parentPath)
+      else assetLoader = new AssetLoader(parentPath)
       new AudioLoader(this.audioContext, this.assetLoader, this.soundChannels).loadAudio().then(() => resolve())
     })
+
+    this.bmson = bmsonSet.bmson
+
+    Promise.all(promises).then((result) => {
+
+      this.player.init().then(() => {
+        this.state = States.READY
+      })
+    })
+
+    promiseBmson.then((result) => {
+      return Promise.all(promises)
+    })
+
+    this.assetLoader = bmsonSet.assetLoader
+
+    this.bmsonLoader = new BmsonLoader(this.bmson)
+    this.chartType = ChartType.fromString(this.bmson.info.chart_name)
+    this.parentPath = parentPath
+
+    // [{time: Number, y: Number, bpm: Number}]
+    // used by timeToY, yToTime
+    // yToTime on a stop event will return start time of the stop
+    this.timingList = this.bmsonLoader.loadTimingList()
+
+    // [{y: Number, l: Number}]
+    this.barLines = this.bmsonLoader.loadBarLines()
+    this.bmsonLoader.appendLackingBarLine(this.barLines)
+    this.bmsonLoader.makeBeatData(this.barLines)
+
+    this.supportLines = this.bmsonLoader.makeSupportLines(this.barLines)
+
+    this.barSpeedChangeList = this.bmsonLoader.getBarSpeedChangeList(this.barLines, this.timingList)
+
+    // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
+    this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
+
+    this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
+    this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
+
+    this.analyzer.density = this.bmsonLoader.getDensity(this.soundChannels, this.duration, this.playMode)
+    this.analyzer.densityMax = Math.max(...this.analyzer.density)
   }
 
   start() {
@@ -155,18 +214,13 @@ export class Player {
   }
 
   update(input) {
-    const nowTime = Date.now()
-    const delta = nowTime - this.lastTime
-    this.lastTime = nowTime
-    this.currentTime += delta
-
-    const lastAnalyzerPosition = this.currentAnalyzerPosition
-    this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
-    /*if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
-      // TODO: Add accuracy of long note
-      //this.analyzer.accuracy[lastAnalyzerPosition]
-    }*/
-
+    if(this.state == States.READY) {
+      if(this.framework.input.isJustPressed(13)) {
+        // Enter
+        this.start()
+        this.state = States.IN_GAME
+      }
+    }
     for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
@@ -178,6 +232,19 @@ export class Player {
       this.specialLaneFlash = 1
       this.specialLaneJudgeState = JudgeState.NO
     }
+    if(!this.playing) return
+
+    const nowTime = Date.now()
+    const delta = nowTime - this.lastTime
+    this.lastTime = nowTime
+    this.currentTime += delta
+
+    const lastAnalyzerPosition = this.currentAnalyzerPosition
+    this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
+    /*if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
+      // TODO: Add accuracy of long note
+      //this.analyzer.accuracy[lastAnalyzerPosition]
+    }*/
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
     //const deltaY = 240 * this.currentBpm * delta / 60000
@@ -506,4 +573,10 @@ export class Player {
       return input.isJustReleased(this.keyConfig[lane])
     }
   }
+}
+
+export class States {
+  static get LOADING() { return 0 }
+  static get READY() { return 1 }
+  static get PLAYING() { return 2 }
 }

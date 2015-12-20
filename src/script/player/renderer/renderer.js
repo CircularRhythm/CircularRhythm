@@ -10,6 +10,7 @@ import { Rank } from "../rank"
 import FormatNumber from "format-number"
 import Util from "../../util"
 import { AnalyzerRenderer } from "./analyzer-renderer"
+import { States } from "../player"
 
 export class Renderer {
   constructor(game, framework, preference) {
@@ -41,7 +42,7 @@ export class Renderer {
 
     //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
     RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
-    RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
+    if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
     RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
 
     const gaugeHeight = 440 * player.gauge / 100
@@ -266,12 +267,12 @@ export class Renderer {
     RenderUtil.strokeLine(g, 170, 460, 170, 590, 1, this.colorScheme.information.separator)
     if(state > 0) {
       g.globalAlpha = state
-      RenderUtil.fillText(g, player.bmson.info.chart_name, 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
+      RenderUtil.fillText(g, player.chartName, 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
       RenderUtil.fillText(g, "Level", 540, 466, "12px sans-serif", this.colorScheme.information.level.header, "left", "top")
-      RenderUtil.fillText(g, player.bmson.info.level, 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
-      const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px sans-serif").width
-      RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
-      RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
+      RenderUtil.fillText(g, player.level, 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
+      const titleWidth = RenderUtil.measureText(g, player.title, "bold 18px sans-serif").width
+      RenderUtil.fillText(g, player.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
+      RenderUtil.fillText(g, player.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
       RenderUtil.strokeLine(g, 190, 510, 610, 510, 1, this.colorScheme.information.separator)
       this.drawAnalyzer(g)
       g.globalAlpha = 1
@@ -289,7 +290,6 @@ export class Renderer {
     RenderUtil.fillText(g, "Rank:", 650, 590, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
     RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).clearer(0.5).rgbaString(), "right", "bottom")
     RenderUtil.fillText(g, Rank.toString(player.rank), 780, 590, "20px sans-serif", this.colorScheme.information.rank[player.rank], "right", "bottom")
-
   }
 
   drawAnalyzer(g) {
@@ -299,15 +299,21 @@ export class Renderer {
     g.beginPath()
     g.rect(190, 520, 420, 70)
     g.clip()
-    const position = player.currentTime / player.duration
-    this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
-    this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
-    const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
-    gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
-    gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)
-    gradient.addColorStop(1, this.colorScheme.analyzer.trail)
-    RenderUtil.fillRect(g, 190 + 420 * position - 6.3, 520, 4.2, 70, gradient)
-    RenderUtil.fillRect(g, 190 + 420 * position - 2.1, 520, 4.2, 70, this.colorScheme.analyzer.position)
+
+    if(player.state == States.LOADING) {
+
+    } else {
+      const position = player.currentTime / player.duration
+      this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
+      this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
+      const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
+      gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
+      gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)
+      gradient.addColorStop(1, this.colorScheme.analyzer.trail)
+      RenderUtil.fillRect(g, 190 + 420 * position - 6.3, 520, 4.2, 70, gradient)
+      RenderUtil.fillRect(g, 190 + 420 * position - 2.1, 520, 4.2, 70, this.colorScheme.analyzer.position)
+    }
+
     g.restore()
     RenderUtil.strokeRect(g, 190, 520, 420, 70, 1, this.colorScheme.analyzer.border)
   }

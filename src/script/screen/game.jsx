@@ -16,7 +16,7 @@ export default React.createClass({
     style.use()
   },
   componentDidMount() {
-    this.game = new Game(this.props.bmsonSetConfig, this.props.app.localFileList, this.props.app.preference, (resultData) => this.onGameEnd(resultData))
+    this.game = new Game(this.props.bmsonSetConfig, this.props.app.preference, (resultData) => this.onGameEnd(resultData))
     this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
     this.gameFramework.start()
 

@@ -8,6 +8,7 @@ import { ChartType } from "../chart-type"
 // TODO: cleanup
 export default React.createClass({
   modeString: {"single": "Single", "double": "Double"},
+  modeId: {"single": 1, "double": 2},
   getInitialState() {
     return {
       showDropScreen: false,
@@ -115,9 +116,17 @@ export default React.createClass({
     const bmsonSetConfig = {}
     const music = this.state.selectedMusic.element
     const chart = this.state.selectedChart.element
+    bmsonSetConfig.title = music.title
+    bmsonSetConfig.subtitle = music.subtitle
+    bmsonSetConfig.artist = music.artist
+    bmsonSetConfig.subartists = music.subartists
+    bmsonSetConfig.chartName = chart.chart_name
+    bmsonSetConfig.level = chart.level
+    bmsonSetConfig.bpm = chart.bpm
     if(music.local) {
       bmsonSetConfig.path = music.basedir + "/" + chart.file
       bmsonSetConfig.local = true
+      bmsonSetConfig.localFileList = this.props.app.localFileList
     } else {
       bmsonSetConfig.path = this.props.app.serverUrl + "/" + music.basedir + "/" + chart.file
       bmsonSetConfig.local = false
@@ -128,6 +137,9 @@ export default React.createClass({
         bmsonSetConfig.packedAssets = false
       }
     }
+    console.log(this.state.selectedChart)
+    bmsonSetConfig.playMode = this.modeId[this.state.selectedChart.mode]
+    bmsonSetConfig.config = { autoSpecial: false }
 
     this.props.manager.transit(ScreenGame, {bmsonSetConfig: bmsonSetConfig})
   },

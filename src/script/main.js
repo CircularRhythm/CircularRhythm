@@ -56,6 +56,15 @@ class CircularRhythm {
           this.load().then(() => {
             this.screenManager.transit(ScreenGame, {
               bmsonSetConfig: {
+                title: "TEST",
+                subtitle: "sub",
+                artist: "artist",
+                subartists: ["sub"],
+                bpm: { initial: 125, min: 120, max: 150 },
+                playMode: 2,
+                level: 1,
+                chartName: "Easy",
+                config: { autoSpecial: false },
                 path: this.serverUrl + "/test/test-double.bmson",
                 assetPath: this.serverUrl + "/test/assets.json",
                 packedAssets: false,
