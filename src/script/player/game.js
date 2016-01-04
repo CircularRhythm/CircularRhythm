@@ -72,12 +72,8 @@ export class Game {
 
     switch(this.state) {
       case States.LOADING:
-        g.fillStyle = "#000000"
-        g.fillText("LOADING", 32, 64)
         break
       case States.READY:
-        g.fillStyle = "#000000"
-        g.fillText("READY, Press Enter", 32, 64)
         if(framework.input.isJustPressed(13)) {
           // Enter
           this.player.start()
@@ -103,9 +99,6 @@ export class Game {
         g.restore()
         break
     }
-
-    g.fillStyle = "#000000"
-    g.fillText(framework.currentFps.toFixed(2), 32, 32)
   }
 }
 

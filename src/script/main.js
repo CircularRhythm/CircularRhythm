@@ -14,12 +14,16 @@ import ScreenGame from "./screen/game"
 import ScreenResult from "./screen/result"
 import { AssetLoaderLocal } from "./player/asset-loader"
 import { ColorScheme } from "./player/renderer/color-scheme"
+import { Rank } from "./player/rank"
 
 class CircularRhythm {
   static main() {
+    this.version = "0.5.0"
+
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
     const screenParam = getParameter("screen")
+    const forceCompatibilityWarningParam = getParameter("forcecompat")
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
     this.debug = debugParam == "true"
 
@@ -41,6 +45,12 @@ class CircularRhythm {
 
     this.screenManager = new ScreenManager(this)
     if(this.debug) {
+      if(forceCompatibilityWarningParam == "true") {
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 1")
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 2")
+        this.compatibilityWarning.push("Compatibility warning by debug parameter 3")
+      }
+
       switch(screenParam) {
         case "game":
           this.load().then(() => {
@@ -56,6 +66,10 @@ class CircularRhythm {
           break
         case "result":
           this.load().then(() => {
+            const analyzer = {}
+            analyzer.density = new Array(100).fill(null).map((e, i) => Math.random() * 5)
+            analyzer.densityMax = Math.max(...analyzer.density)
+            analyzer.accuracy = new Array(100).fill(null).map((e, i) => analyzer.density[i] * Math.random())
             this.screenManager.transit(ScreenResult, {
               result: {
                 title: "TEST",
@@ -63,10 +77,12 @@ class CircularRhythm {
                 mode: 1,
                 chartName: "Test",
                 level: 0,
-                notes: 100,
+                notes: 1000,
                 judge: [1, 2, 3, 4, 5, 6, 7],
                 score: 1000000,
-                maxCombo: 100
+                maxCombo: 1000,
+                rank: Rank.AAA,
+                analyzer: analyzer
               },
               bmsonSetConfig: {
                 path: this.serverUrl + "/test/test-double.bmson",
@@ -103,7 +119,7 @@ class CircularRhythm {
         this.musicList = json
         resolve()
       }).catch((e) => {
-        reject({message: "Cannot connect to server: " + this.app.serverUrl})
+        reject({message: "Cannot connect to server: " + this.serverUrl})
       })
     })
     promises[1] = new Promise((resolve, reject) => {

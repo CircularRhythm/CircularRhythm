@@ -1,6 +1,6 @@
 {
   "name": "circular-rhythm",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "description": "",
   "repository": "git@github.com:CircularRhythm/CircularRhythm.git",
   "dependencies": {
@@ -13,6 +13,7 @@
     "color": "^0.10.1",
     "css-loader": "^0.20.1",
     "del": "^2.0.2",
+    "format-number": "^2.0.0",
     "get-parameter": "^1.0.8",
     "gulp": "^3.9.0",
     "gulp-gh-pages": "^0.5.4",
@@ -29,14 +30,19 @@
     "numeral": "^1.5.3",
     "parse-bmfont-ascii": "^1.0.6",
     "react": "^0.14.3",
+    "react-addons-css-transition-group": "^0.14.3",
+    "react-addons-pure-render-mixin": "^0.14.3",
+    "react-dd-menu": "^1.0.5",
     "react-dom": "^0.14.3",
     "run-sequence": "^1.1.4",
     "sass-loader": "^3.0.0",
     "style-loader": "^0.12.4",
-    "webpack": "^1.12.2",
+    "webpack": "^1.12.9",
     "webpack-stream": "^2.1.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "webpack-dev-server": "^1.14.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

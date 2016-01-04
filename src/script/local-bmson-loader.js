@@ -61,18 +61,49 @@ export class LocalBmsonLoader {
           try {
             const bmson = JSON.parse(event.target.result)
             if(bmson.version) {
-              const chart = {
-                title: bmson.info.title,
-                genre: bmson.info.genre,
-                artist: bmson.info.artist,
-                bpm: bmson.info.init_bpm,
-                level: bmson.info.level,
-                file: filePath
+              let mode
+              if(bmson.info.mode_hint == "circularrhythm-single") {
+                mode = "single"
+              } else if(bmson.info.mode_hint == "circularrhythm-double") {
+                mode = "double"
+              } else {
+                reject("Unsupported mode hint: " + bmson.info.mode_hint)
+                return
               }
-              this.music.title = this.music.title || chart.title
-              this.music.genre = this.music.genre || chart.genre
-              this.music.artist = this.music.artist || chart.artist
-              this.music.charts.single.push(chart)
+
+              if(!this.music.title) {
+                this.music.title = bmson.info.title
+                this.music.subtitle = bmson.info.subtitle || ""
+                this.music.artist = bmson.info.artist
+                this.music.subartists = bmson.info.subartists || []
+                this.music.genre = bmson.info.genre
+                this.music.banner_image = bmson.info.banner_image || null
+                this.music.preview_music = bmson.info.preview_music || null
+              }
+
+              const bpmList = bmson.bpm_events.map((e) => e.bpm).concat(bmson.info.init_bpm)
+
+              let notes = 0
+              bmson.sound_channels.forEach((channel) => {
+                if(mode == "single") {
+                  notes += channel.notes.filter((note) => 1 <= note.x && note.x <= 5).length
+                } else if(mode == "double") {
+                  notes += channel.notes.filter((note) => 1 <= note.x && note.x <= 9).length
+                }
+              })
+
+              const chart = {
+                file: filePath,
+                chart_name: bmson.info.chart_name || "None",
+                level: bmson.info.level,
+                bpm: {
+                  initial: bmson.info.init_bpm,
+                  min: Math.min(...bpmList),
+                  max: Math.max(...bpmList)
+                }
+              }
+
+              this.music.charts[mode].push(chart)
               resolve()
             } else {
               reject("CircularRhythm cannot load legacy bmson. Convert to v1.0 format.")

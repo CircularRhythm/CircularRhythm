@@ -1,5 +1,7 @@
 import { JudgeState } from "../judge-state"
 import { BarSpeedChangeEventType } from "../bar-speed-change-event"
+import { ChartType } from "../../chart-type"
+import { Rank } from "../rank"
 export class ColorScheme {
   constructor(json) {
     function getData(keyArray, data) {
@@ -31,7 +33,44 @@ export class ColorScheme {
     this.score.current = color("score.current", [0, 255, 0, 1])
     this.duration = color("duration", [0, 255, 255, 1])
     this.information = {}
-    this.information.background =  color("information.background", [192, 192, 192, 1])
+    this.information.background = color("information.background", [192, 192, 192, 1])
+    this.information.header = color("information.header", [0, 0, 0, 1])
+    this.information.separator = color("information.separator", [96, 96, 96, 1])
+    this.information.judge = {}
+    this.information.judge.header = color("information.judge.header", [0, 0, 0, 1])
+    this.information.judge.number = color("information.judge.number", [0, 0, 0, 1])
+    this.information.chartName = {}
+    this.information.chartName[ChartType.UNKNOWN] = color("information.chart_name.unknown", [255, 255, 255, 1])
+    this.information.chartName[ChartType.VERYEASY] = color("information.chart_name.very_easy", [0, 255, 0, 1])
+    this.information.chartName[ChartType.EASY] = color("information.chart_name.easy", [0, 255, 255, 1])
+    this.information.chartName[ChartType.MEDIUM] = color("information.chart_name.medium", [255, 255, 0, 1])
+    this.information.chartName[ChartType.HARD] = color("information.chart_name.hard", [255, 0, 0, 1])
+    this.information.chartName[ChartType.VERYHARD] = color("information.chart_name.very_hard", [0, 0, 0, 1])
+    this.information.level = {}
+    this.information.level.header = color("information.level.header", [0, 0, 0, 1])
+    this.information.level.number = color("information.level.number", [0, 0, 0, 1])
+    this.information.title = color("information.title", [0, 0, 0, 1])
+    this.information.subtitle = color("information.subtitle", [0, 0, 0, 1])
+    this.information.status = {}
+    this.information.meter = {}
+    this.information.meter.header = color("information.meter.header", [0, 0, 0, 1])
+    this.information.meter.border = color("information.meter.border", [0, 0, 0, 1])
+    this.information.status.header = color("information.status.header", [0, 0, 0, 1])
+    this.information.status.content = color("information.status.content", [0, 0, 0, 1])
+    this.information.rank = {}
+    this.information.rank[Rank.D] = color("information.rank.d", [0, 0, 0, 1])
+    this.information.rank[Rank.C] = color("information.rank.c", [0, 0, 0, 1])
+    this.information.rank[Rank.B] = color("information.rank.b", [0, 0, 0, 1])
+    this.information.rank[Rank.A] = color("information.rank.a", [0, 0, 0, 1])
+    this.information.rank[Rank.AA] = color("information.rank.aa", [0, 0, 0, 1])
+    this.information.rank[Rank.AAA] = color("information.rank.aaa", [0, 0, 0, 1])
+    this.analyzer = {}
+    this.analyzer.background = color("analyzer.background", [255, 255, 255, 1])
+    this.analyzer.border = color("analyzer.border", [0, 0, 0, 1])
+    this.analyzer.position = color("analyzer.position", [0, 0, 0, 1])
+    this.analyzer.trail = color("analyzer.trail", [255, 255, 255, 1])
+    this.analyzer.density = color("analyzer.density", [0, 0, 0, 1])
+    this.analyzer.accuracy = color("analyzer.accuracy", [0, 255, 0, 1])
     this.controller = {}
     this.controller.background = color("controller.background", [120, 120, 120, 1])
     this.lane = []
@@ -53,11 +92,11 @@ export class ColorScheme {
     this.note.lane[2] = color("note.lane.2", [0, 255, 0, 1])
     this.note.lane[3] = color("note.lane.3", [0, 0, 255, 1])
     this.note.judge = {}
-    this.note.judge[JudgeState.MISS] = color("note.judge.0", [127, 127, 127, 1])
-    this.note.judge[JudgeState.BAD] = color("note.judge.1", [255, 127, 0, 1])
-    this.note.judge[JudgeState.GOOD] = color("note.judge.2", [0, 255, 255, 1])
-    this.note.judge[JudgeState.GREAT] = color("note.judge.3", [0, 255, 0, 1])
-    this.note.judge[JudgeState.EXCELLENT] = color("note.judge.4", [255, 255, 0, 1])
+    this.note.judge[JudgeState.MISS] = color("note.judge.miss", [127, 127, 127, 1])
+    this.note.judge[JudgeState.BAD] = color("note.judge.bad", [255, 127, 0, 1])
+    this.note.judge[JudgeState.GOOD] = color("note.judge.good", [0, 255, 255, 1])
+    this.note.judge[JudgeState.GREAT] = color("note.judge.great", [0, 255, 0, 1])
+    this.note.judge[JudgeState.PERFECT] = color("note.judge.perfect", [255, 255, 0, 1])
     this.note.unit = {}
     this.note.unit[0] = color("note.unit.0", [0, 0, 0, 1])
     this.note.unit[1] = color("note.unit.1", [255, 0, 0, 1])

@@ -19,14 +19,19 @@ export default React.createClass({
     this.game = new Game(this.props.bmsonSetConfig, this.props.app.localFileList, this.props.app.preference, (resultData) => this.onGameEnd(resultData))
     this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
     this.gameFramework.start()
-    window.addEventListener("resize", (e) => this.gameFramework.onResize(e))
-    window.addEventListener("keydown", (e) => this.gameFramework.onKeyDown(e))
-    window.addEventListener("keyup", (e) => this.gameFramework.onKeyUp(e))
+
+    this.onResize = (e) => this.gameFramework.onResize(e)
+    this.onKeyDown = (e) => this.gameFramework.onKeyDown(e)
+    this.onKeyUp = (e) => this.gameFramework.onKeyUp(e)
+
+    window.addEventListener("resize", this.onResize)
+    window.addEventListener("keydown", this.onKeyDown)
+    window.addEventListener("keyup", this.onKeyUp)
   },
   componentWillUnmount() {
-    window.removeEventListener("resize")
-    window.removeEventListener("keydown")
-    window.removeEventListener("keyup")
+    window.removeEventListener("resize", this.onResize)
+    window.removeEventListener("keydown", this.onKeyDown)
+    window.removeEventListener("keyup", this.onKeyUp)
     style.unuse()
   }
 })

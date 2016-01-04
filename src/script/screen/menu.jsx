@@ -3,6 +3,7 @@ import style from "./menu.sass"
 import ScreenGame from "./game"
 import ClassNames from "classnames"
 import { LocalBmsonLoader } from "../local-bmson-loader"
+import { ChartType } from "../chart-type"
 
 // TODO: cleanup
 export default React.createClass({
@@ -159,6 +160,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.single.map((e, i) => {
                 const className = ClassNames({
                   button: true,
+                  ["button" + ChartType.toCamelCaseString(ChartType.fromString(e.chart_name))]: true,
                   buttonActive: (this.state.selectedChart.mode == "single" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -171,6 +173,7 @@ export default React.createClass({
               {this.state.selectedMusic.element.charts.double.map((e, i) => {
                 const className = ClassNames({
                   button: true,
+                  ["button" + ChartType.toCamelCaseString(ChartType.fromString(e.chart_name))]: true,
                   buttonActive: (this.state.selectedChart.mode == "double" && this.state.selectedChart.id == i)
                 })
                 return (
@@ -188,14 +191,25 @@ export default React.createClass({
     let chartDetailContent
     if(this.state.selectedChart.element){
       const chart = this.state.selectedChart.element
+      let bpmContent
+      if(chart.bpm.min != chart.bpm.max) {
+        bpmContent = <span className="content"><span className="bpmMin">{chart.bpm.min}</span><span className="bpmInitial">{chart.bpm.initial}</span><span className="bpmMax">{chart.bpm.max}</span></span>
+      } else {
+        bpmContent = <span className="content"><span className="bpmInitial">{chart.bpm.initial}</span></span>
+      }
+      const className = ClassNames({
+        typeColor: true,
+        ["typeColor" + ChartType.toCamelCaseString(ChartType.fromString(chart.chart_name))]: true
+      })
       chartDetailContent = (
         <div>
+          <div className={className}></div>
           <div className="mode">{this.modeString[this.state.selectedChart.mode]}</div>
-          <div className="difficulty">{chart.chart_name}</div>
-          <div className="level">Level {chart.level}</div>
-          <div className="bpm">{chart.bpm.initial} BPM</div>
-          <div className="notes">{chart.notes} Notes</div>
-          <div id="playButton" onClick={(e) => this.play()}>Play!</div>
+          <div className="chartName">{chart.chart_name}</div>
+          <div className="level">{chart.level}</div>
+          <div className="levelVr"></div>
+          <div className="bpmNotes"><span className="prefix">BPM:</span>{bpmContent}<span className="prefix">Notes:</span><span className="content">{chart.notes}</span></div>
+          <div id="playButton" onClick={(e) => this.play()}><i className="fa fa-play"></i></div>
         </div>
       )
     } else {
@@ -259,6 +273,11 @@ export default React.createClass({
           onDragOver={this.dropOnDragOver}
           onDrop={this.dropOnDrop}></div>
         {compatibilityWarningContent}
+        <div id="footer">
+          <span className="item">Version {this.props.app.version}</span>
+          <span className="spacer"></span>
+          <a className="item" href="https://github.com/CircularRhythm/CircularRhythm" target="_blank">Github</a>
+        </div>
       </div>
     )
   },

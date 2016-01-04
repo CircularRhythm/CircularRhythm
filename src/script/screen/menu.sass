@@ -16,6 +16,25 @@
 
 $shadow-style: 0 0 5px 1px #A0A0A0
 
+$type-back-veryeasy: rgba(127, 255, 127, 1)
+$type-back-easy: rgba(127, 255, 255, 1)
+$type-back-medium: rgba(255, 255, 127, 1)
+$type-back-hard: rgba(255, 127, 127, 1)
+$type-back-veryhard: rgba(127, 127, 127, 1)
+$type-back-unknown: rgba(255, 255, 255, 1)
+
+@mixin type-back-gradient($color)
+  background: linear-gradient(90deg, rgba($color, 1), rgba($color, 0))
+
+@mixin type-button($color)
+  background-color: $color
+  border: 1px solid darken($color, 50%)
+  &:hover
+    background-color: lighten($color, 10%)
+  &.buttonActive
+    background-color: darken($color, 10%)
+    box-shadow: 0px 0px 3px 1px rgba(0, 0, 0, 0.3) inset
+
 body
   background-color: #F0F0FF
 
@@ -89,17 +108,24 @@ body
         cursor: pointer
         flex-grow: 1
         text-align: center
-        border: 1px solid #000000
         &:first-child
           border-top-left-radius: 3px
           border-bottom-left-radius: 3px
         &:last-child
           border-top-right-radius: 3px
           border-bottom-right-radius: 3px
-        &:hover
-          background-color: #F0F0F0
-      .buttonActive
-        background-color: #E0E0E0
+      .buttonVeryEasy
+        @include type-button($type-back-veryeasy)
+      .buttonEasy
+        @include type-button($type-back-easy)
+      .buttonMedium
+        @include type-button($type-back-medium)
+      .buttonHard
+        @include type-button($type-back-hard)
+      .buttonVeryHard
+        @include type-button($type-back-veryhard)
+      .buttonUnknown
+        @include type-button($type-back-unknown)
 
   .vr
     @include absolute(700, 15, 1, 90)
@@ -120,24 +146,50 @@ body
   transition-property: height
   transition-duration: 0.6s
   overflow: hidden
+  .typeColor
+    @include absolute(0, 0, 160, 120)
+  .typeColorVeryEasy
+    @include type-back-gradient($type-back-veryeasy)
+  .typeColorEasy
+    @include type-back-gradient($type-back-easy)
+  .typeColorMedium
+    @include type-back-gradient($type-back-medium)
+  .typeColorHard
+    @include type-back-gradient($type-back-hard)
+  .typeColorVeryHard
+    @include type-back-gradient($type-back-veryhard)
+  .typeColorUnknown
+    @include type-back-gradient($type-back-unknown)
   .mode
-    @include absolute(10, 10, 150, 30)
-    @include font-size(16)
-  .difficulty
-    @include absolute(10, 30, 150, 30)
-    @include font-size(16)
+    @include absolute(10, 15, 150, 30)
+    @include font-size(14)
+    text-align: center
+  .chartName
+    @include absolute(10, 35, 150, 30)
+    @include font-size(18)
+    text-align: center
   .level
-    @include absolute(10, 50, 150, 30)
+    @include absolute(10, 60, 150, 60)
+    @include font-size(48)
+    text-align: center
+  .bpmNotes
+    @include absolute(180, 94, 400, 30)
     @include font-size(16)
-  .bpm
-    @include absolute(10, 70, 150, 30)
-    @include font-size(16)
-  .notes
-    @include absolute(10, 90, 150, 30)
-    @include font-size(16)
-  .title
-    @include absolute(170, 45, 600, 36)
-    @include font-size(24)
+    .prefix
+      margin-right: 5px
+      font-size: 14px
+    .content
+      margin-right: 20px
+      .bpmMin
+        font-size: 14px
+        &:after
+          content: "-"
+          margin: 0px 2px
+      .bpmMax
+        font-size: 14px
+        &:before
+          content: "-"
+          margin: 0px 2px
   #playButton
     @include absolute(760, 50, 80, 60)
     cursor: pointer
@@ -148,6 +200,9 @@ body
     font-size: 20px
     text-align: center
     text-shadow: 0px 0px 5px #FFFFFF
+  .levelVr
+    @include absolute(170, 15, 1, 90)
+    background-color: #000000
 
 .chartDetailInvisible
   height: 0px
@@ -156,10 +211,11 @@ body
 
 #container
   position: absolute
-  top: 150px
   left: 50%
   width: 900px
   margin-left: -450px
+  margin-top: 150px
+  margin-bottom: 40px
 
 #musicList, #localMusicList
   padding: 0px 30px
@@ -224,7 +280,7 @@ body
 #compatibilityWarning
   position: fixed
   z-index: 99
-  bottom: 0
+  bottom: 20px
   left: 0
   right: 0
   background-color: #eedc38
@@ -242,3 +298,27 @@ body
     border-radius: 5px
     background-color: #ffeeb1
     border: 1px solid #000000
+
+#footer
+  position: fixed
+  z-index: 99
+  bottom: 0
+  left: 0
+  right: 0
+  height: 30px
+  line-height: 20px
+  font-size: 14px
+  background-color: rgba(219, 231, 232, 0.8)
+  display: flex
+  padding: 0px 16px
+  justify-content: space-between
+  box-shadow: 0px -2px 10px 0px rgba(0, 0, 0, 0.5)
+
+  .item
+    padding: 5px 10px
+
+  a.item
+    color: #000000
+    text-decoration: none
+    &:hover
+      background-color: rgba(128, 128, 128, 0.3)
