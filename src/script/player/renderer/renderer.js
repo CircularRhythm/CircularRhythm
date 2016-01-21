@@ -39,10 +39,10 @@ export class Renderer {
       g.restore()
     }
 
-    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
-    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
-    RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
+    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px 'Open Sans'", "#000000", "left", "top")
+    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px 'Open Sans'", "#000000", "right", "top")
+    RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px 'Open Sans'", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px 'Open Sans'", "#000000", "center", "bottom")
 
     const gaugeHeight = 440 * player.gauge / 100
     RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
@@ -57,7 +57,7 @@ export class Renderer {
 
     this.drawInfo(g, 1)
 
-    RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px 'Open Sans'", "#000000", "left", "bottom")
   }
 
   renderUnit(g, controller, playerNum, ccw) {
@@ -74,7 +74,7 @@ export class Renderer {
     RenderUtil.fillCircle(g, 0, 0, 170, specialLaneGradient)
 
     RenderUtil.fillCircle(g, 0, 0, 70, this.colorScheme.center)
-    RenderUtil.fillText(g, player.combo, 0, 0, "32px sans-serif", "#000000", "center", "middle")
+    RenderUtil.fillText(g, player.combo, 0, 0, "32px 'Open Sans'", "#000000", "center", "middle")
 
     // Beat flash
     const beatGradient = g.createRadialGradient(0, 0, 60 + player.unitPosition * 5, 0, 0, 70 + player.unitPosition * 10)
@@ -251,44 +251,44 @@ export class Renderer {
 
   drawInfo(g, state) {
     const player = this.game.player
-    RenderUtil.fillText(g, "- Judge -", 85, 470, "bold 12px sans-serif", this.colorScheme.information.header, "center", "bottom")
-    RenderUtil.fillText(g, "Perfect:", 20, 490, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, "Great:", 20, 510, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, "Good:", 20, 530, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, "Bad:", 20, 550, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, "Miss:", 20, 570, "12px sans-serif", this.colorScheme.information.judge.header, "left", "bottom")
-    RenderUtil.fillText(g, player.judgeStats[JudgeState.PERFECT], 150, 490, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, player.judgeStats[JudgeState.GREAT], 150, 510, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, player.judgeStats[JudgeState.GOOD], 150, 530, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, player.judgeStats[JudgeState.BAD], 150, 550, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, player.judgeStats[JudgeState.MISS] + player.judgeStats[JudgeState.MISS_EMPTY], 150, 570, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
-    RenderUtil.fillText(g, `(${player.judgeStats[JudgeState.MISS]})`, 150, 590, "16px sans-serif", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, "- Judge -", 85, 470, "bold 12px 'Open Sans'", this.colorScheme.information.header, "center", "bottom")
+    RenderUtil.fillText(g, "Perfect:", 20, 490, "12px 'Open Sans'", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Great:", 20, 510, "12px 'Open Sans'", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Good:", 20, 530, "12px 'Open Sans'", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Bad:", 20, 550, "12px 'Open Sans'", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, "Miss:", 20, 570, "12px 'Open Sans'", this.colorScheme.information.judge.header, "left", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.PERFECT], 150, 490, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.GREAT], 150, 510, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.GOOD], 150, 530, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.BAD], 150, 550, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, player.judgeStats[JudgeState.MISS] + player.judgeStats[JudgeState.MISS_EMPTY], 150, 570, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
+    RenderUtil.fillText(g, `(${player.judgeStats[JudgeState.MISS]})`, 150, 590, "16px 'Open Sans'", this.colorScheme.information.judge.number, "right", "bottom")
     RenderUtil.strokeLine(g, 170, 460, 170, 590, 1, this.colorScheme.information.separator)
     if(state > 0) {
       g.globalAlpha = state
-      RenderUtil.fillText(g, player.bmson.info.chart_name, 190, 462, "16px sans-serif", this.colorScheme.information.chartName[player.chartType], "left", "top")
-      RenderUtil.fillText(g, "Level", 540, 466, "12px sans-serif", this.colorScheme.information.level.header, "left", "top")
-      RenderUtil.fillText(g, player.bmson.info.level, 610, 462, "16px sans-serif", this.colorScheme.information.level.number, "right", "top")
-      const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px sans-serif").width
-      RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px sans-serif", this.colorScheme.information.title, "left", "bottom")
-      RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px sans-serif", this.colorScheme.information.subtitle, "left", "bottom")
+      RenderUtil.fillText(g, player.bmson.info.chart_name, 190, 462, "16px 'Open Sans'", this.colorScheme.information.chartName[player.chartType], "left", "top")
+      RenderUtil.fillText(g, "Level", 540, 466, "12px 'Open Sans'", this.colorScheme.information.level.header, "left", "top")
+      RenderUtil.fillText(g, player.bmson.info.level, 610, 462, "16px 'Open Sans'", this.colorScheme.information.level.number, "right", "top")
+      const titleWidth = RenderUtil.measureText(g, player.bmson.info.title, "bold 18px 'Open Sans'").width
+      RenderUtil.fillText(g, player.bmson.info.title, 190, 505, "bold 18px 'Open Sans'", this.colorScheme.information.title, "left", "bottom")
+      RenderUtil.fillText(g, player.bmson.info.subtitle, 190 + titleWidth + 10, 505, "14px 'Open Sans'", this.colorScheme.information.subtitle, "left", "bottom")
       RenderUtil.strokeLine(g, 190, 510, 610, 510, 1, this.colorScheme.information.separator)
       this.drawAnalyzer(g)
       g.globalAlpha = 1
     }
     RenderUtil.strokeLine(g, 630, 460, 630, 590, 1, this.colorScheme.information.separator)
-    RenderUtil.fillText(g, "Current", 650, 475, "12px sans-serif", this.colorScheme.information.meter.header, "left", "bottom")
+    RenderUtil.fillText(g, "Current", 650, 475, "12px 'Open Sans'", this.colorScheme.information.meter.header, "left", "bottom")
     RenderUtil.fillRect(g, 762, 457, 16, 16, this.colorScheme.score.current)
     RenderUtil.strokeRect(g, 762, 457, 16, 16, 1, this.colorScheme.information.meter.border)
-    /*RenderUtil.fillText(g, "Current", 650, 495, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, "Current", 650, 515, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, "Current", 650, 535, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")*/
+    /*RenderUtil.fillText(g, "Current", 650, 495, "12px 'Open Sans'", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "Current", 650, 515, "12px 'Open Sans'", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, "Current", 650, 535, "12px 'Open Sans'", this.colorScheme.information.status.header, "left", "bottom")*/
     RenderUtil.strokeLine(g, 650, 545, 780, 542, 1, this.colorScheme.information.separator)
-    RenderUtil.fillText(g, "Max combo:", 650, 565, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, player.maxCombo, 780, 565, "16px sans-serif", this.colorScheme.information.status.content, "right", "bottom")
-    RenderUtil.fillText(g, "Rank:", 650, 590, "12px sans-serif", this.colorScheme.information.status.header, "left", "bottom")
-    RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px sans-serif", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).clearer(0.5).rgbaString(), "right", "bottom")
-    RenderUtil.fillText(g, Rank.toString(player.rank), 780, 590, "20px sans-serif", this.colorScheme.information.rank[player.rank], "right", "bottom")
+    RenderUtil.fillText(g, "Max combo:", 650, 565, "12px 'Open Sans'", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, player.maxCombo, 780, 565, "16px 'Open Sans'", this.colorScheme.information.status.content, "right", "bottom")
+    RenderUtil.fillText(g, "Rank:", 650, 590, "12px 'Open Sans'", this.colorScheme.information.status.header, "left", "bottom")
+    RenderUtil.fillText(g, Rank.toString(player.rank), 782, 592, "20px 'Open Sans'", Color(this.colorScheme.information.rank[player.rank]).darken(0.5).clearer(0.5).rgbaString(), "right", "bottom")
+    RenderUtil.fillText(g, Rank.toString(player.rank), 780, 590, "20px 'Open Sans'", this.colorScheme.information.rank[player.rank], "right", "bottom")
 
   }
 

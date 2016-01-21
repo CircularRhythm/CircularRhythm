@@ -3,6 +3,7 @@ import $ from "jquery"
 import getParameter from "get-parameter"
 import Bowser from "bowser"
 import XHRPromise from "./xhr-promise"
+import WebFontLoader from "webfontloader"
 
 import React from "react"
 import ReactDOM from "react-dom"
@@ -106,7 +107,7 @@ class CircularRhythm {
 
   static load() {
     const promises = []
-    promises[0] = new Promise((resolve, reject) => {
+    promises.push(new Promise((resolve, reject) => {
       XHRPromise.send({
         url: this.serverUrl + "/index.json",
         responseType: "json"
@@ -121,8 +122,9 @@ class CircularRhythm {
       }).catch((e) => {
         reject({message: "Cannot connect to server: " + this.serverUrl})
       })
-    })
-    promises[1] = new Promise((resolve, reject) => {
+    }))
+
+    promises.push(new Promise((resolve, reject) => {
       XHRPromise.send({
         url: "asset/colorscheme/default.json",
         responseType: "json"
@@ -132,7 +134,20 @@ class CircularRhythm {
       }).catch((e) => {
         reject({message: "Cannot load color scheme"})
       })
-    })
+    }))
+
+    promises.push(new Promise((resolve, reject) => {
+      WebFontLoader.load({
+        google: {
+          families: ["Open Sans:300,400,600"]
+        },
+        active: () => resolve(),
+        inactive: () => {
+          console.error("Cannot load web font")
+          resolve()
+        }
+      })
+    }))
 
     return Promise.all(promises)
   }
