@@ -18,7 +18,7 @@ import { Rank } from "./player/rank"
 
 class CircularRhythm {
   static main() {
-    this.version = "0.5.0-beta"
+    this.version = "0.5.0-beta2"
 
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
