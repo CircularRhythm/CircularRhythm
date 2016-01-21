@@ -24,6 +24,7 @@
     "jade": "^1.11.0",
     "jquery": "^2.1.4",
     "json-loader": "^0.5.3",
+    "keycode": "^2.1.0",
     "loader-utils": "^0.2.12",
     "node-sass": "^3.3.3",
     "node-static": "^0.7.7",
@@ -37,13 +38,11 @@
     "run-sequence": "^1.1.4",
     "sass-loader": "^3.0.0",
     "style-loader": "^0.12.4",
+    "webfontloader": "^1.6.20",
     "webpack": "^1.12.9",
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
-    "css-loader": "^0.23.1",
-    "keycode": "^2.1.0",
-    "webfontloader": "^1.6.20",
     "webpack-dev-server": "^1.14.0"
   },
   "scripts": {
