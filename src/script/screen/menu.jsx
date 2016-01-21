@@ -4,6 +4,7 @@ import ScreenGame from "./game"
 import ClassNames from "classnames"
 import { LocalBmsonLoader } from "../local-bmson-loader"
 import { ChartType } from "../chart-type"
+import KeyConfig from "./menu-keyconfig"
 
 // TODO: cleanup
 export default React.createClass({
@@ -12,6 +13,7 @@ export default React.createClass({
     return {
       showDropScreen: false,
       showCompatibilityWarning: this.props.app.compatibilityWarning.length > 0,
+      showKeyConfig: false,
       selectedMusic: {
         type: null,
         id: null,
@@ -136,6 +138,16 @@ export default React.createClass({
       showCompatibilityWarning: false
     })
   },
+  showKeyConfig() {
+    this.setState({
+      showKeyConfig: true
+    })
+  },
+  hideKeyConfig() {
+    this.setState({
+      showKeyConfig: false
+    })
+  },
   render() {
     let musicDetailContent
     if(this.state.selectedMusic.element) {
@@ -253,6 +265,13 @@ export default React.createClass({
       compatibilityWarningContent = null
     }
 
+    let keyConfigContent = (
+      <div>
+        <div className="background" onClick={() => this.hideKeyConfig()}></div>
+        <KeyConfig config={this.props.app.preference.keyConfig} onClose={() => this.hideKeyConfig()}/>
+      </div>
+    )
+
     const chartDetailClassName = ClassNames({
       chartDetailInvisible: (this.state.selectedChart.element == null),
       chartDetailVisible: (this.state.selectedChart.element != null)
@@ -266,6 +285,7 @@ export default React.createClass({
           <div id="localMusicList">{localMusicListContent}</div>
           <div id="musicList">{musicListContent}</div>
         </div>
+        <div id="keyConfig" style={{display: this.state.showKeyConfig ? "block" : "none"}}>{keyConfigContent}</div>
         <div id="drop" style={{display: this.state.showDropScreen ? "block" : "none"}}
           onClick={this.dropOnClick}
           onDragEnter={this.dropOnDragEnter}
@@ -275,8 +295,9 @@ export default React.createClass({
         {compatibilityWarningContent}
         <div id="footer">
           <span className="item">Version {this.props.app.version}</span>
+          <span className="itemButton" onClick={() => this.showKeyConfig()}>Keyconfig</span>
           <span className="spacer"></span>
-          <a className="item" href="https://github.com/CircularRhythm/CircularRhythm" target="_blank">Github</a>
+          <a className="itemButton" href="https://github.com/CircularRhythm/CircularRhythm" target="_blank">Github</a>
         </div>
       </div>
     )

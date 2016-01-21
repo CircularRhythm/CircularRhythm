@@ -32,6 +32,7 @@ class CircularRhythm {
     this.localMusicList = []
     this.localFileList = new Map()
     this.preference = {
+      keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
       renderer: {
         colorScheme: null,
         ccwSingle: false,
