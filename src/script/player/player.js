@@ -18,7 +18,7 @@ export class Player {
     this.bmsonLoader = new BmsonLoader(this.bmson)
     this.chartType = ChartType.fromString(this.bmson.info.chart_name)
     this.parentPath = parentPath
-    this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
+    this.keyConfig = game.preference.keyConfig
     this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]
     this.specialLaneFlash = 0
     this.specialLaneJudgeState = JudgeState.NO
