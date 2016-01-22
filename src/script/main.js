@@ -31,15 +31,7 @@ class CircularRhythm {
     this.musicList = null
     this.localMusicList = []
     this.localFileList = new Map()
-    this.preference = {
-      keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
-      renderer: {
-        colorScheme: null,
-        ccwSingle: false,
-        ccwDouble1: false,
-        ccwDouble2: true
-      }
-    }
+    this.preference = null
 
     this.compatibilityWarning = []
     if(!Bowser.chrome) this.compatibilityWarning.push("Incompatible browser is detected. Currently only Google Chrome is supported. The game may not work correctly in other browsers.")
@@ -150,7 +142,39 @@ class CircularRhythm {
       })
     }))
 
+    promises.push(new Promise((resolve, reject) => {
+      try {
+        this.loadPreference()
+        resolve()
+      } catch(e) {
+        reject(e)
+      }
+    }))
+
     return Promise.all(promises)
+  }
+
+  static loadPreference() {
+    const preferenceStorage = window.localStorage.getItem("preference")
+
+    if(!preferenceStorage) {
+      this.preference = {
+        keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
+        renderer: {
+          colorScheme: null,
+          ccwSingle: false,
+          ccwDouble1: false,
+          ccwDouble2: true
+        }
+      }
+      window.localStorage.setItem("preference", JSON.stringify(this.preference))
+    } else {
+      this.preference = JSON.parse(preferenceStorage)
+    }
+  }
+
+  static savePreference() {
+    window.localStorage.setItem("preference", JSON.stringify(this.preference))
   }
 }
 

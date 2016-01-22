@@ -147,6 +147,8 @@ export default React.createClass({
     this.setState({
       showKeyConfig: false
     })
+
+    this.props.app.savePreference()
   },
   render() {
     let musicDetailContent
