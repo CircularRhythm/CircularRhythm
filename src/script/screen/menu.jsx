@@ -270,7 +270,7 @@ export default React.createClass({
     let keyConfigContent = (
       <div>
         <div className="background" onClick={() => this.hideKeyConfig()}></div>
-        <KeyConfig config={this.props.app.preference.keyConfig} onClose={() => this.hideKeyConfig()}/>
+        <KeyConfig preference={this.props.app.preference} onClose={() => this.hideKeyConfig()}/>
       </div>
     )
 

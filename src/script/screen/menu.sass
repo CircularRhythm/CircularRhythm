@@ -309,6 +309,33 @@ body
     background: url("asset/image/keyconfig.svg")
     background-color: #F0F0FF
 
+    .wise
+      .group
+        position: absolute
+        width: 120px
+        text-align: center
+        .header
+          font-size: 14px
+          margin-bottom: 5px
+        .buttonContainer
+          .button
+            background-color: #E0E0EE
+            border: 1px solid #000
+            cursor: pointer
+            &:first-child
+              border-top-left-radius: 3px
+              border-top-right-radius: 3px
+            &:last-child
+              border-bottom-left-radius: 3px
+              border-bottom-right-radius: 3px
+            &:hover
+              background-color: #E8E8EE
+          .buttonActive
+            background-color: #B0B0BB
+            box-shadow: 0px 0px 2px #303033 inset
+            &:hover
+              background-color: #D0D0DD
+
     .buttons
       .button
         position: absolute
@@ -341,7 +368,7 @@ body
         background-color: #E0E0EE
 
         &:hover
-          background-color: #D0D0DD
+          background-color: #E8E8EE
 
 #compatibilityWarning
   position: fixed
