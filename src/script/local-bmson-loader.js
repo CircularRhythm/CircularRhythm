@@ -1,3 +1,4 @@
+// TODO: It will be better (more easy to see) to list all files at first
 export class LocalBmsonLoader {
   constructor(localFileList) {
     this.localFileList = localFileList
@@ -38,7 +39,7 @@ export class LocalBmsonLoader {
           entries.forEach((entry) => {
             promises.push(this.traverse(entry))
           })
-          Promise.all(promises).then(() => resolve())
+          Promise.all(promises).then((result) => resolve(result))
         })
       })
     } else {
@@ -67,7 +68,7 @@ export class LocalBmsonLoader {
               } else if(bmson.info.mode_hint == "circularrhythm-double") {
                 mode = "double"
               } else {
-                reject("Unsupported mode hint: " + bmson.info.mode_hint)
+                resolve({success: false, message: "Unsupported mode hint: " + bmson.info.mode_hint})
                 return
               }
 
@@ -106,10 +107,10 @@ export class LocalBmsonLoader {
               this.music.charts[mode].push(chart)
               resolve()
             } else {
-              reject("CircularRhythm cannot load legacy bmson. Convert to v1.0 format.")
+              resolve({success: false, message: "CircularRhythm cannot load legacy bmson. Convert to v1.0 format."})
             }
           } catch(e) {
-            reject("Invalid bmson")
+            resolve({success: false, message: "Invalid bmson"})
           }
         }
         reader.readAsText(file)
@@ -121,7 +122,10 @@ export class LocalBmsonLoader {
   load(entry) {
     return new Promise((resolve, reject) => {
       this.music.basedir = entry.filesystem.name + entry.fullPath
-      this.traverse(entry).then(() => {
+      this.traverse(entry).then((result) => {
+        result.forEach((e) => {
+          if(e && !e.success) console.error(e.message)
+        })
         if(this.music.charts.single.length == 0 && this.music.charts.double.length == 0) {
           reject("No bmson")
         } else {
