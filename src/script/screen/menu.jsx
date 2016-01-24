@@ -299,6 +299,7 @@ export default React.createClass({
           <span className="item">Version {this.props.app.version}</span>
           <span className="itemButton" onClick={() => this.showKeyConfig()}>Keyconfig</span>
           <span className="spacer"></span>
+          <a className="itemButton" href="https://twitter.com/circular_rhythm" target="_blank">Twitter</a>
           <a className="itemButton" href="https://github.com/CircularRhythm/CircularRhythm" target="_blank">Github</a>
         </div>
       </div>
