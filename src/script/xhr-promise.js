@@ -3,6 +3,7 @@ export default class XHRPromise {
     const method = config.method || "GET"
     const url = config.url
     const responseType = config.responseType || ""
+    const onprogress = config.onprogress
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest()
       request.open(method, url)
@@ -16,6 +17,7 @@ export default class XHRPromise {
       }
       //request.onerror = () => reject({status: -1, statusText: "Network Error"})
       request.onerror = () => reject({status: 404, statusText: "Network Error"})
+      if(onprogress) request.onprogress = onprogress
       request.send()
     })
   }

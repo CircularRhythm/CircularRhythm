@@ -24,41 +24,57 @@ export class Renderer {
   render(g, controller) {
     const player = this.game.player
 
-    if(player.playMode == 1) {
+    if(player.state == States.LOADING) {
       g.save()
-      g.translate(400, 220)
-      this.renderUnit(g, controller, 0, this.preference.renderer.ccwSingle)
+      g.translate(400, 300)
+      RenderUtil.strokeCircle(g, 0, 0, 100, this.colorScheme.lane[0], 1)
+      RenderUtil.strokeCircle(g, 0, 0, 130, this.colorScheme.lane[1], 1)
+      RenderUtil.strokeCircle(g, 0, 0, 160, this.colorScheme.lane[2], 1)
+      RenderUtil.strokeCircle(g, 0, 0, 190, this.colorScheme.lane[3], 1)
+
+      RenderUtil.strokeArc(g, 0, 0, 130, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.promiseBmsonProgress, this.colorScheme.note.long.active[1], 5, false)
+      RenderUtil.strokeArc(g, 0, 0, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.promiseChartProgress, this.colorScheme.note.long.active[2], 5, false)
+      RenderUtil.strokeArc(g, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.promiseAssetProgress, this.colorScheme.note.long.active[3], 5, false)
       g.restore()
-    } else if(player.playMode == 2) {
-      g.save()
-      g.translate(215, 220)
-      this.renderUnit(g, controller, 0, this.preference.renderer.ccwDouble1)
-      g.restore()
-      g.save()
-      g.translate(585, 220)
-      this.renderUnit(g, controller, 1, this.preference.renderer.ccwDouble2)
-      g.restore()
+
+      RenderUtil.fillRect(g, 0, 225, 800, 150, "rgba(255, 255, 255, 0.6)")
+    } else {
+      if(player.playMode == 1) {
+        g.save()
+        g.translate(400, 220)
+        this.renderUnit(g, controller, 0, this.preference.renderer.ccwSingle)
+        g.restore()
+      } else if(player.playMode == 2) {
+        g.save()
+        g.translate(215, 220)
+        this.renderUnit(g, controller, 0, this.preference.renderer.ccwDouble1)
+        g.restore()
+        g.save()
+        g.translate(585, 220)
+        this.renderUnit(g, controller, 1, this.preference.renderer.ccwDouble2)
+        g.restore()
+      }
+
+      //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
+      RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
+      if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
+      RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
+
+      const gaugeHeight = 440 * player.gauge / 100
+      RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
+      const scoreHeight = 440 * player.score / 1000000
+      RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
+      RenderUtil.fillRect(g, 0, 440, 800, 10, Color(this.colorScheme.duration).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
+      RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
+
+      this.drawInfo(g, 1)
+
     }
-
-    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
-    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
-    if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
-
-    const gaugeHeight = 440 * player.gauge / 100
-    RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
-    RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
-    const scoreHeight = 440 * player.score / 1000000
-    RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
-    RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
-    RenderUtil.fillRect(g, 0, 440, 800, 10, Color(this.colorScheme.duration).clearer(0.7).rgbaString())
-    RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
-    RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
-    RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
-
-    this.drawInfo(g, 1)
-
     RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px sans-serif", "#000000", "left", "bottom")
+    RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
   }
 
   renderUnit(g, controller, playerNum, ccw) {
