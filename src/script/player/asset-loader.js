@@ -7,7 +7,7 @@ export class AssetLoader {
     this.files = new Map()
   }
 
-  load(path) {
+  load(path, onprogress) {
     return new Promise((resolve, reject) => {
       const normalizedPath = path.trim().replace(/^\/*/, "")
       if(this.files.has(normalizedPath)) {
@@ -18,7 +18,7 @@ export class AssetLoader {
           resolve(file)
         }
       } else {
-        const promise = this.get(normalizedPath)
+        const promise = this.get(normalizedPath, (progress) => onprogress(progress))
         this.files.set(normalizedPath, {data: null, currentPromise: promise})
         promise.then((data) => {
           this.files.set(normalizedPath, {data: data, currentPromise: null})
@@ -28,15 +28,19 @@ export class AssetLoader {
     })
   }
 
-  get(path) {
-    return this.xhr(path)
+  get(path, onprogress) {
+    return this.xhr(path, (e) => {
+      if(e.total == 0) onprogress(0)
+      else onprogress(e.loaded / e.total)
+    })
   }
 
-  xhr(path) {
+  xhr(path, onprogress) {
     return new Promise((resolve, reject) => {
       XHRPromise.send({
         url: this.parentPath + "/" + path,
-        responseType: "arraybuffer"
+        responseType: "arraybuffer",
+        onprogress: onprogress
       }).then((data) => {
         resolve(data)
       }).catch((e) => {
@@ -49,14 +53,35 @@ export class AssetLoader {
   }
 }
 
-export class AssetLoaderArchive extends AssetLoader {
+export class AssetLoaderPacked extends AssetLoader {
   constructor(parentPath, definition) {
     super(parentPath)
     this.assetFiles = []
     this.definition = definition
+    // [filename => size]
+    this.occupation = []
+    // Number
+    this.occupationTotal = []
+    this.progress = new Map()
+
+    Object.keys(this.definition).forEach((key) => {
+      this.progress.put(key, 0)
+      const value = this.definition[key]
+      value.forEach((e) => {
+        const index = e[0]
+        const size = e[2] - e[1]
+        if(!this.occupation[index]) {
+          this.occupation[index] = new Map()
+          this.occupationTotal[index] = 0
+        }
+        this.occupation[index].set(key, size)
+        this.occupationTotal[index] += size
+      })
+    })
+    console.log(this.occupation)
   }
 
-  get(path) {
+  get(path, onprogress) {
     return new Promise((resolve, reject) => {
       const normalizedPath = path.trim().replace(/^\/*/, "")
       const definition = this.definition[normalizedPath]
@@ -75,7 +100,13 @@ export class AssetLoaderArchive extends AssetLoader {
               resolve(assetFile.data)
             }
           } else {
-            const promise = this.xhr(assetPath)
+            const promise = this.xhr(assetPath, (event) => {
+              this.occupation[e[0]].forEach((value, key) => {
+                this.
+              })
+              this.occupation[e[0]].get(path) / this.occupationTotal[e[0]]
+              onprogress(0)
+            })
             this.assetFiles[e[0]] = {data: null, currentPromise: promise}
             promise.then((data) => {
               this.assetFiles[e[0]] = {data: data, currentPromise: null}
@@ -106,7 +137,6 @@ export class AssetLoaderArchive extends AssetLoader {
 export class AssetLoaderLocal extends AssetLoader {
   constructor(parentPath, localFileList) {
     super(parentPath)
-    console.log()
     this.localFileList = localFileList
   }
 

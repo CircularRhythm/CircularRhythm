@@ -1,0 +1,57 @@
+import XHRPromise from "../../xhr-promise"
+
+export default class LoaderBmson {
+  constructor(bmsonSetConfig) {
+    this.progress = 0
+    this.progressChart = 0
+    this.progressAsset = 0
+    this.bmsonSetConfig = bmsonSetConfig
+  }
+
+  load() {
+    const bmsonPath = this.bmsonSetConfig.path
+    const assetPath = this.bmsonSetConfig.assetPath
+    const local = this.bmsonSetConfig.local
+    const packedAssets = this.bmsonSetConfig.packedAssets
+
+    return new Promise((resolve, reject) => {
+      const promises = []
+      if(local) {
+        promises.push(LocalFileLoader.get(bmsonPath, "json", localFileList, (e) => { this.progressChart = e.loaded / e.total; this.updateProgress() }))
+      } else {
+        promises.push(XHRPromise.send({
+          url: bmsonPath,
+          responseType: "json",
+          onprogress: (e) => {
+            this.promiseBmsonProgressChart = e.loaded / e.total
+            this.updateProgress()
+          }
+        }))
+        if(packedAssets) promises.push(XHRPromise.send({
+          url: assetPath,
+          responseType: "json",
+          onprogress: (e) => {
+            this.promiseBmsonProgressAsset = e.loaded / e.total
+            this.updateProgress()
+          }
+        }))
+      }
+
+      Promise.all(promises).then((result) => {
+        if(packedAssets) {
+          resolve({ bmson: result[0], assetDefinition: result[1] })
+        } else {
+          resolve({ bmson: result[0] })
+        }
+      })
+    })
+  }
+
+  updateProgress() {
+    if(this.bmsonSetConfig.packedAssets) {
+      this.progress = this.progressChart * 0.7 + this.progressAsset * 0.3
+    } else {
+      this.progress = this.progressChart
+    }
+  }
+}

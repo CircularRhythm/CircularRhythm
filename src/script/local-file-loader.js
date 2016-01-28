@@ -1,5 +1,5 @@
 export class LocalFileLoader {
-  static get(path, type, localFileList) {
+  static get(path, type, localFileList, onprogress = null) {
     return new Promise((resolve, reject) => {
       const entry = localFileList.get(path)
       if(entry) {
@@ -13,6 +13,7 @@ export class LocalFileLoader {
               resolve(result)
             }
           }
+          if(onprogress) reader.onprogress = onprogress
           switch(type) {
             case "text":
             case "json":

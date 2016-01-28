@@ -6,7 +6,6 @@ export class AudioLoader {
     this.audioContext = audioContext
     this.assetLoader = assetLoader
     this.soundChannels = soundChannels
-    this.extensions = ["wav", "ogg"]
   }
 
   loadAudio() {

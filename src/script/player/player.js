@@ -2,12 +2,15 @@ import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop 
 import { Note, NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
 import { AudioLoader } from "./audio-loader"
-import { AssetLoader, AssetLoaderArchive } from "./asset-loader"
+import { AssetLoader, AssetLoaderPacked, AssetLoaderLocal } from "./asset-loader"
 import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 import { ChartType } from "../chart-type"
 import { Rank } from "./rank"
 import XHRPromise from "../xhr-promise"
+import LoaderBmson from "./loader/loader-bmson"
+import LoaderChart from "./loader/loader-chart"
+import LoaderAsset from "./loader/loader-asset"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -35,11 +38,17 @@ export class Player {
     this.level = null
     this.chartType = null
 
-    this.promiseBmsonProgress = 0
-    this.promiseChartProgress = 0.2
-    this.promiseAssetProgress = 0.3
+    this.loaderBmson = null
+    this.loaderChart = null
+    this.loaderAsset = null
+    this.loaderAudio = null
+    /*this.promiseBmsonProgress = 0
+    this.promiseChartProgress = 0
+    this.promiseAssetProgress = 0
+    this.promiseAudioProgress = 0*/
 
     this.bmson = null
+    this.assetDefinition = null
 
     this.keyFlashing = [0, 0, 0, 0, 0, 0, 0, 0]
     this.specialLaneFlash = 0
@@ -122,34 +131,53 @@ export class Player {
   }
 
   load() {
-    const bmsonSetConfig = this.bmsonSetConfig
+    /*const bmsonSetConfig = this.bmsonSetConfig
     const bmsonPath = bmsonSetConfig.path
     const assetPath = bmsonSetConfig.assetPath
     const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
     const packedAssets = bmsonSetConfig.packedAssets
     const local = bmsonSetConfig.local
-    const localFileList = bmsonSetConfig.localFileList
+    const localFileList = bmsonSetConfig.localFileList*/
 
     /*this.promiseBmson = null
     this.promiseChart = null
     this.promiseAsset = null*/
 
     new Promise((resolve, reject) => {
-      const promises = []
-      if(local) {
-        promises.push(LocalFileLoader.get(bmsonPath, "json", localFileList))
-      } else {
-        promises.push(XHRPromise.send({ url: bmsonPath, responseType: "json", onprogress: (e) => {this.promiseBmsonProgress = e.loaded / e.total }}))
-        if(packedAssets) promises.push(XHRPromise.send({ url: assetPath, responseType: "json" }))
-      }
+      this.loaderBmson = new LoaderBmson(this.bmsonSetConfig)
+      this.loaderBmson.load().then((result) => {
+        console.log("Bmson resolve:")
+        console.log(result)
 
-      Promise.all(promises).then((result) => {
-        if(packedAssets) {
-          resolve({ bmson: result[0], asset: result[1] })
+        this.bmson = result.bmson
+        this.assetDefinition = result.assetDefinition
+        this.loaderChart = new LoaderChart(this)
+        return this.loaderChart.load()
+      }).then((result) => {
+        console.log("Chart resolve:")
+        console.log(result)
+
+        const parentPath = this.bmsonSetConfig.path.replace(/\/[^\/]*$/, "")
+        let assetLoader
+        if(this.bmsonSetConfig.local) {
+          assetLoader = new AssetLoaderLocal(parentPath, this.bmsonSetConfig.localFileList)
+        } else if(this.bmsonSetConfig.packedAssets) {
+          assetLoader = new AssetLoaderPacked(parentPath, this.assetDefinition)
         } else {
-          resolve({ bmson: result[0] })
+          assetLoader = new AssetLoader(parentPath)
         }
+        this.loaderAsset = new LoaderAsset(this.soundChannels.map((e) => e.name), assetLoader)
+        return this.loaderAsset.load()
+      }).then((result) => {
+        console.log("Asset resolve:")
+        console.log(result)
+        resolve()
       })
+    })
+
+    return
+
+    new Promise((resolve, reject) => {
     }).then((result) => {
       console.log("Bmson resolve:")
       console.log(result)
@@ -158,37 +186,6 @@ export class Player {
         this.bmson = result.bmson
 
         this.bmsonLoader = new BmsonLoader(this.bmson)
-        this.chartType = ChartType.fromString(this.bmson.info.chart_name)
-        this.parentPath = parentPath
-
-        let assetLoader
-        if(local) assetLoader = new AssetLoaderLocal(parentPath, localFileList)
-        else if(packedAssets) assetLoader = new AssetLoaderArchive(parentPath, result.asset)
-        else assetLoader = new AssetLoader(parentPath)
-        this.assetLoader = assetLoader
-
-        // [{time: Number, y: Number, bpm: Number}]
-        // used by timeToY, yToTime
-        // yToTime on a stop event will return start time of the stop
-        this.timingList = this.bmsonLoader.loadTimingList()
-
-        // [{y: Number, l: Number}]
-        this.barLines = this.bmsonLoader.loadBarLines()
-        this.bmsonLoader.appendLackingBarLine(this.barLines)
-        this.bmsonLoader.makeBeatData(this.barLines)
-
-        this.supportLines = this.bmsonLoader.makeSupportLines(this.barLines)
-
-        this.barSpeedChangeList = this.bmsonLoader.getBarSpeedChangeList(this.barLines, this.timingList)
-
-        // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
-        this.soundChannels = this.bmsonLoader.loadSoundChannels(this.barLines, this.timingList)
-
-        this.numberOfNotes = this.bmsonLoader.getNumberOfNotes(this.soundChannels, this.playMode)
-        this.duration = this.bmsonLoader.getDuration(this.barLines, this.timingList)
-
-        this.analyzer.density = this.bmsonLoader.getDensity(this.soundChannels, this.duration, this.playMode)
-        this.analyzer.densityMax = Math.max(...this.analyzer.density)
 
         resolve()
       })
@@ -230,6 +227,8 @@ export class Player {
   }
 
   update(input) {
+    if(this.state == States.LOADING) {
+    }
     if(this.state == States.READY) {
       if(input.isJustPressed(13)) {
         // Enter
