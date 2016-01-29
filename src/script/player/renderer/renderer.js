@@ -34,8 +34,8 @@ export class Renderer {
 
       if(player.loaderBmson) RenderUtil.strokeArc(g, 0, 0, 100, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderBmson.progress, this.colorScheme.note.long.active[0], 5, false)
       if(player.loaderChart) RenderUtil.strokeArc(g, 0, 0, 130, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderChart.progress, this.colorScheme.note.long.active[1], 5, false)
-      if(player.loaderAsset) RenderUtil.strokeArc(g, 0, 0, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.progress, this.colorScheme.note.long.active[2], 5, false)
-      if(player.loaderAudio) RenderUtil.strokeArc(g, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAudio.progress, this.colorScheme.note.long.active[3], 5, false)
+      if(player.loaderAsset) RenderUtil.strokeArc(g, 0, 0, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.assetProgress, this.colorScheme.note.long.active[2], 5, false)
+      if(player.loaderAudio) RenderUtil.strokeArc(g, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.audioProgress, this.colorScheme.note.long.active[3], 5, false)
       g.restore()
 
       RenderUtil.fillRect(g, 0, 225, 800, 150, "rgba(255, 255, 255, 0.6)")

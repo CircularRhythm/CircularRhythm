@@ -5,9 +5,10 @@ export class AssetLoader {
   constructor(parentPath) {
     this.parentPath = parentPath
     this.files = new Map()
+    this.progress = new Map()
   }
 
-  load(path, onprogress) {
+  load(path) {
     return new Promise((resolve, reject) => {
       const normalizedPath = path.trim().replace(/^\/*/, "")
       if(this.files.has(normalizedPath)) {
@@ -18,7 +19,7 @@ export class AssetLoader {
           resolve(file)
         }
       } else {
-        const promise = this.get(normalizedPath, (progress) => onprogress(progress))
+        const promise = this.get(normalizedPath)
         this.files.set(normalizedPath, {data: null, currentPromise: promise})
         promise.then((data) => {
           this.files.set(normalizedPath, {data: data, currentPromise: null})
@@ -28,11 +29,13 @@ export class AssetLoader {
     })
   }
 
-  get(path, onprogress) {
-    return this.xhr(path, (e) => {
-      if(e.total == 0) onprogress(0)
-      else onprogress(e.loaded / e.total)
-    })
+  getProgress(path) {
+    return this.progress.get(path) || 0
+  }
+
+  get(path) {
+    if(!this.progress.has(path)) this.progress.set(path, 0)
+    return this.xhr(path, (e) => this.progress.set(path, e.loaded / e.total))
   }
 
   xhr(path, onprogress) {
@@ -58,30 +61,29 @@ export class AssetLoaderPacked extends AssetLoader {
     super(parentPath)
     this.assetFiles = []
     this.definition = definition
-    // [filename => size]
-    this.occupation = []
-    // Number
-    this.occupationTotal = []
-    this.progress = new Map()
+
+    // id => [filename]
+    this.idFileList = []
+    // filename => (id => {received, total})
+    this.fileOccupation = new Map()
 
     Object.keys(this.definition).forEach((key) => {
-      this.progress.put(key, 0)
       const value = this.definition[key]
+      const idProgressMap = new Map()
       value.forEach((e) => {
-        const index = e[0]
+        const id = e[0]
         const size = e[2] - e[1]
-        if(!this.occupation[index]) {
-          this.occupation[index] = new Map()
-          this.occupationTotal[index] = 0
-        }
-        this.occupation[index].set(key, size)
-        this.occupationTotal[index] += size
+        if(!this.idFileList[id]) this.idFileList[id] = []
+        this.idFileList[id].push(key)
+        idProgressMap.set(id, {loaded: 0, total: size})
       })
+      this.fileOccupation.set(key, idProgressMap)
     })
-    console.log(this.occupation)
+    console.log(this.idFileList)
+    console.log(this.fileOccupation)
   }
 
-  get(path, onprogress) {
+  get(path) {
     return new Promise((resolve, reject) => {
       const normalizedPath = path.trim().replace(/^\/*/, "")
       const definition = this.definition[normalizedPath]
@@ -91,9 +93,10 @@ export class AssetLoaderPacked extends AssetLoader {
       }
       const promises = definition.map((e) => {
         return new Promise((resolve, reject) => {
-          const assetPath = e[0] + ".crasset"
-          if(this.assetFiles[e[0]]) {
-            const assetFile = this.assetFiles[e[0]]
+          const assetId = e[0]
+          const assetPath = assetId + ".crasset"
+          if(this.assetFiles[assetId]) {
+            const assetFile = this.assetFiles[assetId]
             if(assetFile.currentPromise != null) {
               assetFile.currentPromise.then((data) => resolve(data)).catch((e) => reject(e))
             } else {
@@ -101,15 +104,19 @@ export class AssetLoaderPacked extends AssetLoader {
             }
           } else {
             const promise = this.xhr(assetPath, (event) => {
-              this.occupation[e[0]].forEach((value, key) => {
-                this.
+              this.idFileList[assetId].forEach((filename) => {
+                const fileOccupationInfo = this.fileOccupation.get(filename).get(assetId)
+                fileOccupationInfo.loaded = event.loaded * fileOccupationInfo.total / event.total
+                let sumProgress = 0
+                let fileTotal = 0
+                this.fileOccupation.get(filename).forEach((e) => fileTotal += e.total)
+                this.fileOccupation.get(filename).forEach((e) => sumProgress += e.loaded / fileTotal)
+                this.progress.set(filename, sumProgress)
               })
-              this.occupation[e[0]].get(path) / this.occupationTotal[e[0]]
-              onprogress(0)
             })
-            this.assetFiles[e[0]] = {data: null, currentPromise: promise}
+            this.assetFiles[assetId] = {data: null, currentPromise: promise}
             promise.then((data) => {
-              this.assetFiles[e[0]] = {data: data, currentPromise: null}
+              this.assetFiles[assetId] = {data: data, currentPromise: null}
               resolve(data)
             }).catch((e) => reject(e))
           }

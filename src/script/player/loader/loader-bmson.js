@@ -38,7 +38,10 @@ export default class LoaderBmson {
       }
 
       Promise.all(promises).then((result) => {
+        this.progressChart = 1
+        this.progress = 1
         if(packedAssets) {
+          this.progressAsset = 1
           resolve({ bmson: result[0], assetDefinition: result[1] })
         } else {
           resolve({ bmson: result[0] })
