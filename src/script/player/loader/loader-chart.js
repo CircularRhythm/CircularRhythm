@@ -2,6 +2,7 @@ import { PlayerUtil } from "../player-util"
 import { Note, NoteShort, NoteLong } from "../note"
 import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop, BarSpeedChangeEventType } from "../bar-speed-change-event"
 import { ChartType } from "../../chart-type"
+import { SliceData } from "../slice-data"
 
 // TODO: Exclude long special
 export default class LoaderChart {
@@ -15,6 +16,13 @@ export default class LoaderChart {
     return new Promise((resolve, reject) => {
       const player = this.player
       const bmson = this.bmson
+
+      player.title = bmson.info.title
+      player.subtitle = bmson.info.subtitle
+      player.artist = bmson.info.artist
+      player.subartists = bmson.info.subartists
+      player.level = bmson.info.level
+      player.chartName = bmson.info.chart_name
 
       player.chartType = ChartType.fromString(bmson.info.chart_name)
 
@@ -34,6 +42,7 @@ export default class LoaderChart {
 
       // [{name: String, audioBuffer: AudioBuffer, notes: [Note]}]
       player.soundChannels = this.loadSoundChannels(player.barLines, player.timingList)
+      this.getSliceData(player.soundChannels)
 
       player.numberOfNotes = this.getNumberOfNotes(player.soundChannels, player.playMode)
       player.duration = this.getDuration(player.barLines, player.timingList)
@@ -157,7 +166,7 @@ export default class LoaderChart {
           notes.push(new NoteShort(note.x, note.y, note.c, unitType, time, position))
         }
       }
-      soundChannels.push({name: bmsonSoundChannel.name, source: null, notes: notes})
+      soundChannels.push({name: bmsonSoundChannel.name, audioBuffer: null, notes: notes})
     }
 
     return soundChannels
@@ -345,5 +354,46 @@ export default class LoaderChart {
       })
     })
     return density
+  }
+
+  // Corrupts soundChannels
+  getSliceData(soundChannels) {
+    soundChannels.forEach((channel) => {
+      let audioStartTime = 0
+      if(channel.notes.length > 0 && channel.notes[0].c == true) {
+        console.warn("First note of each channel should be c=false")
+      }
+      for(let i = 0; i < channel.notes.length; i++) {
+        const note = channel.notes[i]
+        const noteTime = note.time
+        if(note.c == false) {
+          audioStartTime = noteTime
+        }
+        const sliceStartTime = noteTime - audioStartTime
+        let sliceDuration
+
+        let addIndex = 0
+        let reachEnd = false
+        // search next time note
+        while(channel.notes[i + addIndex].y <= note.y) {
+          addIndex ++
+          if(i + addIndex >= channel.notes.length) {
+            // If there is no next note
+            sliceDuration = null
+            reachEnd = true
+            break
+          }
+        }
+        if(!reachEnd) {
+          // If there is a next note
+          const nextNote = channel.notes[i + addIndex]
+          const nextNoteTime = nextNote.time
+          const sliceEndTime = nextNoteTime - audioStartTime
+          sliceDuration = sliceEndTime - sliceStartTime
+        }
+
+        note.sliceData = new SliceData(sliceStartTime, sliceDuration)
+      }
+    })
   }
 }

@@ -1,7 +1,8 @@
 import { AssetLoader, AssetLoaderArchive, AssetLoaderLocal, FileErrorStatus } from "../asset-loader"
 
 export default class LoaderAsset {
-  constructor(fileList, assetLoader) {
+  constructor(audioContext, fileList, assetLoader) {
+    this.audioContext = audioContext
     this.assetProgress = 0
     this.audioProgress = 0
     this.fileList = fileList
@@ -21,18 +22,28 @@ export default class LoaderAsset {
         })
       }, 100)
 
-      const promises = this.fileList.map((file, id) => {
+      const assetPromises = this.fileList.map((file, id) => {
         return this.getExtensionModifiedPromise(id, -1)
       })
 
-      promises.forEach((e) => {
-        e.then((result) => console.log(result))
+      const audioPromises = []
+
+      assetPromises.forEach((e, i) => {
+        e.then((result) => {
+          audioPromises[i] = this.decodeAudio(result)
+          audioPromises[i].then((audioBuffer) => {
+            this.audioProgress += 1 / this.fileList.length
+          })
+        })
       })
 
-      Promise.all(promises).then(() => {
+      Promise.all(assetPromises).then(() => {
         clearInterval(intervalId)
         this.assetProgress = 1
-        resolve()
+        return Promise.all(audioPromises)
+      }).then((result) => {
+        this.audioProgress = 1
+        resolve(result)
       })
     })
   }
@@ -66,4 +77,9 @@ export default class LoaderAsset {
     })
   }
     // TODO: EACH SLICE has a polyphony of 1
+  decodeAudio(arraybuffer) {
+    return new Promise((resolve, reject) => {
+      this.audioContext.decodeAudioData(arraybuffer, (audioBuffer) => resolve(audioBuffer), (e) => reject(e))
+    })
+  }
 }

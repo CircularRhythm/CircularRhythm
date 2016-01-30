@@ -120,7 +120,6 @@ export default React.createClass({
     const analyzerElement = document.getElementById("analyzer")
     const ctx = analyzerElement.getContext("2d")
     const analyzerRenderer = this.state.analyzerRenderer
-    console.log(analyzer)
     analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.density, analyzer.densityMax, 1, colorScheme.analyzer.density)
     analyzerRenderer.fillAnalyzerComponent(ctx, analyzer.accuracy, analyzer.densityMax, colorScheme.analyzer.accuracy)
   },

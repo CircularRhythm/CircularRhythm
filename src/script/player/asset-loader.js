@@ -79,8 +79,6 @@ export class AssetLoaderPacked extends AssetLoader {
       })
       this.fileOccupation.set(key, idProgressMap)
     })
-    console.log(this.idFileList)
-    console.log(this.fileOccupation)
   }
 
   get(path) {

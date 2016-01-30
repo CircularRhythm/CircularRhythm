@@ -56,10 +56,11 @@ class CircularRhythm {
           this.load().then(() => {
             this.screenManager.transit(ScreenGame, {
               bmsonSetConfig: {
-                title: "TEST",
+                title: "TyTLE",
                 subtitle: "sub",
-                artist: "artist",
+                artist: "aRtjst",
                 subartists: ["sub"],
+                genre: "tesTgenre",
                 bpm: { initial: 125, min: 120, max: 150 },
                 playMode: 2,
                 level: 1,

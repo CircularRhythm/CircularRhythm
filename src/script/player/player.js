@@ -3,7 +3,6 @@ import { Note, NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
 import { AudioLoader } from "./audio-loader"
 import { AssetLoader, AssetLoaderPacked, AssetLoaderLocal } from "./asset-loader"
-import { BmsonLoader } from "./bmson-loader"
 import { PlayerUtil } from "./player-util"
 import { ChartType } from "../chart-type"
 import { Rank } from "./rank"
@@ -11,6 +10,7 @@ import XHRPromise from "../xhr-promise"
 import LoaderBmson from "./loader/loader-bmson"
 import LoaderChart from "./loader/loader-chart"
 import LoaderAsset from "./loader/loader-asset"
+import { SliceData } from "./slice-data.js"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -24,28 +24,17 @@ export class Player {
     this.autoSpecial = bmsonSetConfig.config.autoSpecial
     this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
 
-    // Preload chart info
-    /*this.title = bmsonSetConfig.title
-    this.subtitle = bmsonSetConfig.subtitle
-    this.artist = bmsonSetConfig.artist
-    this.subartists = bmsonSetConfig.subartists
-    this.level = bmsonSetConfig.level
-    this.chartName = bmsonSetConfig.chartName*/
     this.title = null
     this.subtitle = null
     this.artist = null
     this.subartists = []
     this.level = null
     this.chartType = null
+    this.chartName = null
 
     this.loaderBmson = null
     this.loaderChart = null
     this.loaderAsset = null
-    this.loaderAudio = null
-    /*this.promiseBmsonProgress = 0
-    this.promiseChartProgress = 0
-    this.promiseAssetProgress = 0
-    this.promiseAudioProgress = 0*/
 
     this.bmson = null
     this.assetDefinition = null
@@ -131,32 +120,14 @@ export class Player {
   }
 
   load() {
-    /*const bmsonSetConfig = this.bmsonSetConfig
-    const bmsonPath = bmsonSetConfig.path
-    const assetPath = bmsonSetConfig.assetPath
-    const parentPath = bmsonPath.replace(/\/[^\/]*$/, "")
-    const packedAssets = bmsonSetConfig.packedAssets
-    const local = bmsonSetConfig.local
-    const localFileList = bmsonSetConfig.localFileList*/
-
-    /*this.promiseBmson = null
-    this.promiseChart = null
-    this.promiseAsset = null*/
-
     new Promise((resolve, reject) => {
       this.loaderBmson = new LoaderBmson(this.bmsonSetConfig)
       this.loaderBmson.load().then((result) => {
-        console.log("Bmson resolve:")
-        console.log(result)
-
         this.bmson = result.bmson
         this.assetDefinition = result.assetDefinition
         this.loaderChart = new LoaderChart(this)
         return this.loaderChart.load()
       }).then((result) => {
-        console.log("Chart resolve:")
-        console.log(result)
-
         const parentPath = this.bmsonSetConfig.path.replace(/\/[^\/]*$/, "")
         let assetLoader
         if(this.bmsonSetConfig.local) {
@@ -166,42 +137,16 @@ export class Player {
         } else {
           assetLoader = new AssetLoader(parentPath)
         }
-        this.loaderAsset = new LoaderAsset(this.soundChannels.map((e) => e.name), assetLoader)
+        this.loaderAsset = new LoaderAsset(this.audioContext, this.soundChannels.map((e) => e.name), assetLoader)
         return this.loaderAsset.load()
       }).then((result) => {
-        console.log("Asset resolve:")
-        console.log(result)
-        resolve()
-      })
-    })
+        result.forEach((e, i) => this.soundChannels[i].audioBuffer = e)
 
-    return
-
-    new Promise((resolve, reject) => {
-    }).then((result) => {
-      console.log("Bmson resolve:")
-      console.log(result)
-
-      return new Promise((resolve, reject) => {
-        this.bmson = result.bmson
-
-        this.bmsonLoader = new BmsonLoader(this.bmson)
+        console.log("Loading completed.")
+        this.state = States.READY
 
         resolve()
       })
-    }).then((result) => {
-      console.log("Chart resolve:")
-      console.log(result)
-
-      return new Promise((resolve, reject) => {
-        new AudioLoader(this.audioContext, this.assetLoader, this.soundChannels).loadAudio().then(() => resolve())
-      })
-    }).then((result) => {
-      console.log("Asset resolve:")
-      console.log(result)
-      console.log("All resolve")
-
-      //this.state = States.READY
     })
   }
 
@@ -399,7 +344,7 @@ export class Player {
     this.targetNotes.forEach((e, x) => {
       if(!e.note.targetable) this.targetNotes.delete(x)
     })
-    for(let channel of this.soundChannels) {
+    this.soundChannels.forEach((channel, i) => {
       // Assign new targets
       const newTargets = channel.notes.filter((note) => note.time - this.currentTime < 1000 && note.judgeState == JudgeState.NO && this.isControllableLane(note.x))
       for(let note of newTargets) {
@@ -407,53 +352,50 @@ export class Player {
         const target = this.targetNotes.get(x)
         if(!target) {
           // Target is empty
-          this.targetNotes.set(x, {name: channel.name, note: note})
+          this.targetNotes.set(x, {channelIndex: i, note: note})
         } else {
           // If target is not empty, prior note will be assigned
-          if(note.time < target.note.time) this.targetNotes.set(x, {name: channel.name, note: note})
+          if(note.time < target.note.time) this.targetNotes.set(x, {channelIndex: i, note: note})
         }
       }
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && !this.isControllableLane(note.x))
       playSoundNotes.forEach((note) => {
-        if(note.sliceData) note.sliceData.play(this.audioContext)
+        if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
       })
-    }
+    })
 
     // Judge
     for(let i = 0; i < this.lanes; i++) {
       const x = i + 1
       const target = this.targetNotes.get(x)
-      let note
       if(target) {
-        note = target.note
-      } else {
-        note = null
-      }
-
-      if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
-        // Miss
-        if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
-        else if(this.isJustPressed(i, input)) {
-          const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
-          this.judgeShortNote(note, judge)
-          if(note.sliceData) note.sliceData.play(this.audioContext)
+        const channel = this.soundChannels[target.channelIndex]
+        const note = target.note
+        if(note instanceof NoteShort && note.judgeState == JudgeState.NO) {
+          // Miss
+          if(this.currentTime - note.time > 200) this.judgeShortNote(note, JudgeState.MISS)
+          else if(this.isJustPressed(i, input)) {
+            const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
+            this.judgeShortNote(note, judge)
+            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+          }
         }
-      }
-      if(note instanceof NoteLong) {
-        // Miss
-        if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
-        else if(this.isJustPressed(i, input)) {
-          const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
-          this.firstJudgeLongNote(note, judge)
-          if(note.sliceData) note.sliceData.play(this.audioContext)
-        }
+        if(note instanceof NoteLong) {
+          // Miss
+          if(this.currentTime - note.time > 200 && note.judgeState == JudgeState.NO) this.firstJudgeLongNote(note, JudgeState.MISS)
+          else if(this.isJustPressed(i, input)) {
+            const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
+            this.firstJudgeLongNote(note, judge)
+            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+          }
 
-        if(note.state == 1) {
-          if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
-          else if(this.isJustReleased(i, input)) {
-            const judge = JudgeState.secondFromDelta(this.currentTime - note.endTime)
-            this.secondJudgeLongNote(note, judge)
-            if(!judge && note.sliceData) note.sliceData.stop()
+          if(note.state == 1) {
+            if(this.currentTime - note.endTime > 200) this.secondJudgeLongNote(note, false)
+            else if(this.isJustReleased(i, input)) {
+              const judge = JudgeState.secondFromDelta(this.currentTime - note.endTime)
+              this.secondJudgeLongNote(note, judge)
+              if(!judge && note.sliceData) note.sliceData.stop()
+            }
           }
         }
       }

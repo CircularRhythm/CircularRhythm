@@ -120,6 +120,7 @@ export default React.createClass({
     bmsonSetConfig.subtitle = music.subtitle
     bmsonSetConfig.artist = music.artist
     bmsonSetConfig.subartists = music.subartists
+    bmsonSetConfig.genre = music.genre
     bmsonSetConfig.chartName = chart.chart_name
     bmsonSetConfig.level = chart.level
     bmsonSetConfig.bpm = chart.bpm
@@ -137,7 +138,6 @@ export default React.createClass({
         bmsonSetConfig.packedAssets = false
       }
     }
-    console.log(this.state.selectedChart)
     bmsonSetConfig.playMode = this.modeId[this.state.selectedChart.mode]
     bmsonSetConfig.config = { autoSpecial: false }
 
