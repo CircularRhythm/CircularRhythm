@@ -1,4 +1,5 @@
 import XHRPromise from "../../xhr-promise"
+import { LocalFileLoader } from "../../local-file-loader"
 
 export default class LoaderBmson {
   constructor(bmsonSetConfig) {
@@ -13,6 +14,7 @@ export default class LoaderBmson {
     const assetPath = this.bmsonSetConfig.assetPath
     const local = this.bmsonSetConfig.local
     const packedAssets = this.bmsonSetConfig.packedAssets
+    const localFileList = this.bmsonSetConfig.localFileList
 
     return new Promise((resolve, reject) => {
       const promises = []
