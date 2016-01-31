@@ -23,7 +23,7 @@ export class Player {
     this.lanes = this.playMode * 4 + 1
     this.specialLane = this.playMode * 4 + 1
     this.autoSpecial = bmsonSetConfig.config.autoSpecial
-    this.keyConfig = [71, 70, 68, 83, 72, 74, 75, 76, 32]
+    this.keyConfig = game.preference.keyConfig
 
     this.title = null
     this.subtitle = null

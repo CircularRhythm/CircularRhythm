@@ -3,6 +3,7 @@ import $ from "jquery"
 import getParameter from "get-parameter"
 import Bowser from "bowser"
 import XHRPromise from "./xhr-promise"
+import WebFontLoader from "webfontloader"
 
 import React from "react"
 import ReactDOM from "react-dom"
@@ -18,7 +19,7 @@ import { Rank } from "./player/rank"
 
 class CircularRhythm {
   static main() {
-    this.version = "0.5.0"
+    this.version = "0.5.0-beta.2.2"
 
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
@@ -30,14 +31,7 @@ class CircularRhythm {
     this.musicList = null
     this.localMusicList = []
     this.localFileList = new Map()
-    this.preference = {
-      renderer: {
-        colorScheme: null,
-        ccwSingle: false,
-        ccwDouble1: false,
-        ccwDouble2: true
-      }
-    }
+    this.preference = null
 
     this.compatibilityWarning = []
     if(!Bowser.chrome) this.compatibilityWarning.push("Incompatible browser is detected. Currently only Google Chrome is supported. The game may not work correctly in other browsers.")
@@ -116,7 +110,7 @@ class CircularRhythm {
 
   static load() {
     const promises = []
-    promises[0] = new Promise((resolve, reject) => {
+    promises.push(new Promise((resolve, reject) => {
       XHRPromise.send({
         url: this.serverUrl + "/index.json",
         responseType: "json"
@@ -131,8 +125,9 @@ class CircularRhythm {
       }).catch((e) => {
         reject({message: "Cannot connect to server: " + this.serverUrl})
       })
-    })
-    promises[1] = new Promise((resolve, reject) => {
+    }))
+
+    promises.push(new Promise((resolve, reject) => {
       XHRPromise.send({
         url: "asset/colorscheme/default.json",
         responseType: "json"
@@ -142,9 +137,54 @@ class CircularRhythm {
       }).catch((e) => {
         reject({message: "Cannot load color scheme"})
       })
-    })
+    }))
+
+    promises.push(new Promise((resolve, reject) => {
+      WebFontLoader.load({
+        google: {
+          families: ["Open Sans:300,400,600"]
+        },
+        active: () => resolve(),
+        inactive: () => {
+          console.error("Cannot load web font")
+          resolve()
+        }
+      })
+    }))
+
+    promises.push(new Promise((resolve, reject) => {
+      try {
+        this.loadPreference()
+        resolve()
+      } catch(e) {
+        reject(e)
+      }
+    }))
 
     return Promise.all(promises)
+  }
+
+  static loadPreference() {
+    const preferenceStorage = window.localStorage.getItem("preference")
+
+    if(!preferenceStorage) {
+      this.preference = {
+        keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
+        renderer: {
+          colorScheme: null,
+          ccwSingle: false,
+          ccwDouble1: false,
+          ccwDouble2: true
+        }
+      }
+      window.localStorage.setItem("preference", JSON.stringify(this.preference))
+    } else {
+      this.preference = JSON.parse(preferenceStorage)
+    }
+  }
+
+  static savePreference() {
+    window.localStorage.setItem("preference", JSON.stringify(this.preference))
   }
 }
 

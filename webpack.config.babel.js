@@ -26,7 +26,7 @@ export default function(type) {
         },
         {
           test: /\.sass$/,
-          loaders: ["style-loader/useable", "css-loader", "sass-loader?indentedSyntax"]
+          loaders: ["style-loader/useable", "css-loader?-url", "sass-loader?indentedSyntax"]
         }
       ]
     },
