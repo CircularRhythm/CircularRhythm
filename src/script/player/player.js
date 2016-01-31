@@ -1,7 +1,6 @@
 import { BarSpeedChangeEvent, BarSpeedChangeEventSpeed, BarSpeedChangeEventStop } from "./bar-speed-change-event"
 import { Note, NoteShort, NoteLong } from "./note"
 import { JudgeState } from "./judge-state"
-import { AudioLoader } from "./audio-loader"
 import { AssetLoader, AssetLoaderPacked, AssetLoaderLocal } from "./asset-loader"
 import { PlayerUtil } from "./player-util"
 import { ChartType } from "../chart-type"
