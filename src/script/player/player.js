@@ -16,6 +16,8 @@ export class Player {
   constructor(game, bmsonSetConfig) {
     this.game = game
     this.state = States.LOADING
+    this.loadingScreenOpacity = 1
+    this.readyMessageOpacity = 1
     this.bmsonSetConfig = bmsonSetConfig
     this.playMode = bmsonSetConfig.playMode
     this.lanes = this.playMode * 4 + 1
@@ -171,8 +173,15 @@ export class Player {
   }
 
   update(input) {
-    if(this.state == States.LOADING) {
+    const nowTime = Date.now()
+    const delta = nowTime - this.lastTime
+    this.lastTime = nowTime
+
+    if(this.state != States.LOADING) {
+      this.loadingScreenOpacity -= delta / 500
+      if(this.loadingScreenOpacity < 0) this.loadingScreenOpacity = 0
     }
+
     if(this.state == States.READY) {
       if(input.isJustPressed(13)) {
         // Enter
@@ -193,9 +202,9 @@ export class Player {
     }
     if(!this.playing) return
 
-    const nowTime = Date.now()
-    const delta = nowTime - this.lastTime
-    this.lastTime = nowTime
+    this.readyMessageOpacity -= delta / 300
+    if(this.readyMessageOpacity < 0) this.readyMessageOpacity = 0
+
     this.currentTime += delta
 
     const lastAnalyzerPosition = this.currentAnalyzerPosition

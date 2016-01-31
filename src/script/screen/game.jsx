@@ -10,14 +10,17 @@ export default React.createClass({
     this.props.manager.transit(ScreenResult, {result: result, bmsonSetConfig: this.props.bmsonSetConfig})
   },
   render() {
-    return <canvas id="gameScreen"></canvas>
+    return (<div>
+      <canvas className="gameScreen" id="gameScreenLayer"></canvas>
+      <canvas className="gameScreen" id="gameScreen"></canvas>
+    </div>)
   },
   componentWillMount() {
     style.use()
   },
   componentDidMount() {
     this.game = new Game(this.props.bmsonSetConfig, this.props.app.preference, (resultData) => this.onGameEnd(resultData))
-    this.gameFramework = new GameFramework(this.game, "canvas#gameScreen")
+    this.gameFramework = new GameFramework(this.game, ["gameScreen", "gameScreenLayer"])
     this.gameFramework.start()
 
     this.onResize = (e) => this.gameFramework.onResize(e)

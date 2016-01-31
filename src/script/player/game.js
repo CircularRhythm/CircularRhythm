@@ -26,18 +26,22 @@ export class Game {
     const translateX = (framework.width - this.fieldWidth * scale) / 2 / scale
     this.belowHeight = (framework.height - this.fieldHeight * scale) / scale
 
-    g.fillStyle = this.preference.renderer.colorScheme.background
-    g.beginPath()
-    g.rect(0, 0, framework.width, framework.height)
-    g.fill()
+    g[0].fillStyle = this.preference.renderer.colorScheme.background
+    g[0].beginPath()
+    g[0].rect(0, 0, framework.width, framework.height)
+    g[0].fill()
 
-    g.save()
-    g.scale(scale, scale)
-    g.translate(translateX, 0)
+    g.forEach((e, i) => {
+      e.save()
+      e.scale(scale, scale)
+      e.translate(translateX, 0)
+    })
 
     this.player.update(framework.input)
-    this.renderer.render(g, this.controller)
+    this.renderer.render(framework.g, this.controller)
 
-    g.restore()
+    g.forEach((e) => {
+      e.restore()
+    })
   }
 }

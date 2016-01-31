@@ -3,12 +3,12 @@ import { Timer, TimerDate, TimerPerformance } from "./timer"
 import { Input } from "./input"
 
 export class GameFramework {
-  constructor(game, canvasSelector) {
+  constructor(game, canvasIds) {
     this.game = game
 
-    this.canvasSelector = "canvas#gameScreen"
-    this.canvas = $(canvasSelector)[0]
-    this.g = this.canvas.getContext("2d")
+    this.canvasIds = canvasIds
+    this.canvases = this.canvasIds.map((e) => document.getElementById(e))
+    this.g = this.canvases.map((e) => e.getContext("2d"))
 
     this.timer = new TimerPerformance()
 
@@ -47,7 +47,7 @@ export class GameFramework {
 
     this.input.update()
 
-    this.g.clearRect(0, 0, this.width, this.height)
+    this.g.forEach((e) => e.clearRect(0, 0, this.width, this.height))
 
     this.game.update(this)
 
@@ -72,9 +72,11 @@ export class GameFramework {
     const width = body.width()
     const height = body.height()
 
-    const canvas = $(this.canvasSelector)
-    canvas.attr("width", width)
-    canvas.attr("height", height)
+    this.canvasIds.forEach((e) => {
+      const canvas = document.getElementById(e)
+      canvas.width = width
+      canvas.height = height
+    })
 
     this.width = width
     this.height = height

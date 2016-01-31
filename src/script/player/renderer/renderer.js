@@ -21,63 +21,68 @@ export class Renderer {
     this.analyzerRenderer = new AnalyzerRenderer(190, 520, 420, 70)
   }
 
-  render(g, controller) {
+  render(graphicContexts, controller) {
     const player = this.game.player
+    const g = graphicContexts[0]  // Main
+    const gl = graphicContexts[1] // Layer
 
-    if(player.state == States.LOADING) {
-      g.save()
-      g.translate(400, 300)
-      RenderUtil.strokeCircle(g, 0, 0, 100, this.colorScheme.lane[0], 1)
-      RenderUtil.strokeCircle(g, 0, 0, 130, this.colorScheme.lane[1], 1)
-      RenderUtil.strokeCircle(g, 0, 0, 160, this.colorScheme.lane[2], 1)
-      RenderUtil.strokeCircle(g, 0, 0, 190, this.colorScheme.lane[3], 1)
+    if(player.loadingScreenOpacity > 0) {
+      gl.canvas.style.opacity = player.loadingScreenOpacity
+      RenderUtil.fillRect(gl, 0, 0, 800, 600, this.colorScheme.background)
+      gl.save()
+      gl.translate(400, 300)
+      RenderUtil.strokeCircle(gl, 0, 0, 100, this.colorScheme.lane[0], 1)
+      RenderUtil.strokeCircle(gl, 0, 0, 130, this.colorScheme.lane[1], 1)
+      RenderUtil.strokeCircle(gl, 0, 0, 160, this.colorScheme.lane[2], 1)
+      RenderUtil.strokeCircle(gl, 0, 0, 190, this.colorScheme.lane[3], 1)
 
-      if(player.loaderBmson) RenderUtil.strokeArc(g, 0, 0, 100, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderBmson.progress, this.colorScheme.note.long.active[0], 5, false)
-      if(player.loaderChart) RenderUtil.strokeArc(g, 0, 0, 130, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderChart.progress, this.colorScheme.note.long.active[1], 5, false)
-      if(player.loaderAsset) RenderUtil.strokeArc(g, 0, 0, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.assetProgress, this.colorScheme.note.long.active[2], 5, false)
-      if(player.loaderAsset) RenderUtil.strokeArc(g, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.audioProgress, this.colorScheme.note.long.active[3], 5, false)
-      g.restore()
+      if(player.loaderBmson) RenderUtil.strokeArc(gl, 0, 0, 100, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderBmson.progress, this.colorScheme.note.long.active[0], 5, false)
+      if(player.loaderChart) RenderUtil.strokeArc(gl, 0, 0, 130, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderChart.progress, this.colorScheme.note.long.active[1], 5, false)
+      if(player.loaderAsset) RenderUtil.strokeArc(gl, 0, 0, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.assetProgress, this.colorScheme.note.long.active[2], 5, false)
+      if(player.loaderAsset) RenderUtil.strokeArc(gl, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.audioProgress, this.colorScheme.note.long.active[3], 5, false)
+      gl.restore()
 
-      RenderUtil.fillRect(g, 0, 225, 800, 150, "rgba(255, 255, 255, 0.8)")
-      RenderUtil.fillText(g, player.bmsonSetConfig.genre, 400, 245, "18px sans-serif", "#000000", "center", "top")
-      RenderUtil.fillText(g, player.bmsonSetConfig.title, 400, 265, "32px sans-serif", "#000000", "center", "top")
-      RenderUtil.fillText(g, player.bmsonSetConfig.artist, 400, 310, "18px sans-serif", "#000000", "center", "top")
-      RenderUtil.fillText(g, "Loading...", 400, 355, "14px sans-serif", "#000000", "center", "bottom")
-    } else {
-      if(player.playMode == 1) {
-        g.save()
-        g.translate(400, 220)
-        this.renderUnit(g, controller, 0, this.preference.renderer.ccwSingle)
-        g.restore()
-      } else if(player.playMode == 2) {
-        g.save()
-        g.translate(215, 220)
-        this.renderUnit(g, controller, 0, this.preference.renderer.ccwDouble1)
-        g.restore()
-        g.save()
-        g.translate(585, 220)
-        this.renderUnit(g, controller, 1, this.preference.renderer.ccwDouble2)
-        g.restore()
-      }
-
-      //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
-      RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
-      if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
-      RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
-
-      const gaugeHeight = 440 * player.gauge / 100
-      RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
-      RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
-      const scoreHeight = 440 * player.score / 1000000
-      RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
-      RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
-      RenderUtil.fillRect(g, 0, 440, 800, 10, Color(this.colorScheme.duration).clearer(0.7).rgbaString())
-      RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
-      RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
-
-      this.drawInfo(g, 1)
-
+      RenderUtil.fillRect(gl, 0, 225, 800, 150, "rgba(255, 255, 255, 0.8)")
+      RenderUtil.fillText(gl, player.bmsonSetConfig.genre, 400, 245, "18px sans-serif", "#000000", "center", "top")
+      RenderUtil.fillText(gl, player.bmsonSetConfig.title, 400, 265, "32px sans-serif", "#000000", "center", "top")
+      RenderUtil.fillText(gl, player.bmsonSetConfig.artist, 400, 310, "18px sans-serif", "#000000", "center", "top")
+      RenderUtil.fillText(gl, "Loading...", 400, 355, "14px sans-serif", "#000000", "center", "bottom")
     }
+    if(player.playMode == 1) {
+      g.save()
+      g.translate(400, 220)
+      this.renderUnit(g, controller, 0, this.preference.renderer.ccwSingle)
+      g.restore()
+    } else if(player.playMode == 2) {
+      g.save()
+      g.translate(215, 220)
+      this.renderUnit(g, controller, 0, this.preference.renderer.ccwDouble1)
+      g.restore()
+      g.save()
+      g.translate(585, 220)
+      this.renderUnit(g, controller, 1, this.preference.renderer.ccwDouble2)
+      g.restore()
+    }
+
+    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px sans-serif", "#000000", "left", "top")
+    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px sans-serif", "#000000", "right", "top")
+    if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px sans-serif", "#000000", "right", "bottom")
+    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px sans-serif", "#000000", "center", "bottom")
+
+    const gaugeHeight = 440 * player.gauge / 100
+    RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
+    RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
+    const scoreHeight = 440 * player.score / 1000000
+    RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
+    RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
+    RenderUtil.fillRect(g, 0, 440, 800, 10, Color(this.colorScheme.duration).clearer(0.7).rgbaString())
+    RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
+    RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
+
+    if(player.readyMessageOpacity > 0) RenderUtil.fillText(g, `Press Enter`, 400, 400, "28px sans-serif", Color("#000000").clearer(1 - player.readyMessageOpacity).rgbaString(), "center", "bottom")
+
+    this.drawInfo(g, 1)
+
     RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px sans-serif", "#000000", "left", "bottom")
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
   }
