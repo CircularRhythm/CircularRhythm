@@ -3,6 +3,7 @@ import jade from 'gulp-jade'
 import sass from 'gulp-sass'
 import ghPages from 'gulp-gh-pages'
 import webpackStream from 'webpack-stream'
+import svgMin from "gulp-svgmin"
 import webpackConfig from "./webpack.config.babel.js"
 import del from "del"
 import runSequence from "run-sequence"
@@ -17,6 +18,7 @@ g.task("css_minify", () => g.src("src/style.sass").pipe(sass({ indentedSyntax: t
 g.task("js", () => g.src("src/script/main.js").pipe(webpackStream(webpackConfig("production"))).pipe(g.dest("build/asset/")).pipe(liveReload()))
 g.task("js_minify", () => g.src("src/script/main.js").pipe(webpackStream(webpackConfig("production-min"))).pipe(g.dest("build/asset/")).pipe(liveReload()))
 g.task("asset", () => g.src("asset/**/*").pipe(g.dest("build/asset/")).pipe(liveReload()))
+g.task("svg_minify", () => g.src("asset/**/*.svg").pipe(svgMin()).pipe(g.dest("build/asset/")).pipe(liveReload()))
 
 g.task("clean", (cb) => del("build/", cb))
 g.task("all", ["clean"], (cb) => runSequence(["html", "css", "js", "asset"], cb))
@@ -33,7 +35,7 @@ g.task("watch", (cb) => {
   }).listen(8080, "localhost", cb)
   g.watch("src/index.jade", ["html"])
   g.watch("src/style.sass", ["css"])
-  g.watch("asset/**/*", ["asset"])
+  g.watch("asset/**/*", ["asset", "svg_minify"])
   //g.watch("src/script/**/*.sass", ["js"])
   //g.watch("src/script/**/*.js", ["js"])
   //g.watch("src/script/**/*.jsx", ["js"])
