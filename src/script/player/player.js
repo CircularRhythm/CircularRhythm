@@ -411,18 +411,20 @@ export class Player {
   }
 
   end() {
-    this.game.endCallback({
-      title: this.bmson.info.title,
-      subtitle: this.bmson.info.subtitle,
-      mode: this.playMode,
-      chartName: this.bmson.info.chart_name,
-      level: this.bmson.info.level,
-      judge: this.judgeStats,
-      maxCombo: this.maxCombo,
-      notes: this.numberOfNotes,
-      score: Math.round(this.score),
-      rank: this.rank,
-      analyzer: this.analyzer
+    this.audioContext.close().then(() => {
+      this.game.endCallback({
+        title: this.bmson.info.title,
+        subtitle: this.bmson.info.subtitle,
+        mode: this.playMode,
+        chartName: this.bmson.info.chart_name,
+        level: this.bmson.info.level,
+        judge: this.judgeStats,
+        maxCombo: this.maxCombo,
+        notes: this.numberOfNotes,
+        score: Math.round(this.score),
+        rank: this.rank,
+        analyzer: this.analyzer
+      })
     })
   }
 
