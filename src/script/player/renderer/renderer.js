@@ -19,6 +19,7 @@ export class Renderer {
     this.preference = preference
     this.colorScheme = preference.renderer.colorScheme
     this.analyzerRenderer = new AnalyzerRenderer(190, 520, 420, 70)
+    this.roundDigit1 = FormatNumber({round: 1, padRight: 1})
   }
 
   render(graphicContexts, controller) {
@@ -64,7 +65,7 @@ export class Renderer {
       g.restore()
     }
 
-    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px 'Open Sans'", "#000000", "left", "top")
+    RenderUtil.fillText(g, this.roundDigit1(player.gauge) + "%", 20, 20, "32px 'Open Sans'", "#000000", "left", "top")
     RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px 'Open Sans'", "#000000", "right", "top")
     if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px 'Open Sans'", "#000000", "right", "bottom")
     RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px 'Open Sans'", "#000000", "center", "bottom")

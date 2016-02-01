@@ -190,6 +190,36 @@ body
         &:before
           content: "-"
           margin: 0px 2px
+  .gaugeType
+    .selected
+      @include absolute(600, 90, 150, 20)
+      line-height: 20px
+      font-size: 14px
+      text-align: center
+
+    .buttonContainer
+      @include absolute(600, 60, 150, 25)
+      display: flex
+      flex-flow: row nowrap
+      line-height: 25px
+      .button
+        cursor: pointer
+        flex-grow: 1
+        text-align: center
+        &:first-child
+          border-top-left-radius: 3px
+          border-bottom-left-radius: 3px
+        &:last-child
+          border-top-right-radius: 3px
+          border-bottom-right-radius: 3px
+    .buttonNormal
+      @include type-button(#80FFFF)
+    .buttonEasy
+      @include type-button(#80FF80)
+    .buttonSurvival
+      @include type-button(#FF8080)
+    .buttonDanger
+      @include type-button(#808080)
   #playButton
     @include absolute(760, 50, 80, 60)
     cursor: pointer

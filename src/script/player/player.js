@@ -10,6 +10,8 @@ import LoaderBmson from "./loader/loader-bmson"
 import LoaderChart from "./loader/loader-chart"
 import LoaderAsset from "./loader/loader-asset"
 import { SliceData } from "./slice-data.js"
+import { GaugeGainNormal, GaugeGainEasy, GaugeGainSurvival, GaugeGainDanger } from "./gauge-gain"
+import GaugeType from "./gauge-type"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -112,10 +114,26 @@ export class Player {
       [JudgeState.GREAT]: 0.75,
       [JudgeState.PERFECT]: 1
     }
+
+    switch(bmsonSetConfig.config.gaugeType) {
+      case GaugeType.NORMAL:
+        this.gaugeGain = new GaugeGainNormal()
+        break
+      case GaugeType.EASY:
+        this.gaugeGain = new GaugeGainEasy()
+        break
+      case GaugeType.SURVIVAL:
+        this.gaugeGain = new GaugeGainSurvival()
+        break
+      case GaugeType.DANGER:
+        this.gaugeGain = new GaugeGainDanger()
+        break
+    }
+
     this.theoreticalScore = 0
     this.rank = Rank.D
 
-    this.gauge = 80
+    this.gauge = this.gaugeGain.getInitialGauge()
 
     this.load()
   }
@@ -224,7 +242,7 @@ export class Player {
     const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
       this.playing = false
-      this.end()
+      this.end(false)
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
@@ -410,7 +428,8 @@ export class Player {
     }
   }
 
-  end() {
+  end(dead) {
+    this.playing = false
     this.audioContext.close().then(() => {
       this.game.endCallback({
         title: this.bmson.info.title,
@@ -423,7 +442,9 @@ export class Player {
         notes: this.numberOfNotes,
         score: Math.round(this.score),
         rank: this.rank,
-        analyzer: this.analyzer
+        analyzer: this.analyzer,
+        gaugeType: this.bmsonSetConfig.config.gaugeType,
+        dead: dead
       })
     })
   }
@@ -444,10 +465,11 @@ export class Player {
       } else {
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
-      this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
-      this.theoreticalScore += 1000000 / this.numberOfNotes
-      this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+      this.applyScore(judgeState)
+      this.applyGauge(judgeState)
       this.analyzer.accuracy[Math.floor(note.time / this.duration * 100)] += this.accuracyMultiply[judgeState]
+    } else {
+      this.applyGauge(judgeState)
     }
     this.judgeStats[judgeState] ++
   }
@@ -458,9 +480,8 @@ export class Player {
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
         this.judgeStats[judgeState] ++
-        this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
-        this.theoreticalScore += 1000000 / this.numberOfNotes
-        this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+        this.applyScore(judgeState)
+        this.applyGauge(judgeState)
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
 
@@ -471,6 +492,7 @@ export class Player {
       }
     } else {
       this.judgeStats[judgeState] ++
+      this.applyGauge(judgeState)
     }
   }
 
@@ -481,11 +503,13 @@ export class Player {
       this.combo++
       if(this.combo > this.maxCombo) this.maxCombo = this.combo
       this.judgeStats[note.judgeState] ++
-      this.score += 1000000 * this.scoreMultiply[note.judgeState] / this.numberOfNotes
+      this.applyScore(note.judgeState)
+      this.applyGauge(note.judgeState)
     } else {
       this.combo = 0
       this.judgeStats[JudgeState.BAD] ++
-      this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
+      this.applyScore(JudgeState.BAD)
+      this.applyGauge(JudgeState.BAD)
       this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
 
       const startIndex = Math.floor(note.time / this.duration * 100)
@@ -494,8 +518,21 @@ export class Player {
         this.analyzer.accuracy[i] -= this.accuracyMultiply[firstJudgeState]
       }
     }
+  }
+
+  applyScore(judgeState) {
+    this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
     this.theoreticalScore += 1000000 / this.numberOfNotes
     this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+  }
+
+  applyGauge(judgeState) {
+    this.gauge = this.gaugeGain.getNewGauge(this.gauge, judgeState, this.numberOfNotes, 100)
+    if(this.gauge > 100) this.gauge = 100
+    if(this.gauge < 0) this.gauge = 0
+    if(this.gaugeGain.isDead(this.gauge)) {
+      this.end(true)
+    }
   }
 
   isNormalLane(x) {
