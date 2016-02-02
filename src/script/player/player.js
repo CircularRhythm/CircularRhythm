@@ -448,7 +448,10 @@ export class Player {
   }
 
   end(dead) {
-    this.playing = false
+    let border = 0
+    if(this.gaugeType == GaugeType.NORMAL) border = 75
+    if(this.gaugeType == GaugeType.EASY) border = 65
+    const cleared = !dead && this.gauge > border
     this.audioContext.close().then(() => {
       this.game.endCallback({
         title: this.bmson.info.title,
@@ -463,7 +466,7 @@ export class Player {
         rank: this.rank,
         analyzer: this.analyzer,
         gaugeType: this.gaugeType,
-        dead: dead
+        cleared: cleared
       })
     })
   }

@@ -34,4 +34,9 @@ export class AnalyzerRenderer {
     g.closePath()
     g.fill()
   }
+
+  strokeHorizontalReferenceLine(g, value, width, style, length = 100) {
+    const position = this.y + (1 - value) * this.height
+    RenderUtil.strokeLine(g, this.x, position, this.x + this.width, position, width, style)
+  }
 }

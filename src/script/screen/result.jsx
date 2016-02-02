@@ -16,9 +16,9 @@ export default React.createClass({
     [GaugeType.SURVIVAL]: "Survival",
     [GaugeType.DANGER]: "Danger"
   },
-  getClearString(dead) {
-    if(dead) return "Failed"
-    else return "Cleared"
+  getClearString(cleared) {
+    if(cleared) return "Cleared"
+    else return "Failed"
   },
   getInitialState() {
     return {
@@ -53,7 +53,7 @@ export default React.createClass({
           </div>
         </div>
         <div id="clearScore">
-          <div id="clear">{this.gaugeString[result.gaugeType]} Gauge {this.getClearString(result.dead)}</div>
+          <div id="clear">{this.gaugeString[result.gaugeType]} Gauge {this.getClearString(result.cleared)}</div>
           <div id="score">Score: {result.score}</div>
         </div>
         <div id="analyzerContainer">
@@ -134,9 +134,11 @@ export default React.createClass({
     const analyzerElement = document.getElementById("analyzer")
     const ctx = analyzerElement.getContext("2d")
     const analyzerRenderer = this.state.analyzerRenderer
+    if(this.props.result.gaugeType == GaugeType.NORMAL) analyzerRenderer.strokeHorizontalReferenceLine(ctx, 0.75, 1, colorScheme.analyzer.gauge.clear, 1)
+    if(this.props.result.gaugeType == GaugeType.EASY) analyzerRenderer.strokeHorizontalReferenceLine(ctx, 0.65, 1, colorScheme.analyzer.gauge.clear, 1)
     analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.density, analyzer.densityMax, 1, colorScheme.analyzer.density)
     analyzerRenderer.fillAnalyzerComponent(ctx, analyzer.accuracy, analyzer.densityMax, colorScheme.analyzer.accuracy)
-    analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.gauge, 100, 2, colorScheme.analyzer.density)
+    analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.gauge, 100, 2, colorScheme.analyzer.gauge[this.props.result.gaugeType])
   },
   componentWillUnmount() {
     style.unuse()

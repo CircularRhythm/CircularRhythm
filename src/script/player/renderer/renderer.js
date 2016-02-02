@@ -370,13 +370,13 @@ export class Renderer {
     g.rect(190, 520, 420, 70)
     g.clip()
 
-    if(player.state == States.LOADING) {
-
-    } else {
+    if(player.state != States.LOADING) {
       const position = player.currentTime / player.duration
+      if(player.gaugeType == GaugeType.NORMAL) this.analyzerRenderer.strokeHorizontalReferenceLine(g, 0.75, 1, this.colorScheme.analyzer.gauge.clear, 1)
+      if(player.gaugeType == GaugeType.EASY) this.analyzerRenderer.strokeHorizontalReferenceLine(g, 0.65, 1, this.colorScheme.analyzer.gauge.clear, 1)
       this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
       this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
-      this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.gauge, 100, 2, this.colorScheme.analyzer.density, Math.floor(position * 100))
+      this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.gauge, 100, 2, this.colorScheme.analyzer.gauge[player.gaugeType], Math.floor(position * 100))
       const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
       gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
       gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)

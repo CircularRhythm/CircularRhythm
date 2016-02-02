@@ -98,7 +98,7 @@ class CircularRhythm {
                 rank: Rank.AAA,
                 analyzer: analyzer,
                 gaugeType: GaugeType.NORMAL,
-                dead: false
+                cleared: true
               },
               bmsonSetConfig: testBmsonSetConfig
             })
