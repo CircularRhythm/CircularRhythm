@@ -6,9 +6,20 @@ import ClassNames from "classnames"
 import DropdownMenu from "react-dd-menu"
 import { Rank } from "../player/rank"
 import { AnalyzerRenderer } from "../player/renderer/analyzer-renderer"
+import GaugeType from "../player/gauge-type"
 
 export default React.createClass({
   modeString: {1: "Single", 2: "Double"},
+  gaugeString: {
+    [GaugeType.NORMAL]: "Normal",
+    [GaugeType.EASY]: "Easy",
+    [GaugeType.SURVIVAL]: "Survival",
+    [GaugeType.DANGER]: "Danger"
+  },
+  getClearString(dead) {
+    if(dead) return "Failed"
+    else return "Cleared"
+  },
   getInitialState() {
     return {
       showRetryMenu: false,
@@ -41,7 +52,10 @@ export default React.createClass({
             <span className="level">Level {result.level}</span>
           </div>
         </div>
-        <div id="score">Score: {result.score}</div>
+        <div id="clearScore">
+          <div id="clear">{this.gaugeString[result.gaugeType]} Gauge {this.getClearString(result.dead)}</div>
+          <div id="score">Score: {result.score}</div>
+        </div>
         <div id="analyzerContainer">
           <canvas id="analyzer" width="880px" height="200px"></canvas>
         </div>

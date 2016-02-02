@@ -49,29 +49,31 @@ class CircularRhythm {
         this.compatibilityWarning.push("Compatibility warning by debug parameter 3")
       }
 
+      const testBmsonSetConfig = {
+        title: "TyTLE",
+        subtitle: "sub",
+        artist: "aRtjst",
+        subartists: ["sub"],
+        genre: "tesTgenre",
+        bpm: { initial: 125, min: 120, max: 150 },
+        playMode: 2,
+        level: 1,
+        chartName: "Easy",
+        config: {
+          autoSpecial: false,
+          gaugeType: GaugeType.NORMAL
+        },
+        path: this.serverUrl + "/test/test-double.bmson",
+        assetPath: this.serverUrl + "/test/assets.json",
+        packedAssets: false,
+        local: false
+      }
+
       switch(screenParam) {
         case "game":
           this.load().then(() => {
             this.screenManager.transit(ScreenGame, {
-              bmsonSetConfig: {
-                title: "TyTLE",
-                subtitle: "sub",
-                artist: "aRtjst",
-                subartists: ["sub"],
-                genre: "tesTgenre",
-                bpm: { initial: 125, min: 120, max: 150 },
-                playMode: 2,
-                level: 1,
-                chartName: "Easy",
-                config: {
-                  autoSpecial: false,
-                  gaugeType: GaugeType.NORMAL
-                },
-                path: this.serverUrl + "/test/test-double.bmson",
-                assetPath: this.serverUrl + "/test/assets.json",
-                packedAssets: false,
-                local: false
-              }
+              bmsonSetConfig: testBmsonSetConfig
             })
           })
           break
@@ -97,12 +99,7 @@ class CircularRhythm {
                 gaugeType: GaugeType.NORMAL,
                 dead: false
               },
-              bmsonSetConfig: {
-                path: this.serverUrl + "/test/test-double.bmson",
-                assetPath: this.serverUrl + "/test/assets.json",
-                packedAssets: false,
-                local: false
-              }
+              bmsonSetConfig: testBmsonSetConfig
             })
           })
           break
