@@ -25,6 +25,7 @@ export class Player {
     this.playMode = bmsonSetConfig.playMode
     this.lanes = this.playMode * 4 + 1
     this.specialLane = this.playMode * 4 + 1
+    this.gaugeType = bmsonSetConfig.config.gaugeType
     this.autoSpecial = bmsonSetConfig.config.autoSpecial
     this.keyConfig = game.preference.keyConfig
 
@@ -124,7 +125,7 @@ export class Player {
       [JudgeState.PERFECT]: 1
     }
 
-    switch(bmsonSetConfig.config.gaugeType) {
+    switch(this.gaugeType) {
       case GaugeType.NORMAL:
         this.gaugeGain = new GaugeGainNormal()
         break
@@ -461,7 +462,7 @@ export class Player {
         score: Math.round(this.score),
         rank: this.rank,
         analyzer: this.analyzer,
-        gaugeType: this.bmsonSetConfig.config.gaugeType,
+        gaugeType: this.gaugeType,
         dead: dead
       })
     })
