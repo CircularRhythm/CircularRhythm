@@ -54,6 +54,7 @@ export class Player {
     this.audioContext = new AudioContext()
     this.backgroundGainNode = this.audioContext.createGain()
     this.backgroundGainNode.connect(this.audioContext.destination)
+    this.backgroundGainNode.gain.value = 0.8
     this.foregroundGainNode = this.audioContext.createGain()
     this.foregroundGainNode.connect(this.audioContext.destination)
     this.soundEffectGainNode = this.audioContext.createGain()
