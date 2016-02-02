@@ -83,6 +83,7 @@ class CircularRhythm {
             analyzer.density = new Array(100).fill(null).map((e, i) => Math.random() * 5)
             analyzer.densityMax = Math.max(...analyzer.density)
             analyzer.accuracy = new Array(100).fill(null).map((e, i) => analyzer.density[i] * Math.random())
+            analyzer.gauge = new Array(100).fill(null).map((e, i) => Math.random() * 100)
             this.screenManager.transit(ScreenResult, {
               result: {
                 title: "TEST",

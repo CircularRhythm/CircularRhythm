@@ -136,6 +136,7 @@ export default React.createClass({
     const analyzerRenderer = this.state.analyzerRenderer
     analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.density, analyzer.densityMax, 1, colorScheme.analyzer.density)
     analyzerRenderer.fillAnalyzerComponent(ctx, analyzer.accuracy, analyzer.densityMax, colorScheme.analyzer.accuracy)
+    analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.gauge, 100, 2, colorScheme.analyzer.density)
   },
   componentWillUnmount() {
     style.unuse()

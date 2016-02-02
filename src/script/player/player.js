@@ -94,6 +94,7 @@ export class Player {
     this.analyzer.density = null
     this.analyzer.densityMax = null
     this.analyzer.accuracy = new Array(100).fill(0)
+    this.analyzer.gauge = new Array(100).fill(0)
 
     this.judgeStats = {
       [JudgeState.MISS_EMPTY]: 0,
@@ -244,10 +245,9 @@ export class Player {
 
     const lastAnalyzerPosition = this.currentAnalyzerPosition
     this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
-    /*if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
-      // TODO: Add accuracy of long note
-      //this.analyzer.accuracy[lastAnalyzerPosition]
-    }*/
+    if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
+      this.analyzer.gauge[lastAnalyzerPosition] = this.gauge
+    }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
     //const deltaY = 240 * this.currentBpm * delta / 60000

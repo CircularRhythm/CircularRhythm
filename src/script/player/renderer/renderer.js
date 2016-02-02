@@ -340,6 +340,7 @@ export class Renderer {
       const position = player.currentTime / player.duration
       this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
       this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
+      this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.gauge, 100, 2, this.colorScheme.analyzer.density, Math.floor(position * 100))
       const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
       gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
       gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)
