@@ -20,6 +20,7 @@ export class Player {
     this.state = States.LOADING
     this.loadingScreenOpacity = 1
     this.readyMessageOpacity = 1
+    this.deadTimer = 0
     this.bmsonSetConfig = bmsonSetConfig
     this.playMode = bmsonSetConfig.playMode
     this.lanes = this.playMode * 4 + 1
@@ -51,6 +52,12 @@ export class Player {
     this.unitPosition = 0
 
     this.audioContext = new AudioContext()
+    this.backgroundGainNode = this.audioContext.createGain()
+    this.backgroundGainNode.connect(this.audioContext.destination)
+    this.foregroundGainNode = this.audioContext.createGain()
+    this.foregroundGainNode.connect(this.audioContext.destination)
+    this.soundEffectGainNode = this.audioContext.createGain()
+    this.soundEffectGainNode.connect(this.audioContext.destination)
 
     this.lastTime = 0
     this.playing = false
@@ -207,6 +214,15 @@ export class Player {
         this.state = States.IN_GAME
       }
     }
+
+    if(this.state == States.DEAD) {
+      this.deadTimer += delta / 3000
+      if(this.deadTimer > 1) {
+        this.end(true)
+        this.state = States.END
+      }
+    }
+
     for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
@@ -243,6 +259,7 @@ export class Player {
     if(currentBarLineIndex == -1) {
       this.playing = false
       this.end(false)
+      this.state = States.END
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
@@ -386,7 +403,7 @@ export class Player {
       }
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && !this.isControllableLane(note.x))
       playSoundNotes.forEach((note) => {
-        if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+        if(note.sliceData) note.sliceData.play(this.audioContext, this.backgroundGainNode, channel.audioBuffer)
       })
     })
 
@@ -403,7 +420,7 @@ export class Player {
           else if(this.isJustPressed(i, input)) {
             const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
             this.judgeShortNote(note, judge)
-            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+            if(note.sliceData) note.sliceData.play(this.audioContext, this.foregroundGainNode, channel.audioBuffer)
           }
         }
         if(note instanceof NoteLong) {
@@ -412,7 +429,7 @@ export class Player {
           else if(this.isJustPressed(i, input)) {
             const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
             this.firstJudgeLongNote(note, judge)
-            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+            if(note.sliceData) note.sliceData.play(this.audioContext, this.foregroundGainNode, channel.audioBuffer)
           }
 
           if(note.state == 1) {
@@ -531,7 +548,10 @@ export class Player {
     if(this.gauge > 100) this.gauge = 100
     if(this.gauge < 0) this.gauge = 0
     if(this.gaugeGain.isDead(this.gauge)) {
-      this.end(true)
+      this.playing = false
+      this.state = States.DEAD
+      this.backgroundGainNode.gain.value = 0
+      this.foregroundGainNode.gain.value = 0
     }
   }
 
@@ -583,4 +603,6 @@ export class States {
   static get LOADING() { return 0 }
   static get READY() { return 1 }
   static get PLAYING() { return 2 }
+  static get DEAD() { return 3 }
+  static get END() { return 4 }
 }

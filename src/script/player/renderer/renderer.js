@@ -49,6 +49,13 @@ export class Renderer {
       RenderUtil.fillText(gl, player.bmsonSetConfig.artist, 400, 310, "18px 'Open Sans'", "#000000", "center", "top")
       RenderUtil.fillText(gl, "Loading...", 400, 355, "14px 'Open Sans'", "#000000", "center", "bottom")
     }
+    if(player.deadTimer > 0) {
+      gl.canvas.style.opacity = Math.min(player.deadTimer * 3, 1)
+      RenderUtil.fillRect(gl, 0, 0, 800, 600, this.colorScheme.background)
+      RenderUtil.fillRect(gl, 0, 225, 800, 150, "#FF8080")
+      RenderUtil.fillText(gl, "Failed...", 400, 300, "32px 'Open Sans'", "#000000", "center", "center")
+      RenderUtil.fillText(gl, "Let's try again!", 400, 340, "16px 'Open Sans'", "#000000", "center", "center")
+    }
     if(player.playMode == 1) {
       g.save()
       g.translate(400, 220)

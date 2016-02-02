@@ -5,11 +5,11 @@ export class SliceData {
     this.sourceNode = null
   }
 
-  play(audioContext, audioBuffer) {
+  play(audioContext, destination, audioBuffer) {
     if(this.sourceNode != null) this.stop()
     this.source = audioContext.createBufferSource()
     this.source.buffer = audioBuffer
-    this.source.connect(audioContext.destination)
+    this.source.connect(destination)
     if(this.duration) this.source.start(0, this.start / 1000, this.duration / 1000)
     else this.source.start(0, this.start / 1000)
   }
