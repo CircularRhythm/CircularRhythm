@@ -5,12 +5,20 @@ import ClassNames from "classnames"
 import { LocalBmsonLoader } from "../local-bmson-loader"
 import { ChartType } from "../chart-type"
 import KeyConfig from "./menu-keyconfig"
+import GaugeType from "../player/gauge-type"
 
 // TODO: cleanup
 export default React.createClass({
   modeString: {"single": "Single", "double": "Double"},
   modeId: {"single": 1, "double": 2},
+  gaugeString: {
+    [GaugeType.NORMAL]: "Normal",
+    [GaugeType.EASY]: "Easy",
+    [GaugeType.SURVIVAL]: "Survival",
+    [GaugeType.DANGER]: "Danger"
+  },
   getInitialState() {
+    const playConfig = this.props.app.preference.playConfig
     return {
       showDropScreen: false,
       showCompatibilityWarning: this.props.app.compatibilityWarning.length > 0,
@@ -24,7 +32,8 @@ export default React.createClass({
         type: null,
         id: null,
         element: null
-      }
+      },
+      gaugeType: playConfig.gaugeType
     }
   },
   selectMusic(type, id) {
@@ -141,7 +150,14 @@ export default React.createClass({
       }
     }
     bmsonSetConfig.playMode = this.modeId[this.state.selectedChart.mode]
-    bmsonSetConfig.config = { autoSpecial: false }
+
+    this.props.app.preference.playConfig = {
+      autoSpecial: false,
+      gaugeType: this.state.gaugeType
+    }
+    this.props.app.savePreference()
+    bmsonSetConfig.config = this.props.app.preference.playConfig
+    console.log(bmsonSetConfig)
 
     this.props.manager.transit(ScreenGame, {bmsonSetConfig: bmsonSetConfig})
   },
@@ -234,6 +250,21 @@ export default React.createClass({
           <div className="chartName">{chart.chart_name}</div>
           <div className="level">{chart.level}</div>
           <div className="levelVr"></div>
+          <div className="gaugeType">
+            <div className="selected">{this.gaugeString[this.state.gaugeType] + " Gauge"}</div>
+            <div className="buttonContainer">
+              {[GaugeType.EASY, GaugeType.NORMAL, GaugeType.SURVIVAL, GaugeType.DANGER].map((e, i) => {
+                const className = ClassNames({
+                  button: true,
+                  ["button" + this.gaugeString[e]]: true,
+                  buttonActive: this.state.gaugeType == e
+                })
+                return (
+                  <div className={className} key={i} onClick={() => this.setState({gaugeType: e})}></div>
+                )
+              })}
+            </div>
+          </div>
           <div className="bpmNotes"><span className="prefix">BPM:</span>{bpmContent}<span className="prefix">Notes:</span><span className="content">{chart.notes}</span></div>
           <div id="playButton" onClick={(e) => this.play()}><i className="fa fa-play"></i></div>
         </div>

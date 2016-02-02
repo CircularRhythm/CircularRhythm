@@ -11,6 +11,7 @@ import FormatNumber from "format-number"
 import Util from "../../util"
 import { AnalyzerRenderer } from "./analyzer-renderer"
 import { States } from "../player"
+import GaugeType from "../gauge-type"
 
 export class Renderer {
   constructor(game, framework, preference) {
@@ -19,6 +20,7 @@ export class Renderer {
     this.preference = preference
     this.colorScheme = preference.renderer.colorScheme
     this.analyzerRenderer = new AnalyzerRenderer(190, 520, 420, 70)
+    this.roundDigit1 = FormatNumber({round: 1, padRight: 1})
   }
 
   render(graphicContexts, controller) {
@@ -28,7 +30,7 @@ export class Renderer {
 
     if(player.loadingScreenOpacity > 0) {
       gl.canvas.style.opacity = player.loadingScreenOpacity
-      RenderUtil.fillRect(gl, 0, 0, 800, 600, this.colorScheme.background)
+      RenderUtil.fillRect(gl, 0, 0, 800, 600, this.colorScheme.loading.background)
       gl.save()
       gl.translate(400, 300)
       RenderUtil.strokeCircle(gl, 0, 0, 100, this.colorScheme.lane[0], 1)
@@ -42,11 +44,27 @@ export class Renderer {
       if(player.loaderAsset) RenderUtil.strokeArc(gl, 0, 0, 190, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * player.loaderAsset.audioProgress, this.colorScheme.note.long.active[3], 5, false)
       gl.restore()
 
-      RenderUtil.fillRect(gl, 0, 225, 800, 150, "rgba(255, 255, 255, 0.8)")
-      RenderUtil.fillText(gl, player.bmsonSetConfig.genre, 400, 245, "18px 'Open Sans'", "#000000", "center", "top")
-      RenderUtil.fillText(gl, player.bmsonSetConfig.title, 400, 265, "32px 'Open Sans'", "#000000", "center", "top")
-      RenderUtil.fillText(gl, player.bmsonSetConfig.artist, 400, 310, "18px 'Open Sans'", "#000000", "center", "top")
-      RenderUtil.fillText(gl, "Loading...", 400, 355, "14px 'Open Sans'", "#000000", "center", "bottom")
+      if(player.bmsonSetConfig.subtitle) {
+        RenderUtil.fillRect(gl, 0, 210, 800, 180, this.colorScheme.loading.bar)
+        RenderUtil.fillText(gl, player.bmsonSetConfig.genre, 400, 230, "18px 'Open Sans'", this.colorScheme.loading.genre, "center", "top")
+        RenderUtil.fillText(gl, player.bmsonSetConfig.title, 400, 255, "32px 'Open Sans'", this.colorScheme.loading.title, "center", "top")
+        RenderUtil.fillText(gl, player.bmsonSetConfig.subtitle, 400, 295, "16px 'Open Sans'", this.colorScheme.loading.subtitle, "center", "top")
+        RenderUtil.fillText(gl, player.bmsonSetConfig.artist, 400, 325, "18px 'Open Sans'", this.colorScheme.loading.artist, "center", "top")
+        RenderUtil.fillText(gl, "Loading...", 400, 370, "14px 'Open Sans'", this.colorScheme.loading.text, "center", "bottom")
+      } else {
+        RenderUtil.fillRect(gl, 0, 225, 800, 150, this.colorScheme.loading.bar)
+        RenderUtil.fillText(gl, player.bmsonSetConfig.genre, 400, 245, "18px 'Open Sans'", this.colorScheme.loading.genre, "center", "top")
+        RenderUtil.fillText(gl, player.bmsonSetConfig.title, 400, 265, "32px 'Open Sans'", this.colorScheme.loading.title, "center", "top")
+        RenderUtil.fillText(gl, player.bmsonSetConfig.artist, 400, 310, "18px 'Open Sans'", this.colorScheme.loading.artist, "center", "top")
+        RenderUtil.fillText(gl, "Loading...", 400, 355, "14px 'Open Sans'", this.colorScheme.loading.text, "center", "bottom")
+      }
+    }
+    if(player.deadTimer > 0) {
+      gl.canvas.style.opacity = Math.min(player.deadTimer * 3, 1)
+      RenderUtil.fillRect(gl, 0, 0, 800, 600, this.colorScheme.failed.background)
+      RenderUtil.fillRect(gl, 0, 225, 800, 150, this.colorScheme.failed.bar)
+      RenderUtil.fillText(gl, "Failed...", 400, 300, "32px 'Open Sans'", this.colorScheme.failed.text, "center", "center")
+      RenderUtil.fillText(gl, "Let's try again!", 400, 340, "16px 'Open Sans'", this.colorScheme.failed.comment, "center", "center")
     }
     if(player.playMode == 1) {
       g.save()
@@ -64,14 +82,40 @@ export class Renderer {
       g.restore()
     }
 
-    //RenderUtil.fillText(g, Numeral(player.gauge).format("0.0") + "%", 20, 20, "32px 'Open Sans'", "#000000", "left", "top")
-    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px 'Open Sans'", "#000000", "right", "top")
+    RenderUtil.fillText(g, this.roundDigit1(player.gauge) + "%", 20, 20, "32px 'Open Sans'", this.colorScheme.gauge.text, "left", "top")
+    RenderUtil.fillText(g, Math.round(player.score), 780, 20, "32px 'Open Sans'", this.colorScheme.score.text, "right", "top")
     if(player.state != States.LOADING) RenderUtil.fillText(g, `${Util.formatTime(player.currentTime)}/${Util.formatTime(player.duration)}`, 780, 440, "16px 'Open Sans'", "#000000", "right", "bottom")
-    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px 'Open Sans'", "#000000", "center", "bottom")
+    RenderUtil.fillText(g, player.currentBpm, 400, 440, "32px 'Open Sans'", this.colorScheme.bpm, "center", "bottom")
 
-    const gaugeHeight = 440 * player.gauge / 100
-    RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[0]).clearer(0.7).rgbaString())
-    RenderUtil.fillRect(g, 0, 440 - gaugeHeight, 10, gaugeHeight, this.colorScheme.gauge[0])
+    if(player.gaugeType == GaugeType.NORMAL || player.gaugeType == GaugeType.EASY) {
+      let border
+      if(player.gaugeType == GaugeType.NORMAL) border = 75
+      if(player.gaugeType == GaugeType.EASY) border = 65
+      const top = Math.max(player.gauge - border, 0)
+      const bottom = Math.min(player.gauge, border)
+      const topHeight = 440 * top / 100
+      const bottomHeight = 440 * bottom / 100
+      const maxTopHeight = 440 * (100 - border) / 100
+      const maxBottomHeight = 440 * border / 100
+      RenderUtil.fillRect(g, 0, 0, 10, maxTopHeight, Color(this.colorScheme.gauge[player.gaugeType].top).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, maxTopHeight, 10, maxBottomHeight, Color(this.colorScheme.gauge[player.gaugeType].bottom).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, 440 - maxBottomHeight - topHeight, 10, topHeight, this.colorScheme.gauge[player.gaugeType].top)
+      RenderUtil.fillRect(g, 0, 440 - bottomHeight, 10, bottomHeight, this.colorScheme.gauge[player.gaugeType].bottom)
+    }
+    if(player.gaugeType == GaugeType.SURVIVAL) {
+      let color
+      if(player.gauge < 25) color = this.colorScheme.gauge[player.gaugeType].caution
+      else color = this.colorScheme.gauge[player.gaugeType].usual
+      const height = 440 * player.gauge / 100
+      RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[player.gaugeType].usual).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, 440 - height, 10, height, color)
+    }
+    if(player.gaugeType == GaugeType.DANGER) {
+      const height = 440 * player.gauge / 100
+      RenderUtil.fillRect(g, 0, 0, 10, 440, Color(this.colorScheme.gauge[player.gaugeType]).clearer(0.7).rgbaString())
+      RenderUtil.fillRect(g, 0, 440 - height, 10, height, this.colorScheme.gauge[player.gaugeType])
+    }
+
     const scoreHeight = 440 * player.score / 1000000
     RenderUtil.fillRect(g, 790, 0, 10, 440, Color(this.colorScheme.score.current).clearer(0.7).rgbaString())
     RenderUtil.fillRect(g, 790, 440 - scoreHeight, 10, scoreHeight, this.colorScheme.score.current)
@@ -79,11 +123,11 @@ export class Renderer {
     RenderUtil.fillRect(g, 0, 440, 800 * (player.currentTime / player.duration), 10, this.colorScheme.duration)
     RenderUtil.fillRect(g, 0, 450, 800, 150, this.colorScheme.information.background)
 
-    if(player.readyMessageOpacity > 0) RenderUtil.fillText(g, `Press Enter`, 400, 400, "28px 'Open Sans'", Color("#000000").clearer(1 - player.readyMessageOpacity).rgbaString(), "center", "bottom")
+    if(player.readyMessageOpacity > 0) RenderUtil.fillText(g, `Press Enter`, 400, 400, "28px 'Open Sans'", Color(this.colorScheme.start).clearer(1 - player.readyMessageOpacity).rgbaString(), "center", "bottom")
 
     this.drawInfo(g, 1)
 
-    RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px 'Open Sans'", "#000000", "left", "bottom")
+    RenderUtil.fillText(g, `${this.framework.currentFps.toFixed(2)} FPS`, 10, 590, "10px 'Open Sans'", this.colorScheme.fps, "left", "bottom")
     RenderUtil.fillRect(g, 0, 600, 800, this.game.belowHeight, this.colorScheme.controller.background)
   }
 
@@ -101,7 +145,7 @@ export class Renderer {
     RenderUtil.fillCircle(g, 0, 0, 170, specialLaneGradient)
 
     RenderUtil.fillCircle(g, 0, 0, 70, this.colorScheme.center)
-    RenderUtil.fillText(g, player.combo, 0, 0, "32px 'Open Sans'", "#000000", "center", "middle")
+    RenderUtil.fillText(g, player.combo, 0, 0, "32px 'Open Sans'", this.colorScheme.combo, "center", "middle")
 
     // Beat flash
     const beatGradient = g.createRadialGradient(0, 0, 60 + player.unitPosition * 5, 0, 0, 70 + player.unitPosition * 10)
@@ -326,12 +370,13 @@ export class Renderer {
     g.rect(190, 520, 420, 70)
     g.clip()
 
-    if(player.state == States.LOADING) {
-
-    } else {
+    if(player.state != States.LOADING) {
       const position = player.currentTime / player.duration
+      if(player.gaugeType == GaugeType.NORMAL) this.analyzerRenderer.strokeHorizontalReferenceLine(g, 0.75, 1, this.colorScheme.analyzer.gauge.clear, 1)
+      if(player.gaugeType == GaugeType.EASY) this.analyzerRenderer.strokeHorizontalReferenceLine(g, 0.65, 1, this.colorScheme.analyzer.gauge.clear, 1)
       this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.density, player.analyzer.densityMax, 1, this.colorScheme.analyzer.density)
       this.analyzerRenderer.fillAnalyzerComponent(g, player.analyzer.accuracy, player.analyzer.densityMax, this.colorScheme.analyzer.accuracy, Math.floor(position * 100))
+      this.analyzerRenderer.strokeAnalyzerComponent(g, player.analyzer.gauge, 100, 2, this.colorScheme.analyzer.gauge[player.gaugeType], Math.floor(position * 100))
       const gradient = g.createLinearGradient(190 + 420 * position - 6.3, 0, 190 + 420 * position - 2.1, 0)
       gradient.addColorStop(0, Color(this.colorScheme.analyzer.trail).clearer(1).rgbaString())
       gradient.addColorStop(0.5, this.colorScheme.analyzer.trail)

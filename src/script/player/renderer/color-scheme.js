@@ -2,6 +2,7 @@ import { JudgeState } from "../judge-state"
 import { BarSpeedChangeEventType } from "../bar-speed-change-event"
 import { ChartType } from "../../chart-type"
 import { Rank } from "../rank"
+import GaugeType from "../gauge-type"
 export class ColorScheme {
   constructor(json) {
     function getData(keyArray, data) {
@@ -28,9 +29,20 @@ export class ColorScheme {
     this.center = color("center", [255, 255, 255, 1])
     this.beat = color("beat", [0, 127, 127, 1])
     this.gauge = {}
-    this.gauge[0] = color("gauge.normal", [255, 127, 0, 1])
+    this.gauge[GaugeType.NORMAL] = {}
+    this.gauge[GaugeType.NORMAL].top = color("gauge.normal.top", [255, 255, 0, 1])
+    this.gauge[GaugeType.NORMAL].bottom = color("gauge.normal.bottom", [255, 127, 0, 1])
+    this.gauge[GaugeType.EASY] = {}
+    this.gauge[GaugeType.EASY].top = color("gauge.easy.top", [255, 255, 0, 1])
+    this.gauge[GaugeType.EASY].bottom = color("gauge.easy.bottom", [0, 255, 0, 1])
+    this.gauge[GaugeType.SURVIVAL] = {}
+    this.gauge[GaugeType.SURVIVAL].usual = color("gauge.survival.usual", [255, 0, 0, 1])
+    this.gauge[GaugeType.SURVIVAL].caution = color("gauge.survival.caution", [127, 0, 0, 1])
+    this.gauge[GaugeType.DANGER] = color("gauge.danger", [0, 0, 0, 1])
+    this.gauge.text = color("gauge.text", [0, 0, 0, 1])
     this.score = {}
     this.score.current = color("score.current", [0, 255, 0, 1])
+    this.score.text = color("score.text", [0, 0, 0, 1])
     this.duration = color("duration", [0, 255, 255, 1])
     this.information = {}
     this.information.background = color("information.background", [192, 192, 192, 1])
@@ -71,8 +83,30 @@ export class ColorScheme {
     this.analyzer.trail = color("analyzer.trail", [255, 255, 255, 1])
     this.analyzer.density = color("analyzer.density", [0, 0, 0, 1])
     this.analyzer.accuracy = color("analyzer.accuracy", [0, 255, 0, 1])
+    this.analyzer.gauge = {}
+    this.analyzer.gauge[GaugeType.NORMAL] = color("analyzer.gauge.normal", [255, 127, 0, 1])
+    this.analyzer.gauge[GaugeType.EASY] = color("analyzer.gauge.easy", [0, 255, 0, 1])
+    this.analyzer.gauge[GaugeType.SURVIVAL] = color("analyzer.gauge.survival", [255, 0, 0, 1])
+    this.analyzer.gauge[GaugeType.DANGER] = color("analyzer.gauge.danger", [0, 0, 0, 1])
+    this.analyzer.gauge.clear = color("analyzer.gauge.clear", [255, 255, 0, 1])
     this.controller = {}
     this.controller.background = color("controller.background", [120, 120, 120, 1])
+    this.loading = {}
+    this.loading.background = color("loading.background", [255, 255, 255, 1])
+    this.loading.bar = color("loading.bar", [255, 255, 255, 1])
+    this.loading.title = color("loading.title", [0, 0, 0, 1])
+    this.loading.subtitle = color("loading.subtitle", [0, 0, 0, 1])
+    this.loading.artist = color("loading.artist", [0, 0, 0, 1])
+    this.loading.genre = color("loading.genre", [0, 0, 0, 1])
+    this.loading.text = color("loading.text", [0, 0, 0, 1])
+    this.failed = {}
+    this.failed.background = color("failed.background", [0, 0, 0, 1])
+    this.failed.bar = color("failed.bar", [255, 0, 0, 0.2])
+    this.failed.text = color("failed.text", [0, 0, 0, 1])
+    this.failed.comment = color("failed.comment", [0, 0, 0, 1])
+    this.start = color("start", [0, 0, 0, 1])
+    this.combo = color("combo", [0, 0, 0, 1])
+    this.bpm = color("bpm", [0, 0, 0, 1])
     this.lane = []
     this.lane[0] = color("lane.0", [255, 0, 0, 1])
     this.lane[1] = color("lane.1", [255, 255, 0, 1])
@@ -119,6 +153,7 @@ export class ColorScheme {
     this.speedChangeLine[BarSpeedChangeEventType.FASTER] = color("speed_change.faster", [255, 0, 0, 1])
     this.speedChangeLine[BarSpeedChangeEventType.SLOWER] = color("speed_change.slower", [0, 0, 255, 1])
     this.speedChangeLine[BarSpeedChangeEventType.STOP] = color("speed_change.stop", [127, 127, 127, 1])
+    this.fps = color("fps", [0, 0, 0, 1])
   }
 
   arrayToRGBA(array) {

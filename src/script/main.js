@@ -16,14 +16,16 @@ import ScreenResult from "./screen/result"
 import { AssetLoaderLocal } from "./player/asset-loader"
 import { ColorScheme } from "./player/renderer/color-scheme"
 import { Rank } from "./player/rank"
+import GaugeType from "./player/gauge-type"
 
 class CircularRhythm {
   static main() {
-    this.version = "0.5.0-beta.3"
+    this.version = "0.5.0-beta.4"
 
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")
     const screenParam = getParameter("screen")
+    const resetPreferenceParam = getParameter("resetpref")
     const forceCompatibilityWarningParam = getParameter("forcecompat")
     this.serverUrl = serverUrlParam ? serverUrlParam : "http://circularrhythm.github.io/OfficialMusicServer"
     this.debug = debugParam == "true"
@@ -32,6 +34,8 @@ class CircularRhythm {
     this.localMusicList = []
     this.localFileList = new Map()
     this.preference = null
+
+    if(resetPreferenceParam) window.localStorage.removeItem("preference")
 
     this.compatibilityWarning = []
     if(!Bowser.chrome) this.compatibilityWarning.push("Incompatible browser is detected. Currently only Google Chrome is supported. The game may not work correctly in other browsers.")
@@ -45,26 +49,31 @@ class CircularRhythm {
         this.compatibilityWarning.push("Compatibility warning by debug parameter 3")
       }
 
+      const testBmsonSetConfig = {
+        title: "TyTLE",
+        subtitle: "sub",
+        artist: "aRtjst",
+        subartists: ["sub"],
+        genre: "tesTgenre",
+        bpm: { initial: 125, min: 120, max: 150 },
+        playMode: 2,
+        level: 1,
+        chartName: "Easy",
+        config: {
+          autoSpecial: false,
+          gaugeType: GaugeType.NORMAL
+        },
+        path: this.serverUrl + "/test/test-double.bmson",
+        assetPath: this.serverUrl + "/test/assets.json",
+        packedAssets: false,
+        local: false
+      }
+
       switch(screenParam) {
         case "game":
           this.load().then(() => {
             this.screenManager.transit(ScreenGame, {
-              bmsonSetConfig: {
-                title: "TyTLE",
-                subtitle: "sub",
-                artist: "aRtjst",
-                subartists: ["sub"],
-                genre: "tesTgenre",
-                bpm: { initial: 125, min: 120, max: 150 },
-                playMode: 2,
-                level: 1,
-                chartName: "Easy",
-                config: { autoSpecial: false },
-                path: this.serverUrl + "/test/test-double.bmson",
-                assetPath: this.serverUrl + "/test/assets.json",
-                packedAssets: false,
-                local: false
-              }
+              bmsonSetConfig: testBmsonSetConfig
             })
           })
           break
@@ -74,6 +83,7 @@ class CircularRhythm {
             analyzer.density = new Array(100).fill(null).map((e, i) => Math.random() * 5)
             analyzer.densityMax = Math.max(...analyzer.density)
             analyzer.accuracy = new Array(100).fill(null).map((e, i) => analyzer.density[i] * Math.random())
+            analyzer.gauge = new Array(100).fill(null).map((e, i) => Math.random() * 100)
             this.screenManager.transit(ScreenResult, {
               result: {
                 title: "TEST",
@@ -86,14 +96,11 @@ class CircularRhythm {
                 score: 1000000,
                 maxCombo: 1000,
                 rank: Rank.AAA,
-                analyzer: analyzer
+                analyzer: analyzer,
+                gaugeType: GaugeType.NORMAL,
+                cleared: true
               },
-              bmsonSetConfig: {
-                path: this.serverUrl + "/test/test-double.bmson",
-                assetPath: this.serverUrl + "/test/assets.json",
-                packedAssets: false,
-                local: false
-              }
+              bmsonSetConfig: testBmsonSetConfig
             })
           })
           break
@@ -166,20 +173,27 @@ class CircularRhythm {
 
   static loadPreference() {
     const preferenceStorage = window.localStorage.getItem("preference")
+    const defaultPreference = {
+      keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
+      playConfig: {
+        gaugeType: GaugeType.NORMAL,
+        autoSpecial: false
+      },
+      renderer: {
+        colorScheme: null,
+        ccwSingle: false,
+        ccwDouble1: false,
+        ccwDouble2: true
+      }
+    }
 
     if(!preferenceStorage) {
-      this.preference = {
-        keyConfig: [71, 70, 68, 83, 72, 74, 75, 76, 32],
-        renderer: {
-          colorScheme: null,
-          ccwSingle: false,
-          ccwDouble1: false,
-          ccwDouble2: true
-        }
-      }
+      this.preference = defaultPreference
       window.localStorage.setItem("preference", JSON.stringify(this.preference))
     } else {
       this.preference = JSON.parse(preferenceStorage)
+      // Update
+      if(!this.preference.playConfig) this.preference.playConfig = defaultPreference.playConfig
     }
   }
 

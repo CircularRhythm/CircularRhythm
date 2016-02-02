@@ -10,6 +10,8 @@ import LoaderBmson from "./loader/loader-bmson"
 import LoaderChart from "./loader/loader-chart"
 import LoaderAsset from "./loader/loader-asset"
 import { SliceData } from "./slice-data.js"
+import { GaugeGainNormal, GaugeGainEasy, GaugeGainSurvival, GaugeGainDanger } from "./gauge-gain"
+import GaugeType from "./gauge-type"
 
 export class Player {
   // TODO: Should not iterate soundChannels every frame due to performance problems (especially bmson converted from bms)
@@ -18,10 +20,12 @@ export class Player {
     this.state = States.LOADING
     this.loadingScreenOpacity = 1
     this.readyMessageOpacity = 1
+    this.deadTimer = 0
     this.bmsonSetConfig = bmsonSetConfig
     this.playMode = bmsonSetConfig.playMode
     this.lanes = this.playMode * 4 + 1
     this.specialLane = this.playMode * 4 + 1
+    this.gaugeType = bmsonSetConfig.config.gaugeType
     this.autoSpecial = bmsonSetConfig.config.autoSpecial
     this.keyConfig = game.preference.keyConfig
 
@@ -49,6 +53,13 @@ export class Player {
     this.unitPosition = 0
 
     this.audioContext = new AudioContext()
+    this.backgroundGainNode = this.audioContext.createGain()
+    this.backgroundGainNode.connect(this.audioContext.destination)
+    this.backgroundGainNode.gain.value = 0.8
+    this.foregroundGainNode = this.audioContext.createGain()
+    this.foregroundGainNode.connect(this.audioContext.destination)
+    this.soundEffectGainNode = this.audioContext.createGain()
+    this.soundEffectGainNode.connect(this.audioContext.destination)
 
     this.lastTime = 0
     this.playing = false
@@ -84,6 +95,7 @@ export class Player {
     this.analyzer.density = null
     this.analyzer.densityMax = null
     this.analyzer.accuracy = new Array(100).fill(0)
+    this.analyzer.gauge = new Array(100).fill(0)
 
     this.judgeStats = {
       [JudgeState.MISS_EMPTY]: 0,
@@ -112,10 +124,26 @@ export class Player {
       [JudgeState.GREAT]: 0.75,
       [JudgeState.PERFECT]: 1
     }
+
+    switch(this.gaugeType) {
+      case GaugeType.NORMAL:
+        this.gaugeGain = new GaugeGainNormal()
+        break
+      case GaugeType.EASY:
+        this.gaugeGain = new GaugeGainEasy()
+        break
+      case GaugeType.SURVIVAL:
+        this.gaugeGain = new GaugeGainSurvival()
+        break
+      case GaugeType.DANGER:
+        this.gaugeGain = new GaugeGainDanger()
+        break
+    }
+
     this.theoreticalScore = 0
     this.rank = Rank.D
 
-    this.gauge = 80
+    this.gauge = this.gaugeGain.getInitialGauge()
 
     this.load()
   }
@@ -189,6 +217,15 @@ export class Player {
         this.state = States.IN_GAME
       }
     }
+
+    if(this.state == States.DEAD) {
+      this.deadTimer += delta / 3000
+      if(this.deadTimer > 1) {
+        this.end(true)
+        this.state = States.END
+      }
+    }
+
     for(let i = 0; i < this.lanes - 1; i++) {
       this.keyFlashing[i] -= 0.05
       if(this.keyFlashing[i] < 0) this.keyFlashing[i] = 0
@@ -209,10 +246,9 @@ export class Player {
 
     const lastAnalyzerPosition = this.currentAnalyzerPosition
     this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
-    /*if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
-      // TODO: Add accuracy of long note
-      //this.analyzer.accuracy[lastAnalyzerPosition]
-    }*/
+    if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
+      this.analyzer.gauge[lastAnalyzerPosition] = this.gauge
+    }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
     //const deltaY = 240 * this.currentBpm * delta / 60000
@@ -224,7 +260,8 @@ export class Player {
     const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
       this.playing = false
-      this.end()
+      this.end(false)
+      this.state = States.END
       return
     }
     const currentBarLine = this.barLines[currentBarLineIndex]
@@ -368,7 +405,7 @@ export class Player {
       }
       const playSoundNotes = channel.notes.filter((note) => this.currentTime - delta < note.time && note.time <= this.currentTime && !this.isControllableLane(note.x))
       playSoundNotes.forEach((note) => {
-        if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+        if(note.sliceData) note.sliceData.play(this.audioContext, this.backgroundGainNode, channel.audioBuffer)
       })
     })
 
@@ -385,7 +422,7 @@ export class Player {
           else if(this.isJustPressed(i, input)) {
             const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
             this.judgeShortNote(note, judge)
-            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+            if(note.sliceData) note.sliceData.play(this.audioContext, this.foregroundGainNode, channel.audioBuffer)
           }
         }
         if(note instanceof NoteLong) {
@@ -394,7 +431,7 @@ export class Player {
           else if(this.isJustPressed(i, input)) {
             const judge = JudgeState.firstFromDelta(this.currentTime - note.time)
             this.firstJudgeLongNote(note, judge)
-            if(note.sliceData) note.sliceData.play(this.audioContext, channel.audioBuffer)
+            if(note.sliceData) note.sliceData.play(this.audioContext, this.foregroundGainNode, channel.audioBuffer)
           }
 
           if(note.state == 1) {
@@ -410,19 +447,27 @@ export class Player {
     }
   }
 
-  end() {
-    this.game.endCallback({
-      title: this.bmson.info.title,
-      subtitle: this.bmson.info.subtitle,
-      mode: this.playMode,
-      chartName: this.bmson.info.chart_name,
-      level: this.bmson.info.level,
-      judge: this.judgeStats,
-      maxCombo: this.maxCombo,
-      notes: this.numberOfNotes,
-      score: Math.round(this.score),
-      rank: this.rank,
-      analyzer: this.analyzer
+  end(dead) {
+    let border = 0
+    if(this.gaugeType == GaugeType.NORMAL) border = 75
+    if(this.gaugeType == GaugeType.EASY) border = 65
+    const cleared = !dead && this.gauge > border
+    this.audioContext.close().then(() => {
+      this.game.endCallback({
+        title: this.bmson.info.title,
+        subtitle: this.bmson.info.subtitle,
+        mode: this.playMode,
+        chartName: this.bmson.info.chart_name,
+        level: this.bmson.info.level,
+        judge: this.judgeStats,
+        maxCombo: this.maxCombo,
+        notes: this.numberOfNotes,
+        score: Math.round(this.score),
+        rank: this.rank,
+        analyzer: this.analyzer,
+        gaugeType: this.gaugeType,
+        cleared: cleared
+      })
     })
   }
 
@@ -442,10 +487,11 @@ export class Player {
       } else {
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
-      this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
-      this.theoreticalScore += 1000000 / this.numberOfNotes
-      this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+      this.applyScore(judgeState)
+      this.applyGauge(judgeState)
       this.analyzer.accuracy[Math.floor(note.time / this.duration * 100)] += this.accuracyMultiply[judgeState]
+    } else {
+      this.applyGauge(judgeState)
     }
     this.judgeStats[judgeState] ++
   }
@@ -456,9 +502,8 @@ export class Player {
       if(judgeState == JudgeState.BAD || judgeState == JudgeState.MISS) {
         this.combo = 0
         this.judgeStats[judgeState] ++
-        this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
-        this.theoreticalScore += 1000000 / this.numberOfNotes
-        this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+        this.applyScore(judgeState)
+        this.applyGauge(judgeState)
         this.eraseParticleList.push({x: note.x, position: note.position, phase: 0, judgeState: judgeState})
       }
 
@@ -469,6 +514,7 @@ export class Player {
       }
     } else {
       this.judgeStats[judgeState] ++
+      this.applyGauge(judgeState)
     }
   }
 
@@ -479,11 +525,13 @@ export class Player {
       this.combo++
       if(this.combo > this.maxCombo) this.maxCombo = this.combo
       this.judgeStats[note.judgeState] ++
-      this.score += 1000000 * this.scoreMultiply[note.judgeState] / this.numberOfNotes
+      this.applyScore(note.judgeState)
+      this.applyGauge(note.judgeState)
     } else {
       this.combo = 0
       this.judgeStats[JudgeState.BAD] ++
-      this.score += 1000000 * this.scoreMultiply[JudgeState.BAD] / this.numberOfNotes
+      this.applyScore(JudgeState.BAD)
+      this.applyGauge(JudgeState.BAD)
       this.eraseParticleList.push({x: note.x, position: note.noteHeadPosition, phase: 0, judgeState: JudgeState.BAD})
 
       const startIndex = Math.floor(note.time / this.duration * 100)
@@ -492,8 +540,24 @@ export class Player {
         this.analyzer.accuracy[i] -= this.accuracyMultiply[firstJudgeState]
       }
     }
+  }
+
+  applyScore(judgeState) {
+    this.score += 1000000 * this.scoreMultiply[judgeState] / this.numberOfNotes
     this.theoreticalScore += 1000000 / this.numberOfNotes
     this.rank = Rank.fromRate(this.score / this.theoreticalScore)
+  }
+
+  applyGauge(judgeState) {
+    this.gauge = this.gaugeGain.getNewGauge(this.gauge, judgeState, this.numberOfNotes, 100)
+    if(this.gauge > 100) this.gauge = 100
+    if(this.gauge < 0) this.gauge = 0
+    if(this.gaugeGain.isDead(this.gauge)) {
+      this.playing = false
+      this.state = States.DEAD
+      this.backgroundGainNode.gain.value = 0
+      this.foregroundGainNode.gain.value = 0
+    }
   }
 
   isNormalLane(x) {
@@ -544,4 +608,6 @@ export class States {
   static get LOADING() { return 0 }
   static get READY() { return 1 }
   static get PLAYING() { return 2 }
+  static get DEAD() { return 3 }
+  static get END() { return 4 }
 }

@@ -6,9 +6,20 @@ import ClassNames from "classnames"
 import DropdownMenu from "react-dd-menu"
 import { Rank } from "../player/rank"
 import { AnalyzerRenderer } from "../player/renderer/analyzer-renderer"
+import GaugeType from "../player/gauge-type"
 
 export default React.createClass({
   modeString: {1: "Single", 2: "Double"},
+  gaugeString: {
+    [GaugeType.NORMAL]: "Normal",
+    [GaugeType.EASY]: "Easy",
+    [GaugeType.SURVIVAL]: "Survival",
+    [GaugeType.DANGER]: "Danger"
+  },
+  getClearString(cleared) {
+    if(cleared) return "Cleared"
+    else return "Failed"
+  },
   getInitialState() {
     return {
       showRetryMenu: false,
@@ -41,7 +52,10 @@ export default React.createClass({
             <span className="level">Level {result.level}</span>
           </div>
         </div>
-        <div id="score">Score: {result.score}</div>
+        <div id="clearScore">
+          <div id="clear">{this.gaugeString[result.gaugeType]} Gauge {this.getClearString(result.cleared)}</div>
+          <div id="score">Score: {result.score}</div>
+        </div>
         <div id="analyzerContainer">
           <canvas id="analyzer" width="880px" height="200px"></canvas>
         </div>
@@ -120,8 +134,11 @@ export default React.createClass({
     const analyzerElement = document.getElementById("analyzer")
     const ctx = analyzerElement.getContext("2d")
     const analyzerRenderer = this.state.analyzerRenderer
+    if(this.props.result.gaugeType == GaugeType.NORMAL) analyzerRenderer.strokeHorizontalReferenceLine(ctx, 0.75, 1, colorScheme.analyzer.gauge.clear, 1)
+    if(this.props.result.gaugeType == GaugeType.EASY) analyzerRenderer.strokeHorizontalReferenceLine(ctx, 0.65, 1, colorScheme.analyzer.gauge.clear, 1)
     analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.density, analyzer.densityMax, 1, colorScheme.analyzer.density)
     analyzerRenderer.fillAnalyzerComponent(ctx, analyzer.accuracy, analyzer.densityMax, colorScheme.analyzer.accuracy)
+    analyzerRenderer.strokeAnalyzerComponent(ctx, analyzer.gauge, 100, 2, colorScheme.analyzer.gauge[this.props.result.gaugeType])
   },
   componentWillUnmount() {
     style.unuse()
