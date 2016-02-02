@@ -39,7 +39,7 @@
     "run-sequence": "^1.1.4",
     "sass-loader": "^3.0.0",
     "style-loader": "^0.12.4",
-    "webfontloader": "^1.6.20",
+    "webfontloader": "^1.6.21",
     "webpack": "^1.12.9",
     "webpack-stream": "^2.1.1"
   },
