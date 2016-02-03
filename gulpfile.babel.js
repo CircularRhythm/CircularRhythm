@@ -10,6 +10,8 @@ import sass from 'gulp-sass'
 import svgMin from "gulp-svgmin"
 import jsonMinify from "gulp-jsonminify"
 
+import karma from "karma"
+
 import ghPages from 'gulp-gh-pages'
 import liveReload from "gulp-livereload"
 import del from "del"
@@ -93,6 +95,20 @@ g.task("watch", (cb) => {
   g.watch(["asset/**/*", "!asset/**/*.{svg,json}"], ["asset"])
   g.watch("asset/**/*.svg", ["svg_minify"])
   g.watch("asset/**/*.json", ["json_minify"])
+})
+
+g.task("test", (cb) => {
+  new karma.Server({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: false
+  }, cb).start()
+})
+
+g.task("test_single", (cb) => {
+  new karma.Server({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, cb).start()
 })
 
 // Travis CI

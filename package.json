@@ -45,6 +45,13 @@
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
+    "karma": "^0.13.19",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^0.2.2",
+    "karma-mocha": "^0.2.1",
+    "karma-webpack": "^1.7.0",
+    "mocha": "^2.4.5",
     "webpack-dev-server": "^1.14.0"
   },
   "scripts": {

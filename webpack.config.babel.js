@@ -1,10 +1,11 @@
 import webpack from "webpack";
 
-// Type: "development", "production"
+// Type: "development", "production", "production-min", "test"
 export default function(type) {
   const development = type == "development"
   const production = type == "production"
   const productionMin = type == "production-min"
+  const test = type == "test"
 
   const config = {
     entry: ["./src/script/main.js"],
@@ -45,6 +46,11 @@ export default function(type) {
 
   if(productionMin) {
     config.plugins.push(new webpack.optimize.UglifyJsPlugin())
+  }
+
+  if(test) {
+    config.entry = {}
+    config.devtool = 'cheap-module-eval-source-map'
   }
 
   return config
