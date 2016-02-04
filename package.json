@@ -40,7 +40,7 @@
     "sass-loader": "^3.0.0",
     "style-loader": "^0.12.4",
     "webfontloader": "^1.6.20",
-    "webpack": "^1.12.9",
+    "webpack": "^1.12.12",
     "webpack-stream": "^2.1.1"
   },
   "devDependencies": {
