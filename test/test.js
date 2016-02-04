@@ -1,8 +1,8 @@
-describe("Test test", () => {
-  it("can pass", () => {
-    expect(true).to.be.true
-  })
-  it("cannot pass", () => {
-    expect(true).to.be.false
+import assert from "power-assert"
+import Util from "circular-rhythm/util"
+
+describe("Util", () => {
+  it("formatTime", () => {
+    assert(Util.formatTime(10000) === "0:10")
   })
 })

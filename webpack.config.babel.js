@@ -32,6 +32,9 @@ export default function(type) {
       ]
     },
     resolve: {
+      alias: {
+        "circular-rhythm": __dirname + "/src/script/"
+      },
       extensions: ["", ".js", ".jsx"]
     },
     plugins: []
@@ -50,7 +53,19 @@ export default function(type) {
 
   if(test) {
     config.entry = {}
-    config.devtool = 'cheap-module-eval-source-map'
+    //config.devtool = 'cheap-module-eval-source-map'
+    config.devtool = 'inline-source-map'
+    config.module.preLoaders = [
+      {
+        test: /\.js$/,
+        exclude: /(test|node_modules|bower_components)\//,
+        loader: 'isparta-instrumenter'
+      }
+    ]
+
+    // Ignore weird warning
+    config.module.exprContextCritical = false
+    config.module.noParse = /node_modules\/acorn/
   }
 
   return config
