@@ -1,4 +1,5 @@
 import assert from "power-assert"
+
 import Util from "circular-rhythm/util"
 
 describe("Util", () => {

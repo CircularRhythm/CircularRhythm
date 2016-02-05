@@ -1,18 +1,19 @@
 import webpack from "webpack";
 
-// Type: "development", "production", "production-min", "test"
+// Type: "development", "production", "production-min", "test", "test-single"
 export default function(type) {
   const development = type == "development"
   const production = type == "production"
   const productionMin = type == "production-min"
   const test = type == "test"
+  const testSingle = type == "test-single"
 
   const config = {
     entry: ["./src/script/main.js"],
     output: {
       path: __dirname + "/build/asset/",
       publicPath: "/asset/",
-      filename: "main.js",
+      filename: "main.js"
     },
     module: {
       loaders: [
@@ -52,8 +53,25 @@ export default function(type) {
   }
 
   if(test) {
+    config.devtool = 'inline-source-map'
+    config.entry = ["stack-source-map/register", "./test/test_index.js", "webpack/hot/dev-server"]
+    config.output = {
+      path: __dirname + "/build/",
+      publicPath: "/",
+      filename: "test.js",
+    }
+    config.module.loaders[0].loaders.unshift("mocha")
+
+    config.debug = true
+    config.plugins.push(new webpack.HotModuleReplacementPlugin())
+
+    // Ignore weird warning
+    config.module.exprContextCritical = false
+    config.module.noParse = /node_modules\/acorn/
+  }
+
+  if(testSingle) {
     config.entry = {}
-    //config.devtool = 'cheap-module-eval-source-map'
     config.devtool = 'inline-source-map'
     config.module.preLoaders = [
       {

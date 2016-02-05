@@ -98,10 +98,14 @@ g.task("watch", (cb) => {
 })
 
 g.task("test", (cb) => {
-  new karma.Server({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false
-  }, cb).start()
+  const config = webpackConfig("test")
+  config.entry.unshift("webpack-dev-server/client?http://localhost:8081")
+  new webpackDevServer(webpack(config), {
+    contentBase: __dirname + "/build/",
+    publicPath: "/",
+    hot: true,
+    stats: { colors: true }
+  }).listen(8081, "localhost", cb)
 })
 
 g.task("test_single", (cb) => {
