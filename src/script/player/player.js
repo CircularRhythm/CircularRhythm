@@ -247,7 +247,7 @@ export class Player {
     const lastAnalyzerPosition = this.currentAnalyzerPosition
     this.currentAnalyzerPosition = Math.floor(this.currentTime / this.duration * 100)
     if(lastAnalyzerPosition != this.currentAnalyzerPosition) {
-      this.analyzer.gauge[lastAnalyzerPosition] = this.gauge
+      this.analyzer.gauge.fill(this.gauge, lastAnalyzerPosition, this.currentAnalyzerPosition)
     }
 
     // ⊿T [tick/frame] = 240 [tick/beat(4th)] * bpm [beat(4th)/min] * delta [ms] / 60000 [ms/min]
@@ -259,6 +259,21 @@ export class Player {
 
     const currentBarLineIndex = PlayerUtil.getBarLineIndex(this.currentY, this.barLines)
     if(currentBarLineIndex == -1) {
+      // Prevent inactive survival cheating
+      this.soundChannels.forEach((channel) => {
+        channel.notes.filter((e) => this.isControllableLane(e.x) && e.judgeState == JudgeState.NO).forEach((e) => {
+          if(e instanceof NoteShort) this.judgeShortNote(e, JudgeState.MISS)
+          else if(e instanceof NoteLong) this.firstJudgeLongNote(e, JudgeState.MISS)
+        })
+        channel.notes.filter((e) => this.isControllableLane(e.x) && e instanceof NoteLong && e.state == 1).forEach((e) => {
+          this.secondJudgeLongNote(e, false)
+        })
+      })
+      this.analyzer.gauge[99] = this.gauge
+      if(this.state == States.DEAD) {
+        return
+      }
+
       this.playing = false
       this.end(false)
       this.state = States.END
@@ -463,7 +478,7 @@ export class Player {
         maxCombo: this.maxCombo,
         notes: this.numberOfNotes,
         score: Math.round(this.score),
-        rank: this.rank,
+        rank: Rank.fromRate(this.score / 1000000),
         analyzer: this.analyzer,
         gaugeType: this.gaugeType,
         cleared: cleared
