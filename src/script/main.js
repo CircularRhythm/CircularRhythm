@@ -20,7 +20,7 @@ import GaugeType from "./player/gauge-type"
 
 class CircularRhythm {
   static main() {
-    this.version = "0.5.0-beta.4.1"
+    this.version = "0.5.0-beta.4.2"
 
     const serverUrlParam = getParameter("server")
     const debugParam = getParameter("debug")

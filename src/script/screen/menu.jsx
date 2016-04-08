@@ -356,6 +356,6 @@ export default React.createClass({
   },
   componentWillUnmount() {
     style.unuse()
-    document.removeEventListener("dragenter")
+    document.removeEventListener("dragenter", this.bodyOnDragEnter)
   }
 })
